@@ -3,6 +3,19 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.3.1] - 2026-11-24
+
+### Added
+
+- Collapsible branches: a chevron replaces the branch glyph, a collapsed node shows a hidden-count badge,
+  Alt+click folds the whole branch, and a header control collapses or expands all. The state is per tab and
+  never enters the document, the exports or the history.
+- Labels at 16px, the root at 17px, wrapping to three lines; the key chip moves to the right of the row.
+
+### Fixed
+
+- The wrapped label field no longer shows native scrollbar arrows.
+
 ## [0.3.0] - 2026-11-24
 
 ### Changed

@@ -533,6 +533,7 @@ a.text-btn {
   border: 1px solid transparent;
   resize: none;
   overflow-y: auto;
+  scrollbar-width: none;
   display: block;
   background: transparent;
   border-radius: 5px;
@@ -1274,4 +1275,8 @@ kbd {
   border-radius: 999px;
   padding: 1px 6px;
   white-space: nowrap;
+}
+
+.label-input::-webkit-scrollbar {
+  display: none;
 }
