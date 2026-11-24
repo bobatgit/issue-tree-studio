@@ -213,18 +213,6 @@ export function Outline({ ws, onImport }: Props) {
                     {isRoot ? "◆" : "└"}
                   </span>
 
-                  <button
-                    type="button"
-                    className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
-                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void copyKey(keyInfo?.key ?? "", node.id, node.label);
-                    }}
-                  >
-                    {keyInfo?.key ?? "····"}
-                  </button>
-
                   <input
                     className={`label-input ${isRoot ? "root-label" : ""}`}
                     data-label-id={node.id}
@@ -248,6 +236,18 @@ export function Outline({ ws, onImport }: Props) {
                     }}
                   >
                     {node.status === "complete" ? "✓" : ""}
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
+                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}, ${node.status}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void copyKey(keyInfo?.key ?? "", node.id, node.label);
+                    }}
+                  >
+                    {keyInfo?.key ?? "····"}
                   </button>
 
                   <div className="row-actions">

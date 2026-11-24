@@ -434,7 +434,7 @@ a.text-btn {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 18px 22px 54px minmax(0, 1fr) 72px 62px;
+  grid-template-columns: 18px 22px minmax(0, 1fr) 26px 54px 62px;
   align-items: center;
   gap: 7px;
   padding: 3px 6px 3px 2px;
