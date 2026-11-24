@@ -4,14 +4,7 @@ import { copyText, downloadText, formatTime, slugify } from "../lib/ui";
 import { MECE_SELF_CHECK, disabledAiReviewer, heuristicMeceReview } from "../model/mece";
 import { flatten, snapshotOf } from "../model/tree";
 import type { VersionDiff } from "../model/diff";
-import type { NodeType } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
-
-const TYPE_LABEL: Record<NodeType, string> = {
-  question: "Question",
-  hypothesis: "Hypothesis",
-  issue: "Issue",
-};
 
 function scrollToNode(nodeId: string): void {
   document.querySelector(`[data-row-id="${nodeId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -88,7 +81,7 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
       <div className="section">
         <div className="section-head">
           <span>Selected split</span>
-          <span>{meceNode ? TYPE_LABEL[meceNode.type] : "none"}</span>
+          <span>{meceNode ? ws.keyMap.byNode[meceNode.id]?.key ?? "none" : "none"}</span>
         </div>
         {!meceNode ? (
           <p className="empty-note">Select a node to review its split.</p>
@@ -182,7 +175,7 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                 <span className="ftop">
                   <span className="sev info" />
                   <span className="ftitle">
-                    {needle} — {TYPE_LABEL[currentMatch.node.type]}
+                    {needle}
                   </span>
                 </span>
                 <span className="fdetail">{currentMatch.node.label || "Untitled"}</span>
@@ -215,7 +208,6 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
           <thead>
             <tr>
               <th>Key</th>
-              <th>Type</th>
               <th>Label</th>
             </tr>
           </thead>
@@ -243,10 +235,6 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                       {info?.key ?? "····"}
                     </button>
                   </td>
-                  <td>
-                    <span className={`type-dot ${entry.node.type}`} />
-                    {TYPE_LABEL[entry.node.type].slice(0, 4)}
-                  </td>
                   <td>{entry.node.label || <span className="muted">Untitled</span>}</td>
                 </tr>
               );
@@ -270,7 +258,6 @@ function DiffView({ diff }: { diff: VersionDiff }) {
     { title: "Removed", items: diff.removed.map((item) => item.label) },
     { title: "Relabelled", items: diff.relabelled.map((item) => `${item.from} → ${item.to}`) },
     { title: "Moved", items: diff.moved.map((item) => `${item.label} (${item.from || "top"} → ${item.to || "top"})`) },
-    { title: "Re-typed", items: diff.retyped.map((item) => `${item.id.slice(0, 4)}: ${item.from} → ${item.to}`) },
     { title: "Keys changed", items: diff.rekeyed.map((item) => `${item.from} → ${item.to}  ${item.label}`) },
   ].filter((block) => block.items.length > 0);
 
@@ -507,21 +494,6 @@ export function NodePanel({ ws }: { ws: Workspace }) {
             value={node.label}
             onChange={(event) => ws.editLabel(node.id, event.target.value)}
           />
-        </div>
-        <div className="field">
-          <label htmlFor="node-type">Type</label>
-          <select
-            id="node-type"
-            className="select"
-            value={node.type}
-            onChange={(event) => ws.setType(node.id, event.target.value as NodeType)}
-          >
-            {(["question", "hypothesis", "issue"] as NodeType[]).map((type) => (
-              <option key={type} value={type}>
-                {TYPE_LABEL[type]}
-              </option>
-            ))}
-          </select>
         </div>
         <div className="field">
           <label htmlFor="node-note">Note</label>

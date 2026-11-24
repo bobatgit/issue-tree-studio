@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { copyText } from "../lib/ui";
 import { flatten, maxDepth, parentOf } from "../model/tree";
-import type { NodeType } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -15,12 +14,6 @@ interface DropTarget {
   id: string;
   position: DropPosition;
 }
-
-const TYPE_LABEL: Record<NodeType, string> = {
-  question: "Question",
-  hypothesis: "Hypothesis",
-  issue: "Issue",
-};
 
 export function Outline({ ws, onImport }: Props) {
   const doc = ws.doc;
@@ -223,7 +216,7 @@ export function Outline({ ws, onImport }: Props) {
                   <button
                     type="button"
                     className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
-                    title={`Copy key ${keyInfo?.key ?? ""} — ${TYPE_LABEL[node.type]} at level ${entry.depth}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
+                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       void copyKey(keyInfo?.key ?? "", node.id, node.label);
@@ -236,27 +229,12 @@ export function Outline({ ws, onImport }: Props) {
                     className={`label-input ${isRoot ? "root-label" : ""}`}
                     data-label-id={node.id}
                     value={node.label}
-                    placeholder={isRoot ? "Write the root as a precise question" : "Write a question, hypothesis or issue"}
+                    placeholder={isRoot ? "Write the root as a precise question" : "Write a question"}
                     aria-label={`Label for ${keyInfo?.key ?? "node"} at level ${entry.depth}`}
                     onChange={(event) => ws.editLabel(node.id, event.target.value)}
                     onFocus={() => ws.select(node.id)}
                     onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
                   />
-
-                  <select
-                    className={`type-select ${node.type}`}
-                    value={node.type}
-                    aria-label="Node type"
-                    title="Question, hypothesis or issue"
-                    onChange={(event) => ws.setType(node.id, event.target.value as NodeType)}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    {(["question", "hypothesis", "issue"] as NodeType[]).map((type) => (
-                      <option key={type} value={type}>
-                        {TYPE_LABEL[type]}
-                      </option>
-                    ))}
-                  </select>
 
                   <div className="row-actions">
                     <button

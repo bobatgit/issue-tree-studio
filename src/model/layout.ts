@@ -6,7 +6,7 @@
  * them with a viewBox.
  */
 
-import type { KeyMap, NodeType, TreeDoc } from "./types";
+import type { KeyMap, TreeDoc } from "./types";
 
 export interface LayoutOptions {
   maxWidth: number;
@@ -17,13 +17,11 @@ export interface LayoutOptions {
   fontSize?: number;
   maxLines?: number;
   showKeys?: boolean;
-  showTypes?: boolean;
 }
 
 export interface LayoutNode {
   id: string;
   label: string;
-  type: NodeType;
   key: string;
   x: number;
   y: number;
@@ -115,7 +113,6 @@ export function layoutTree(
   const gapX = options.gapX ?? 0.38;
   const gapY = options.gapY ?? 0.16;
   const showKeys = options.showKeys ?? true;
-  const showTypes = options.showTypes ?? true;
 
   interface Entry {
     id: string;
@@ -123,7 +120,6 @@ export function layoutTree(
     parentId: string | null;
     children: string[];
     label: string;
-    type: NodeType;
     key: string;
   }
 
@@ -140,7 +136,6 @@ export function layoutTree(
       parentId,
       children: node.children.filter((childId) => !included || included.has(childId)),
       label: node.label,
-      type: node.type,
       key: keyMap.byNode[id]?.key ?? "----",
     });
     maxDepth = Math.max(maxDepth, depth);
@@ -170,7 +165,7 @@ export function layoutTree(
   const maxLines = options.maxLines ?? 4;
   const charsPerLine = estimateCharsPerLine(boxWidth, fontSize);
   const lineHeight = (fontSize * 1.24) / 72;
-  const metaH = showKeys || showTypes ? Math.max(0.15, fontSize / 72 + 0.06) : 0;
+  const metaH = showKeys ? Math.max(0.15, fontSize / 72 + 0.06) : 0;
 
   let linesByNode = new Map<string, string[]>();
   for (const entry of entries.values()) {
@@ -229,7 +224,6 @@ export function layoutTree(
     nodes.push({
       id: entry.id,
       label: entry.label,
-      type: entry.type,
       key: entry.key,
       x: (entry.depth - 1) * (boxWidth + gapX),
       y: cy - boxH / 2,

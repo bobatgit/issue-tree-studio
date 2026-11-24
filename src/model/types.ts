@@ -1,9 +1,5 @@
 /** Core data model for Issue Tree Studio. */
 
-export type NodeType = "question" | "hypothesis" | "issue";
-
-export const NODE_TYPES: NodeType[] = ["question", "hypothesis", "issue"];
-
 export interface MeceFlags {
   /** The children together cover everything that could explain or achieve the parent. */
   exhaustive?: boolean;
@@ -14,7 +10,6 @@ export interface MeceFlags {
 export interface TreeNode {
   id: string;
   label: string;
-  type: NodeType;
   /** Child ids in display order. */
   children: string[];
   note?: string;

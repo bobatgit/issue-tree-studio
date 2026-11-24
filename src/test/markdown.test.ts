@@ -58,13 +58,6 @@ describe("markdown import", () => {
     expect(result.warnings).toHaveLength(1);
   });
 
-  it("leaves group nodes as questions and ends as hypotheses", () => {
-    const doc = parseMarkdown("- Root?\n  - Group?\n    - Leaf?\n").doc;
-    const nodes = Object.values(doc.nodes);
-    expect(nodes.find((node) => node.label === "Root?")?.type).toBe("question");
-    expect(nodes.find((node) => node.label === "Group?")?.type).toBe("question");
-    expect(nodes.find((node) => node.label === "Leaf?")?.type).toBe("hypothesis");
-  });
 });
 
 describe("markdown export", () => {

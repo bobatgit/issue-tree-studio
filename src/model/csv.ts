@@ -1,14 +1,13 @@
 /** CSV export and import for issue trees. */
 
-import type { KeyMap, NodeType, TreeDoc, TreeNode } from "./types";
-import { NODE_CAP, NODE_TYPES } from "./types";
+import type { KeyMap, TreeDoc, TreeNode } from "./types";
+import { NODE_CAP } from "./types";
 import { buildDoc, flatten, newId, now } from "./tree";
 
 export const CSV_HEADER = [
   "key",
   "parent_key",
   "level",
-  "type",
   "label",
   "path",
   "branch_index",
@@ -44,7 +43,6 @@ export function exportCsv(doc: TreeDoc, keyMap: KeyMap, version = doc.version): 
       key,
       parentKey,
       entry.depth,
-      entry.node.type,
       entry.node.label,
       pathKeys.join("/"),
       entry.parentId ? entry.index + 1 : 0,
@@ -108,11 +106,6 @@ function headerIndex(header: string[], names: string[]): number {
   return -1;
 }
 
-function asType(value: string | undefined): NodeType {
-  const clean = (value ?? "").trim().toLowerCase();
-  return (NODE_TYPES as string[]).includes(clean) ? (clean as NodeType) : "hypothesis";
-}
-
 export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
   const warnings: string[] = [];
   const rows = parseCsv(text);
@@ -125,14 +118,13 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     key: headerIndex(header, ["key", "id", "node_id"]),
     parent: headerIndex(header, ["parent_key", "parent", "parent_id"]),
     label: headerIndex(header, ["label", "text", "question", "issue", "name"]),
-    type: headerIndex(header, ["type", "node_type"]),
     level: headerIndex(header, ["level", "depth"]),
   };
 
   if (col.label < 0) {
     return {
       doc: buildDoc(name, [{ label: "Root question", depth: 1 }]),
-      warnings: ["No label column found. Expected key,parent_key,level,type,label,path,branch_index,version."],
+      warnings: [`No label column found. Expected ${CSV_HEADER.join(",")}.`],
     };
   }
 
@@ -155,7 +147,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     const id = newId();
     const label = (row[col.label] ?? "").trim();
     const externalKey = col.key >= 0 ? (row[col.key] ?? "").trim() : "";
-    nodes[id] = { id, label, type: asType(col.type >= 0 ? row[col.type] : undefined), children: [] };
+    nodes[id] = { id, label, children: [] };
     ids.push(id);
     if (externalKey) {
       if (externalToId.has(externalKey)) {
@@ -193,19 +185,10 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
   let rootId: string | null = roots.length === 1 ? roots[0] : null;
   if (roots.length > 1) {
     const synthetic = newId();
-    nodes[synthetic] = { id: synthetic, label: name, type: "question", children: [...roots] };
+    nodes[synthetic] = { id: synthetic, label: name, children: [...roots] };
     rootId = synthetic;
     warnings.push(`Found ${roots.length} top-level rows. Added a shared root so the rows form one tree.`);
   }
-  if (rootId) {
-    nodes[rootId] = { ...nodes[rootId], type: "question" };
-  }
-  for (const node of Object.values(nodes)) {
-    if (node.children.length > 0 && node.type === "hypothesis") {
-      nodes[node.id] = { ...node, type: "question" };
-    }
-  }
-
   return {
     doc: {
       id: newId(),

@@ -12,21 +12,19 @@ import {
   moveNode,
   outdentNode,
   removeNode,
-  setType,
 } from "../model/tree";
 import { NODE_CAP } from "../model/types";
 
 const labels = (doc: Parameters<typeof flatten>[0]): string[] => flatten(doc).map((entry) => entry.node.label);
 
 describe("tree operations", () => {
-  it("adds a child and promotes a hypothesis parent to a question", () => {
+  it("adds a child under the given parent", () => {
     const doc = createDoc("Tree", "Root?");
     const rootId = doc.rootId as string;
-    const withHypothesis = setType(doc, rootId, "hypothesis");
-    const result = addChild(withHypothesis, rootId, "Child?");
+    const result = addChild(doc, rootId, "Child?");
     expect(result).not.toBeNull();
     expect(labels(result!.doc)).toEqual(["Root?", "Child?"]);
-    expect(result!.doc.nodes[rootId].type).toBe("question");
+    expect(result!.doc.nodes[rootId].children).toHaveLength(1);
   });
 
   it("adds a sibling after the given node", () => {
@@ -124,14 +122,5 @@ describe("buildDoc", () => {
       { label: "B?", depth: 1 },
     ], { syntheticRoot: "Shared root?" });
     expect(labels(doc)).toEqual(["Shared root?", "A?", "B?"]);
-  });
-
-  it("turns any node with children into a question", () => {
-    const doc = buildDoc("Test", [
-      { label: "Root?", depth: 1 },
-      { label: "Leaf?", depth: 2 },
-      { label: "Leaf child?", depth: 3 },
-    ]);
-    expect(Object.values(doc.nodes).find((node) => node.label === "Leaf?")?.type).toBe("question");
   });
 });

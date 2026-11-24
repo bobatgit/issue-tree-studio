@@ -9,7 +9,7 @@
 import PptxGenJS from "pptxgenjs";
 import { computeKeyMap } from "../model/keys";
 import { layoutTree, packSlides, type LayoutNode, type LayoutResult } from "../model/layout";
-import type { KeyMap, NodeType, TreeDoc } from "../model/types";
+import type { KeyMap, TreeDoc } from "../model/types";
 
 export interface PptxExportOptions {
   showKeys: boolean;
@@ -25,13 +25,9 @@ const CONTENT_BOTTOM = 0.5;
 const CONTENT_W = SLIDE_W - MARGIN_X * 2;
 const CONTENT_H = SLIDE_H - CONTENT_TOP - CONTENT_BOTTOM;
 
-const TYPE_STYLE: Record<NodeType, { fill: string; border: string; text: string; label: string }> = {
-  question: { fill: "F8FAFC", border: "94A3B8", text: "1E293B", label: "QUESTION" },
-  hypothesis: { fill: "FFF7E8", border: "D9A441", text: "3F2E0B", label: "HYPOTHESIS" },
-  issue: { fill: "EEF2F7", border: "B6C2D1", text: "25303F", label: "ISSUE" },
-};
+const NODE_STYLE = { fill: "F8FAFC", border: "94A3B8", text: "1E293B" };
 
-const ROOT_STYLE = { fill: "1E293B", border: "0F172A", text: "FFFFFF", label: "ROOT" };
+const ROOT_STYLE = { fill: "1E293B", border: "0F172A", text: "FFFFFF" };
 const EDGE_COLOR = "B8C4D4";
 const MUTED = "64748B";
 
@@ -140,7 +136,7 @@ function drawLayout(
   pptx: PptxGenJS,
   slide: Slide,
   layout: LayoutResult,
-  options: { showKeys: boolean; showTypes: boolean; originY?: number },
+  options: { showKeys: boolean; originY?: number },
 ): void {
   if (layout.nodes.length === 0) return;
   const availableH = CONTENT_H - ((options.originY ?? CONTENT_TOP) - CONTENT_TOP);
@@ -172,7 +168,6 @@ function drawLayout(
       h: node.h * scale,
       fontSize: Math.max(5, node.fontSize * scale),
       showKeys: options.showKeys,
-      showTypes: options.showTypes,
       dense: scale < 0.55,
     });
   }
@@ -189,13 +184,12 @@ function drawNode(
     h: number;
     fontSize: number;
     showKeys: boolean;
-    showTypes: boolean;
     dense: boolean;
   },
 ): void {
   const isRoot = node.depth === 1;
-  const style = isRoot ? ROOT_STYLE : TYPE_STYLE[node.type];
-  const showMeta = !box.dense && (box.showKeys || box.showTypes) && box.h > 0.42;
+  const style = isRoot ? ROOT_STYLE : NODE_STYLE;
+  const showMeta = !box.dense && box.showKeys && box.h > 0.42;
   const metaH = showMeta ? Math.min(0.2, box.h * 0.32) : 0;
 
   slide.addShape(pptx.ShapeType.roundRect, {
@@ -237,19 +231,6 @@ function drawNode(
     });
   }
 
-  if (box.showTypes && showMeta && box.h > 0.5) {
-    slide.addText(style.label, {
-      x: box.x + 0.06,
-      y: box.y + box.h - metaH - 0.02,
-      w: Math.max(0.3, box.w - 0.12),
-      h: metaH,
-      fontSize: Math.max(5.5, box.fontSize * 0.62),
-      color: isRoot ? "CBD5E1" : MUTED,
-      fontFace: "Segoe UI",
-      bold: true,
-      charSpacing: 0.8,
-    });
-  }
 }
 
 function addKeyIndexSlides(
@@ -264,7 +245,7 @@ function addKeyIndexSlides(
     const node = doc.nodes[id];
     if (!node) return;
     const key = keyMap.byNode[id]?.key ?? "----";
-    rows.push([{ text: key }, { text: node.type }, { text: String(depth) }, { text: node.label }]);
+    rows.push([{ text: key }, { text: String(depth) }, { text: node.label }]);
     for (const childId of node.children) walk(childId, depth + 1);
   };
   if (doc.rootId) walk(doc.rootId, 1);
@@ -274,12 +255,12 @@ function addKeyIndexSlides(
     const page = startPage + start / chunk;
     const slice = rows.slice(start, start + chunk);
     const slide = pptx.addSlide();
-    addTitle(slide, "Key index", "Resolve a key from a meeting note back to its question, hypothesis or issue.");
+    addTitle(slide, "Key index", "Resolve a key from a meeting note back to its question.");
     slide.addTable(
       [
-        ["Key", "Type", "Level", "Label"].map((text, i) => ({
+        ["Key", "Level", "Label"].map((text, i) => ({
           text,
-          options: { bold: true, color: "475569", align: i === 2 ? ("center" as const) : ("left" as const) },
+          options: { bold: true, color: "475569", align: i === 1 ? ("center" as const) : ("left" as const) },
         })),
         ...slice,
       ],
@@ -287,7 +268,7 @@ function addKeyIndexSlides(
         x: MARGIN_X,
         y: 1.05,
         w: CONTENT_W,
-        colW: [1.05, 1.35, 0.8, 9.1],
+        colW: [1.05, 0.8, 10.4],
         fontSize: 8.5,
         fontFace: "Segoe UI",
         color: "1E293B",
@@ -341,7 +322,6 @@ export function buildPresentation(
         gapX: 0.3,
         gapY: 0.07,
         showKeys: options.showKeys,
-        showTypes: false,
       });
       addTitle(
         slide,
@@ -352,11 +332,10 @@ export function buildPresentation(
       );
       drawLayout(pptx, slide, layout, {
         showKeys: options.showKeys,
-        showTypes: false,
         originY: CONTENT_TOP + 0.22,
       });
       slide.addText(
-        "Amber = hypothesis   ·   Blue-grey = question   ·   4-character keys identify every node",
+        "Keys identify every node",
         {
           x: MARGIN_X,
           y: SLIDE_H - 0.62,
@@ -378,12 +357,10 @@ export function buildPresentation(
       gapX: 0.42,
       gapY: 0.18,
       showKeys: options.showKeys,
-      showTypes: true,
     });
     addTitle(slide, group.title || doc.name, `From the root: ${rootLabel}`);
     drawLayout(pptx, slide, layout, {
       showKeys: options.showKeys,
-      showTypes: true,
       originY: CONTENT_TOP + 0.22,
     });
     addFooter(slide, doc, page, totalPages, "branch detail");

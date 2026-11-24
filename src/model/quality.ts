@@ -99,16 +99,6 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
         node.id,
       );
     }
-    if (node.type === "hypothesis" && node.children.length > 0) {
-      push(
-        "HYPOTHESIS_WITH_CHILDREN",
-        "error",
-        "A hypothesis has children",
-        "A hypothesis is a testable end node. Change it to Question or move its children up.",
-        node.id,
-      );
-    }
-
     if (node.children.length === 1) singleChild.push(node.id);
 
     for (let i = 0; i < node.children.length; i += 1) {

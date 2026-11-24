@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { layoutTree, packSlides } from "../model/layout";
-import type { NodeType } from "../model/types";
 import { flatten } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
@@ -9,11 +8,7 @@ interface Props {
   onExport: () => void;
 }
 
-const STYLE: Record<NodeType, { fill: string; border: string; text: string }> = {
-  question: { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" },
-  hypothesis: { fill: "#FFF7E8", border: "#D9A441", text: "#3F2E0B" },
-  issue: { fill: "#EEF2F7", border: "#B6C2D1", text: "#25303F" },
-};
+const NODE_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
 
 const ROOT = { fill: "#1E293B", border: "#0F172A", text: "#FFFFFF" };
 
@@ -30,7 +25,6 @@ export function Diagram({ ws, onExport }: Props) {
       gapY: 0.16,
       maxLines: 4,
       showKeys,
-      showTypes: true,
     });
   }, [doc, ws.keyMap, showKeys]);
 
@@ -45,15 +39,6 @@ export function Diagram({ ws, onExport }: Props) {
   return (
     <div>
       <div className="legend">
-        <span>
-          <span className="type-dot question" /> Question
-        </span>
-        <span>
-          <span className="type-dot hypothesis" /> Hypothesis
-        </span>
-        <span>
-          <span className="type-dot issue" /> Issue
-        </span>
         <span>{layout.leaves} leaf rows</span>
       </div>
 
@@ -77,7 +62,7 @@ export function Diagram({ ws, onExport }: Props) {
 
           {layout.nodes.map((node) => {
             const isRoot = node.depth === 1;
-            const style = isRoot ? ROOT : STYLE[node.type];
+            const style = isRoot ? ROOT : NODE_STYLE;
             const lineHeight = (node.fontSize * 1.24) / 72;
             return (
               <g
@@ -122,18 +107,6 @@ export function Diagram({ ws, onExport }: Props) {
                     fill={isRoot ? "#CBD5E1" : "#64748B"}
                   >
                     {node.key}
-                  </text>
-                ) : null}
-                {node.h > 0.4 ? (
-                  <text
-                    x={node.x + 0.05}
-                    y={node.y + node.h - 0.05}
-                    fontSize={Math.max(0.055, node.fontSize / 72 * 0.6)}
-                    fontFamily="Segoe UI, system-ui, sans-serif"
-                    fontWeight={600}
-                    fill={isRoot ? "#CBD5E1" : "#7C8798"}
-                  >
-                    {node.type.toUpperCase()}
                   </text>
                 ) : null}
               </g>

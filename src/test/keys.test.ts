@@ -141,7 +141,7 @@ describe("document keys", () => {
         ...current,
         nodes: {
           ...current.nodes,
-          [id]: { id, label: `Branch ${index}?`, type: "question", children: [] },
+          [id]: { id, label: `Branch ${index}?`, children: [] },
           [rootId]: { ...current.nodes[rootId], children: [...current.nodes[rootId].children, id] },
         },
       };

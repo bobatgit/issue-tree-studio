@@ -25,7 +25,6 @@ import {
   setMece as setMeceOp,
   setNote as setNoteOp,
   setSettings as setSettingsOp,
-  setType as setTypeOp,
   snapshotOf,
   updateLabel,
 } from "../model/tree";
@@ -35,12 +34,12 @@ import type {
   KeyAlias,
   KeyMap,
   MeceFlags,
-  NodeType,
   TreeDoc,
   VersionEntry,
   VersionTrigger,
 } from "../model/types";
 import { ALIAS_CAP, DEFAULT_SETTINGS } from "../model/types";
+import { parseProject } from "../model/project";
 import * as db from "./db";
 
 export interface Toast {
@@ -80,7 +79,6 @@ export interface Workspace {
   outdent: (id: string) => void;
   move: (id: string, parentId: string, index: number) => void;
   editLabel: (id: string, label: string) => void;
-  setType: (id: string, type: NodeType) => void;
   setNote: (id: string, note: string) => void;
   setMece: (id: string, flags: MeceFlags) => void;
   setSettings: (settings: Partial<DocSettings>) => void;
@@ -462,15 +460,6 @@ export function useWorkspace(): Workspace {
     [commit],
   );
 
-  const setType = useCallback(
-    (id: string, type: NodeType) => {
-      const current = docRef.current;
-      if (!current) return;
-      commit(setTypeOp(current, id, type), "type", "changed a node type");
-    },
-    [commit],
-  );
-
   const setNote = useCallback(
     (id: string, note: string) => {
       const current = docRef.current;
@@ -574,14 +563,12 @@ export function useWorkspace(): Workspace {
         next = parsed.doc;
         warnings = parsed.warnings;
       } else {
-        try {
-          const data = JSON.parse(text) as { doc?: TreeDoc };
-          if (!data.doc || !data.doc.nodes || !data.doc.rootId) throw new Error("shape");
-          next = { ...data.doc, id: newId(), version: 1, createdAt: Date.now(), updatedAt: Date.now() };
-        } catch {
+        const parsed = parseProject(text);
+        if (!parsed) {
           toast("error", "That JSON is not an Issue Tree Studio project.");
           return;
         }
+        next = parsed;
       }
       next = { ...next, id: newId(), name: name ?? next.name, version: 1 };
       await createAndOpen(next);
@@ -711,7 +698,6 @@ export function useWorkspace(): Workspace {
     outdent,
     move,
     editLabel,
-    setType,
     setNote,
     setMece,
     setSettings: (settings) => setSettings({ ...defaults, ...settings }),

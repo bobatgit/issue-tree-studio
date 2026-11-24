@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeKeyMap } from "../model/keys";
 import { parseMarkdown } from "../model/markdown";
 import { findingCounts, overlapScore, reviewTree } from "../model/quality";
-import { createDoc, setType } from "../model/tree";
+import { createDoc } from "../model/tree";
 import { generateTree } from "./testUtils";
 
 function review(markdown: string) {
@@ -35,14 +35,6 @@ describe("quality checks", () => {
     expect(result.codes).toContain("SINGLE_CHILD");
   });
 
-  it("flags a hypothesis that has children", () => {
-    const doc = parseMarkdown("- Root?\n  - Group?\n    - Leaf?\n").doc;
-    const groupId = Object.values(doc.nodes).find((node) => node.label === "Group?")?.id as string;
-    const typed = setType(doc, groupId, "hypothesis");
-    const codes = reviewTree(typed, computeKeyMap(typed)).map((finding) => finding.code);
-    expect(codes).toContain("HYPOTHESIS_WITH_CHILDREN");
-  });
-
   it("flags an empty label", () => {
     const doc = createDoc("Root?");
     const rootId = doc.rootId as string;
@@ -50,7 +42,7 @@ describe("quality checks", () => {
       ...doc,
       nodes: {
         ...doc.nodes,
-        blank: { id: "blank", label: "   ", type: "hypothesis" as const, children: [] },
+        blank: { id: "blank", label: "   ", children: [] },
         [rootId]: { ...doc.nodes[rootId], children: ["blank"] },
       },
     };

@@ -18,7 +18,6 @@ export interface VersionDiff {
   added: { id: string; label: string }[];
   removed: { id: string; label: string }[];
   relabelled: { id: string; from: string; to: string }[];
-  retyped: { id: string; from: string; to: string }[];
   moved: { id: string; label: string; from: string; to: string }[];
   reordered: number;
   rekeyed: KeyChange[];
@@ -50,7 +49,6 @@ export function diffSnapshots(before: SnapshotWithKeys, after: SnapshotWithKeys)
   const added: VersionDiff["added"] = [];
   const removed: VersionDiff["removed"] = [];
   const relabelled: VersionDiff["relabelled"] = [];
-  const retyped: VersionDiff["retyped"] = [];
   const moved: VersionDiff["moved"] = [];
   const rekeyed: VersionDiff["rekeyed"] = [];
   let reordered = 0;
@@ -68,9 +66,6 @@ export function diffSnapshots(before: SnapshotWithKeys, after: SnapshotWithKeys)
     }
     if (previous.label !== node.label) {
       relabelled.push({ id, from: previous.label, to: node.label });
-    }
-    if (previous.type !== node.type) {
-      retyped.push({ id, from: previous.type, to: node.type });
     }
     const fromPath = beforePaths.get(id) ?? "";
     const toPath = afterPaths.get(id) ?? "";
@@ -96,7 +91,6 @@ export function diffSnapshots(before: SnapshotWithKeys, after: SnapshotWithKeys)
   if (relabelled.length) parts.push(`${relabelled.length} relabelled`);
   if (moved.length) parts.push(`${moved.length} moved`);
   if (reordered) parts.push(`${reordered} reordered`);
-  if (retyped.length) parts.push(`${retyped.length} re-typed`);
   if (rekeyed.length) parts.push(`${rekeyed.length} keys changed`);
   if (!parts.length) parts.push("no visible change");
 
@@ -104,7 +98,6 @@ export function diffSnapshots(before: SnapshotWithKeys, after: SnapshotWithKeys)
     added,
     removed,
     relabelled,
-    retyped,
     moved,
     reordered,
     rekeyed,

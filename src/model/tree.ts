@@ -1,6 +1,6 @@
 /** Pure, immutable tree operations. Every function returns a new document. */
 
-import type { DocSettings, FlatNode, MeceFlags, NodeType, TreeDoc, TreeNode } from "./types";
+import type { DocSettings, FlatNode, MeceFlags, TreeDoc, TreeNode } from "./types";
 import { DEFAULT_SETTINGS, NODE_CAP } from "./types";
 
 export function newId(): string {
@@ -33,7 +33,7 @@ export function createDoc(
     name,
     rootId,
     nodes: {
-      [rootId]: { id: rootId, label: rootLabel, type: "question", children: [] },
+      [rootId]: { id: rootId, label: rootLabel, children: [] },
     },
     version: 1,
     createdAt: timestamp,
@@ -121,10 +121,6 @@ export function updateLabel(doc: TreeDoc, id: string, label: string): TreeDoc {
   return withNode(doc, id, { label });
 }
 
-export function setType(doc: TreeDoc, id: string, type: NodeType): TreeDoc {
-  return withNode(doc, id, { type });
-}
-
 export function setNote(doc: TreeDoc, id: string, note: string): TreeDoc {
   return withNode(doc, id, { note });
 }
@@ -150,21 +146,14 @@ export function addChild(
   doc: TreeDoc,
   parentId: string,
   label = "",
-  type: NodeType = "hypothesis",
 ): { doc: TreeDoc; id: string } | null {
   const parent = doc.nodes[parentId];
   if (!parent || atCap(doc)) return null;
   const id = newId();
   const next = touch(doc, (draft) => {
-    draft.nodes[id] = { id, label, type, children: [] };
+    draft.nodes[id] = { id, label, children: [] };
     const currentParent = draft.nodes[parentId];
-    // A hypothesis is a testable end node: giving it children turns it into a question.
-    const nextParentType = currentParent.type === "hypothesis" ? "question" : currentParent.type;
-    draft.nodes[parentId] = {
-      ...currentParent,
-      type: nextParentType,
-      children: [...currentParent.children, id],
-    };
+    draft.nodes[parentId] = { ...currentParent, children: [...currentParent.children, id] };
   });
   return { doc: next, id };
 }
@@ -174,10 +163,9 @@ export function addSibling(
   doc: TreeDoc,
   siblingId: string,
   label = "",
-  type: NodeType = "hypothesis",
 ): { doc: TreeDoc; id: string } | null {
   const parentId = parentOf(doc, siblingId);
-  if (!parentId) return addChild(doc, siblingId, label, type);
+  if (!parentId) return addChild(doc, siblingId, label);
   if (atCap(doc)) return null;
   const id = newId();
   const parent = doc.nodes[parentId];
@@ -185,7 +173,7 @@ export function addSibling(
   const children = [...parent.children];
   children.splice(index + 1, 0, id);
   const next = touch(doc, (draft) => {
-    draft.nodes[id] = { id, label, type, children: [] };
+    draft.nodes[id] = { id, label, children: [] };
     draft.nodes[parentId] = { ...draft.nodes[parentId], children };
   });
   return { doc: next, id };
@@ -258,7 +246,7 @@ export function outdentNode(doc: TreeDoc, id: string): TreeDoc {
 /** Rebuild a document from a flat depth list. Used by the markdown importer. */
 export function buildDoc(
   name: string,
-  items: { label: string; depth: number; type?: NodeType }[],
+  items: { label: string; depth: number }[],
   options: { settings?: DocSettings; syntheticRoot?: string } = {},
 ): TreeDoc {
   const settings = options.settings ?? DEFAULT_SETTINGS;
@@ -269,7 +257,7 @@ export function buildDoc(
 
   for (const item of items) {
     const id = newId();
-    nodes[id] = { id, label: item.label, type: item.type ?? "hypothesis", children: [] };
+    nodes[id] = { id, label: item.label, children: [] };
     while (stack.length > 0 && stack[stack.length - 1].depth >= item.depth) stack.pop();
     const parent = stack[stack.length - 1];
     if (parent) nodes[parent.id].children.push(id);
@@ -283,19 +271,10 @@ export function buildDoc(
     nodes[synthetic] = {
       id: synthetic,
       label: options.syntheticRoot ?? "Root question",
-      type: "question",
       children: roots,
     };
     rootId = synthetic;
   }
-  if (rootId) nodes[rootId] = { ...nodes[rootId], type: "question" };
-  // Anything that ended up with children is a question, never a leaf hypothesis.
-  for (const node of Object.values(nodes)) {
-    if (node.children.length > 0 && node.type === "hypothesis") {
-      nodes[node.id] = { ...node, type: "question" };
-    }
-  }
-
   return {
     id: newId(),
     name,

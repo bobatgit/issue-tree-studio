@@ -1,6 +1,6 @@
 /** Generic markdown nested-list import and export. */
 
-import type { NodeType, TreeDoc } from "./types";
+import type { TreeDoc } from "./types";
 import { NODE_CAP } from "./types";
 import { buildDoc, flatten } from "./tree";
 
@@ -102,7 +102,7 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
   if (items.length === 0) {
     const fallback = title || "Root question";
     return {
-      doc: buildDoc(name, [{ label: fallback, depth: 1, type: "question" }]),
+      doc: buildDoc(name, [{ label: fallback, depth: 1 }]),
       warnings: ["No list items found. Started a new tree with a single root node."],
     };
   }
@@ -115,7 +115,7 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
   }
 
   const stack: number[] = [];
-  const flat: { label: string; depth: number; type?: NodeType }[] = [];
+  const flat: { label: string; depth: number }[] = [];
   for (const item of capped) {
     while (stack.length > 0 && stack[stack.length - 1] >= item.indent) stack.pop();
     stack.push(item.indent);

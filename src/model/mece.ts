@@ -58,7 +58,7 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string
       {
         code: "NOT_SPLIT",
         level: "info",
-        message: "This node has no branches yet. Split it, or mark it as a hypothesis you can test.",
+        message: "This node has no branches yet. Split it into the reasons or options beneath it.",
         nodeKeys: [keyOf(nodeId)],
       },
     ];

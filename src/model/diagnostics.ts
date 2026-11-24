@@ -3,7 +3,7 @@
  * the tree itself. One paste into an issue is enough to reproduce a defect.
  */
 
-import { countNodes, flatten, maxDepth } from "./tree";
+import { countNodes, maxDepth } from "./tree";
 import type { KeyMap, TreeDoc } from "./types";
 import { NODE_CAP } from "./types";
 
@@ -17,11 +17,6 @@ export interface DiagnosticsMeta {
 }
 
 export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: DiagnosticsMeta): string {
-  const flat = flatten(doc);
-  const typeCounts = flat.reduce<Record<string, number>>((counts, entry) => {
-    counts[entry.node.type] = (counts[entry.node.type] ?? 0) + 1;
-    return counts;
-  }, {});
   const keys = Object.values(keyMap.byNode);
   const promoted = keys.filter((info) => info.promoted).length;
   const lengths = keys.map((info) => info.length);
@@ -41,7 +36,6 @@ export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: Diagnostics
     `- tree: ${doc.name} (v${doc.version})`,
     `- nodes: ${countNodes(doc)} / ${NODE_CAP}, depth ${maxDepth(doc)}`,
     `- keys: length ${keyLength}, promoted ${promoted}, collisions ${keyMap.collisions.length}`,
-    `- types: question ${typeCounts.question ?? 0}, hypothesis ${typeCounts.hypothesis ?? 0}, issue ${typeCounts.issue ?? 0}`,
     `- settings: keys in editor ${settings.showKeysInEditor}, keys in export ${settings.showKeysInExport}, overview ${settings.includeOverviewSlide}, key index ${settings.includeKeyIndexSlide}`,
     "",
     "<details><summary>Tree JSON</summary>",

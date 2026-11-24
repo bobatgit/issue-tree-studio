@@ -59,7 +59,7 @@ describe("csv export", () => {
     doc.nodes[doc.rootId as string].label = "¿Por qué cayó el beneficio? – año 2025";
     const csv = exportCsv(doc, computeKeyMap(doc));
     const rows = parseCsv(csv);
-    expect(rows[1][4]).toBe("¿Por qué cayó el beneficio? – año 2025");
+    expect(rows[1][3]).toBe("¿Por qué cayó el beneficio? – año 2025");
     expect(csv.charCodeAt(0)).toBe(0xfeff);
   });
 });

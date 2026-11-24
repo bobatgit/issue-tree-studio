@@ -57,18 +57,6 @@ describe("version diff", () => {
     expect(diff.summary).toContain("moved");
   });
 
-  it("detects a type change", () => {
-    const before = parseMarkdown("- Root?\n  - A?\n").doc;
-    const target = flatten(before)[1];
-    const typed: TreeDoc = {
-      ...before,
-      nodes: { ...before.nodes, [target.node.id]: { ...target.node, type: "issue" } },
-    };
-    const diff = diffSnapshots(snap(before), snap(typed));
-    expect(diff.retyped).toHaveLength(1);
-    expect(diff.summary).toContain("re-typed");
-  });
-
   it("reports no visible change for identical snapshots", () => {
     const doc = parseMarkdown("- Root?\n  - A?\n").doc;
     const diff = diffSnapshots(snap(doc), snap(doc));
