@@ -1,6 +1,8 @@
 node_modules/
 dist/
 artifacts/
+# Pi goal, task and session state stays on this machine
+.pi/
 temp-pptx/
 .env
 .env.local
