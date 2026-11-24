@@ -6,6 +6,8 @@ project file.
 
 Everything runs in the browser. There is no backend, no account and no upload.
 
+Live site: **https://bobatgit.github.io/issue-tree-studio/** · source: **https://github.com/bobatgit/issue-tree-studio**
+
 ---
 
 ## Quick start
