@@ -12,6 +12,7 @@ import {
   moveNode,
   outdentNode,
   removeNode,
+  visibleEntries,
 } from "../model/tree";
 import { NODE_CAP } from "../model/types";
 
@@ -122,5 +123,19 @@ describe("buildDoc", () => {
       { label: "B?", depth: 1 },
     ], { syntheticRoot: "Shared root?" });
     expect(labels(doc)).toEqual(["Shared root?", "A?", "B?"]);
+  });
+});
+
+describe("collapsed branches", () => {
+  it("hides the descendants of a collapsed node", () => {
+    const doc = parseMarkdown("- Root?\n  - A?\n    - A1?\n  - B?\n").doc;
+    const a = Object.values(doc.nodes).find((node) => node.label === "A?")?.id as string;
+    const visible = visibleEntries(doc, new Set([a]));
+    expect(visible.map((entry) => entry.node.label)).toEqual(["Root?", "A?", "B?"]);
+  });
+
+  it("keeps everything visible when nothing is collapsed", () => {
+    const doc = parseMarkdown("- Root?\n  - A?\n").doc;
+    expect(visibleEntries(doc, new Set()).length).toBe(countNodes(doc));
   });
 });

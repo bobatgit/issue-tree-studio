@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "../App";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  sessionStorage.clear();
+});
 
 describe("app shell", () => {
   it("opens with a tree, key chips and the outline", async () => {
@@ -54,5 +57,25 @@ describe("node status", () => {
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
     fireEvent.click(screen.getAllByLabelText("Mark this node complete")[0]);
     await waitFor(() => expect(screen.getAllByLabelText("Mark this node open").length).toBeGreaterThan(0));
+  });
+});
+
+describe("branch collapse", () => {
+  it("hides a branch and restores it", async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
+    fireEvent.click(
+      screen.getByTitle("Diagnostic tree: why did profit fall, split into revenue, cost and mix."),
+    );
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(2), { timeout: 5000 });
+    const before = screen.getAllByRole("treeitem").length;
+
+    fireEvent.click(screen.getAllByLabelText(/^Collapse /)[0]);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeLessThan(before));
+
+    const folded = screen.getAllByRole("treeitem").length;
+    fireEvent.click(screen.getAllByLabelText(/^Expand /)[0]);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBe(before));
+    expect(folded).toBeLessThan(before);
   });
 });

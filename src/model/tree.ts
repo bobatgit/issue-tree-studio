@@ -85,6 +85,23 @@ export function maxDepth(doc: TreeDoc): number {
   return flatten(doc).reduce((max, entry) => Math.max(max, entry.depth), 0);
 }
 
+/** Preorder entries with the descendants of collapsed nodes removed. */
+export function visibleEntries(doc: TreeDoc, collapsed: ReadonlySet<string>): FlatNode[] {
+  const all = flatten(doc);
+  const hidden = new Set<string>();
+  for (const entry of all) {
+    if (entry.parentId && (hidden.has(entry.parentId) || collapsed.has(entry.parentId))) {
+      hidden.add(entry.node.id);
+    }
+  }
+  return all.filter((entry) => !hidden.has(entry.node.id));
+}
+
+/** Every node below `id`, excluding itself. */
+export function descendantIds(doc: TreeDoc, id: string): string[] {
+  return subtreeIds(doc, id).filter((childId) => childId !== id);
+}
+
 export function subtreeIds(doc: TreeDoc, id: string): string[] {
   const out: string[] = [];
   const walk = (nodeId: string): void => {

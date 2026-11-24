@@ -6,8 +6,11 @@ import { flatten, snapshotOf } from "../model/tree";
 import type { VersionDiff } from "../model/diff";
 import type { Workspace } from "../store/useWorkspace";
 
-function scrollToNode(nodeId: string): void {
-  document.querySelector(`[data-row-id="${nodeId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+function scrollToNode(ws: Workspace, nodeId: string): void {
+  ws.expandAncestors(nodeId);
+  requestAnimationFrame(() => {
+    document.querySelector(`[data-row-id="${nodeId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
 }
 
 function copyKey(key: string, ws: Workspace, label: string): void {
@@ -64,7 +67,7 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
               onClick={() => {
                 if (finding.nodeId) {
                   ws.select(finding.nodeId);
-                  scrollToNode(finding.nodeId);
+                  scrollToNode(ws, finding.nodeId);
                 }
               }}
             >
@@ -169,7 +172,7 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                 className="finding"
                 onClick={() => {
                   ws.select(currentMatch.node.id);
-                  scrollToNode(currentMatch.node.id);
+                  scrollToNode(ws, currentMatch.node.id);
                 }}
               >
                 <span className="ftop">
@@ -219,7 +222,7 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                   key={entry.node.id}
                   onClick={() => {
                     ws.select(entry.node.id);
-                    scrollToNode(entry.node.id);
+                    scrollToNode(ws, entry.node.id);
                   }}
                 >
                   <td className="key">

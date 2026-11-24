@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { copyText } from "../lib/ui";
-import { flatten, maxDepth, parentOf } from "../model/tree";
+import { descendantIds, maxDepth, parentOf, visibleEntries } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -21,7 +21,7 @@ export function Outline({ ws, onImport }: Props) {
   const [drop, setDrop] = useState<DropTarget | null>(null);
   const focusRequest = useRef(false);
 
-  const flat = useMemo(() => (doc ? flatten(doc) : []), [doc]);
+  const flat = useMemo(() => (doc ? visibleEntries(doc, ws.collapsed) : []), [doc, ws.collapsed]);
   const depth = useMemo(() => (doc ? maxDepth(doc) : 0), [doc]);
 
   useEffect(() => {
@@ -133,6 +133,13 @@ export function Outline({ ws, onImport }: Props) {
         <span>{depth} levels</span>
         <span className="spacer" />
         <span className="muted">Keys follow label and path</span>
+        <button
+          type="button"
+          className="text-btn ghost"
+          onClick={() => (ws.collapsed.size > 0 ? ws.expandAll() : ws.collapseAll())}
+        >
+          {ws.collapsed.size > 0 ? "Expand all" : "Collapse all"}
+        </button>
         <button type="button" className="text-btn ghost" onClick={onImport}>
           Paste outline
         </button>
@@ -209,10 +216,33 @@ export function Outline({ ws, onImport }: Props) {
                     ⠿
                   </button>
 
-                  <span className="tree-line" aria-hidden="true">
-                    {isRoot ? "◆" : "└"}
-                  </span>
+                  {node.children.length > 0 ? (
+                    <button
+                      type="button"
+                      className={`chevron ${ws.collapsed.has(node.id) ? "closed" : "open"}`}
+                      aria-label={
+                        ws.collapsed.has(node.id)
+                          ? `Expand ${node.label || "node"}`
+                          : `Collapse ${node.label || "node"}`
+                      }
+                      aria-expanded={!ws.collapsed.has(node.id)}
+                      title="Collapse or expand this branch. Alt+click folds the whole branch."
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (event.altKey) ws.setBranchCollapsed(node.id, !ws.collapsed.has(node.id));
+                        else ws.toggleCollapse(node.id);
+                      }}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      ▸
+                    </button>
+                  ) : (
+                    <span className="tree-line" aria-hidden="true">
+                      └
+                    </span>
+                  )}
 
+                  <div className="label-wrap">
                   <input
                     className={`label-input ${isRoot ? "root-label" : ""}`}
                     data-label-id={node.id}
@@ -223,6 +253,12 @@ export function Outline({ ws, onImport }: Props) {
                     onFocus={() => ws.select(node.id)}
                     onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
                   />
+                  {ws.collapsed.has(node.id) && descendantIds(doc, node.id).length > 0 ? (
+                    <span className="collapsed-count" title="Hidden nodes beneath this one">
+                      +{descendantIds(doc, node.id).length}
+                    </span>
+                  ) : null}
+                  </div>
 
                   <button
                     type="button"

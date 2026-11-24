@@ -15,11 +15,13 @@ import {
   countNodes,
   createDoc,
   docFromSnapshot,
+  descendantIds,
   flatten,
   indentNode,
   moveNode,
   newId,
   outdentNode,
+  parentOf,
   removeNode,
   setDocName,
   setMece as setMeceOp,
@@ -83,6 +85,12 @@ export interface Workspace {
   editLabel: (id: string, label: string) => void;
   setStatus: (id: string, status: NodeStatus) => void;
   setNote: (id: string, note: string) => void;
+  collapsed: Set<string>;
+  toggleCollapse: (id: string) => void;
+  setBranchCollapsed: (id: string, value: boolean) => void;
+  collapseAll: () => void;
+  expandAll: () => void;
+  expandAncestors: (id: string) => void;
   setMece: (id: string, flags: MeceFlags) => void;
   setSettings: (settings: Partial<DocSettings>) => void;
   undo: () => void;
@@ -110,6 +118,22 @@ export function useWorkspace(): Workspace {
   const [versionCount, setVersionCount] = useState(0);
   const [pendingVersion, setPendingVersion] = useState(false);
   const [selection, setSelection] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      const raw = sessionStorage.getItem("its.collapsed");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set();
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem("its.collapsed", JSON.stringify([...collapsed]));
+    } catch {
+      // Storage can be unavailable; the view still works for this page.
+    }
+  }, [collapsed]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [undoDepth, setUndoDepth] = useState(0);
   const [redoDepth, setRedoDepth] = useState(0);
@@ -478,6 +502,57 @@ export function useWorkspace(): Workspace {
     [commit],
   );
 
+  const toggleCollapse = useCallback((id: string) => {
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const setBranchCollapsed = useCallback((id: string, value: boolean) => {
+    const current = docRef.current;
+    if (!current) return;
+    const ids = descendantIds(current, id);
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      for (const childId of ids) {
+        if (value) next.add(childId);
+        else next.delete(childId);
+      }
+      if (value) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const collapseAll = useCallback(() => {
+    const current = docRef.current;
+    if (!current?.rootId) return;
+    setCollapsed(new Set(current.nodes[current.rootId]?.children ?? []));
+  }, []);
+
+  const expandAll = useCallback(() => setCollapsed(new Set()), []);
+
+  const expandAncestors = useCallback((id: string) => {
+    const current = docRef.current;
+    if (!current) return;
+    const ancestors: string[] = [];
+    let parent = parentOf(current, id);
+    while (parent) {
+      ancestors.push(parent);
+      parent = parentOf(current, parent);
+    }
+    if (ancestors.length === 0) return;
+    setCollapsed((previous) => {
+      if (!ancestors.some((ancestor) => previous.has(ancestor))) return previous;
+      const next = new Set(previous);
+      for (const ancestor of ancestors) next.delete(ancestor);
+      return next;
+    });
+  }, []);
+
   const setNote = useCallback(
     (id: string, note: string) => {
       const current = docRef.current;
@@ -717,6 +792,12 @@ export function useWorkspace(): Workspace {
     move,
     editLabel,
     setStatus,
+    collapsed,
+    toggleCollapse,
+    setBranchCollapsed,
+    collapseAll,
+    expandAll,
+    expandAncestors,
     setNote,
     setMece,
     setSettings: (settings) => setSettings({ ...defaults, ...settings }),
