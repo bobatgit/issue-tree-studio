@@ -1,0 +1,66 @@
+name: Defect - it works, but not as intended
+description: The app runs, but the result is wrong. A rule is broken or missing.
+title: "[defect] "
+labels: ["defect"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when nothing crashes but the output is not what should happen. The most useful field is the rule that should hold. If you cannot write that rule in one sentence, the ticket needs a specification first: label it `needs-spec`.
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule that should hold
+      description: One sentence. This becomes the test.
+      placeholder: Moving a node under a new parent keeps its key, because the label path did not change.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What the app does instead
+      description: Include the observed key, value, CSV row or slide, and the expected one.
+      placeholder: The key changed from K7M2 to B8YV after the move.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to see it
+      description: Steps or the smallest outline that shows the problem.
+      placeholder: |
+        1. Paste: - Root? / - A? / - B?
+        2. Drag A under B
+        3. Watch the key chip of A
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The stamp in the top right of the app.
+      placeholder: 0.2.0 · c861e80
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Export then Copy diagnostics. This attaches the exact tree.
+      render: markdown
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Where the defect shows
+      multiple: true
+      options:
+        - On screen only
+        - CSV export
+        - PowerPoint export
+        - Markdown export
+        - Key or hash
+        - Version history
+    validations:
+      required: false

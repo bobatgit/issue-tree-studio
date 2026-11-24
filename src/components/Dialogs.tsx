@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { downloadText, slugify } from "../lib/ui";
+import { APP_VERSION, BUILD_SHA, NEW_ISSUE_URL, browserMeta } from "../lib/appInfo";
+import { buildDiagnostics } from "../model/diagnostics";
+import { copyText, downloadText, slugify } from "../lib/ui";
 import { exportCsv } from "../model/csv";
 import { toMarkdown } from "../model/markdown";
 import type { ImportFormat, Workspace } from "../store/useWorkspace";
@@ -136,6 +138,43 @@ export function ExportDialog({ ws, open, onClose }: DialogProps) {
           </div>
           <p className="small muted" style={{ marginBottom: 0 }}>
             CSV columns: key, parent_key, level, type, label, path, branch_index, version.
+          </p>
+        </div>
+
+        <div className="section">
+          <div className="section-head">
+            <span>Support</span>
+            <span>
+              build {APP_VERSION} · {BUILD_SHA}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="text-btn"
+              onClick={() => {
+                const text = buildDiagnostics(doc, ws.keyMap, {
+                  appVersion: APP_VERSION,
+                  buildSha: BUILD_SHA,
+                  ...browserMeta(),
+                });
+                void copyText(text).then((ok) => {
+                  ws.toast(
+                    ok ? "success" : "error",
+                    ok ? "Diagnostics copied. Paste them into the new issue." : "Could not copy diagnostics.",
+                  );
+                });
+              }}
+            >
+              Copy diagnostics
+            </button>
+            <a className="text-btn" href={NEW_ISSUE_URL} target="_blank" rel="noreferrer">
+              Report a problem
+            </a>
+          </div>
+          <p className="small muted" style={{ marginBottom: 0 }}>
+            Diagnosis text contains the build, your browser, the tree statistics and the tree itself, so a report can
+            be reproduced without guesswork.
           </p>
         </div>
 

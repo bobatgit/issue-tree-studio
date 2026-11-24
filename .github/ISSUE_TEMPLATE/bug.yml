@@ -1,0 +1,62 @@
+name: Bug - it does not work
+description: A crash, a dead button, or an export that fails. Something is broken.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Something is broken. Include the build stamp from the top right of the app so the report points at the right bundle.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a fresh page load.
+      placeholder: |
+        1. Open the app
+        2. Paste this outline ...
+        3. Click Export
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen
+      placeholder: A CSV file downloads.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happens instead
+      description: Include the exact error text from the screen or from the browser console.
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build
+      description: The stamp in the top right of the app, for example 0.2.0 · c861e80
+      placeholder: 0.2.0 · c861e80
+    validations:
+      required: true
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - Chrome
+        - Edge
+        - Firefox
+        - Safari
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: In the app use Export then Copy diagnostics, and paste the result here.
+      render: markdown
+    validations:
+      required: false

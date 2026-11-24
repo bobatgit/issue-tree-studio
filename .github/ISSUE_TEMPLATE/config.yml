@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide
+    url: https://bobatgit.github.io/issue-tree-studio/
+    about: Key scheme, import formats, CSV columns, export options and versioning.
+  - name: Key index and exports
+    url: https://github.com/bobatgit/issue-tree-studio#6-export
+    about: What each export contains and how the columns are defined.

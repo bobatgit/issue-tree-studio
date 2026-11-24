@@ -16,7 +16,7 @@ Live site: **https://bobatgit.github.io/issue-tree-studio/** · source: **https:
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # type-check plus production build into dist/
-npm test           # 84 unit and render tests
+npm test           # 88 unit and render tests
 npm run smoke      # writes real .pptx and .csv files into artifacts/
 ```
 
@@ -313,11 +313,75 @@ npx gh-pages -d dist --nojekyll
 
 Then set **Settings -> Pages -> Source: Deploy from a branch** and pick `gh-pages` / root.
 
-## 10. Verification
+## 10. Reporting a problem
+
+Open https://github.com/bobatgit/issue-tree-studio/issues/new/choose and pick one of three templates. They are
+different problems and they ask different questions.
+
+| Template | Use when | Required fields |
+| --- | --- | --- |
+| Bug | Does not work: crash, dead button, export fails | Steps, expected, actual, build, browser |
+| Defect | Runs, but the result is wrong | The rule that should hold, the actual output, how to see it |
+| Feature | Needs to do something new | The problem, the decision it unlocks, the smallest useful version |
+
+The middle case is not a bug hunt. A `defect` needs one sentence that says what should happen. That sentence
+becomes the test, and often settles the ticket before any code changes. If the rule cannot be written, the
+ticket gets `needs-spec` instead of a fix.
+
+### Name the build
+
+Every push to `main` redeploys the site, so a report without a build can describe an old bundle. The header
+shows it at the right edge:
+
+```
+0.2.0 · c861e80
+```
+
+Version, then the short commit. Clicking it opens the releases page.
+
+### Copy diagnostics
+
+In the app: Export, then **Copy diagnostics**. The clipboard gets one block:
+
+- build, page URL, browser and viewport
+- tree name, version, node count and depth
+- key length, promoted keys and collisions
+- node type counts and document settings
+- the tree JSON, collapsed
+
+Paste it into the issue. The tree JSON is enough to reproduce the exact state, without sending anything to a
+server. Nothing personal is included beyond your browser string and window size.
+
+### Labels
+
+| Label | Meaning |
+| --- | --- |
+| `bug` | Broken: it does not work |
+| `defect` | Works, but not as intended |
+| `feature` | New capability |
+| `p1` | Broken or data loss |
+| `p2` | Wrong but usable |
+| `p3` | Polish |
+| `needs-spec` | The intended behaviour is not written down yet |
+| `needs-repro` | Cannot reproduce yet |
+
+`bug` and `defect` are separate on purpose. A broken export and a wrongly ordered CSV row need different
+evidence, and merging them makes both slower to fix.
+
+### Lifecycle
+
+```
+capture -> triage (type + priority) -> reproduce -> fix with a failing test -> close -> changelog -> deploy
+```
+
+A fix commit says `Fixes #12`, so the ticket closes itself. The change lands in `CHANGELOG.md` and goes live in
+about a minute, because Pages deploys on every push to `main`.
+
+## 11. Verification
 
 ```
 npm test
-# 8 files, 84 tests: keys, markdown, CSV, tree operations, layout, quality, diff, app render
+# 9 files, 88 tests: keys, markdown, CSV, tree operations, layout, quality, diff, diagnostics, app render
 
 npm run build
 # tsc -b clean, vite build clean
@@ -349,7 +413,7 @@ native `p:sp` shapes only.
 
 ---
 
-## 11. Known trade-offs
+## 12. Known trade-offs
 
 * Four-character keys were an explicit requirement. They are safe at 100 nodes (0.47 percent), not at 1,000
   (38 percent). Raising `DEFAULT_KEY_LENGTH` to 5 in `src/model/keys.ts` cuts the risk by a factor of 32

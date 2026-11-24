@@ -223,6 +223,25 @@ textarea:focus-visible,
   cursor: not-allowed;
 }
 
+.build-stamp {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+  text-decoration: none;
+  padding: 4px 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.build-stamp:hover {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+a.text-btn {
+  text-decoration: none;
+}
+
 .menu-wrap {
   position: relative;
 }

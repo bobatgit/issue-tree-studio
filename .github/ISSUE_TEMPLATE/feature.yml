@@ -1,0 +1,54 @@
+name: Feature - it needs to do something new
+description: A capability the app does not have yet.
+title: "[feature] "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the decision this unlocks, not the implementation. A feature that cannot name its decision is usually not needed yet.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you unable to do today?
+      placeholder: I cannot show a branch to a colleague without sending the whole deck.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: The decision it unlocks
+      description: What becomes possible or faster once this exists?
+      placeholder: I can settle one branch in a five-minute review instead of a 30-minute walkthrough.
+    validations:
+      required: true
+  - type: textarea
+    id: smallest
+    attributes:
+      label: Smallest useful version
+      description: The least that would already help.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: What it must not break
+      description: The 100-node cap, the 4-character keys, offline use, the export formats, and so on.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Editing and outline
+        - Keys and hashing
+        - Quality and MECE
+        - Version history
+        - PowerPoint export
+        - CSV or markdown export
+        - Import
+        - Other
+    validations:
+      required: false
