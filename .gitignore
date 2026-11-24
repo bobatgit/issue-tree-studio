@@ -1,0 +1,7 @@
+node_modules/
+dist/
+artifacts/
+temp-pptx/
+.env
+.env.local
+*.log
