@@ -30,7 +30,12 @@ export function TopBar({ ws, onImport, onExport }: Props) {
     <header className="topbar">
       <div className="brand">
         <span className="brand-mark" aria-hidden="true">
-          IT
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+            <circle cx="2.7" cy="3.6" r="1.05" fill="currentColor" stroke="none" />
+            <circle cx="2.7" cy="8" r="1.05" fill="currentColor" stroke="none" />
+            <circle cx="2.7" cy="12.4" r="1.05" fill="currentColor" stroke="none" />
+            <path d="M5.9 3.6h7.4M5.9 8h7.4M5.9 12.4h7.4" />
+          </svg>
         </span>
         Issue Tree Studio
       </div>
