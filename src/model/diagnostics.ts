@@ -17,6 +17,10 @@ export interface DiagnosticsMeta {
 }
 
 export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: DiagnosticsMeta): string {
+  const statusCounts = Object.values(doc.nodes).reduce<Record<string, number>>((counts, node) => {
+    counts[node.status] = (counts[node.status] ?? 0) + 1;
+    return counts;
+  }, {});
   const keys = Object.values(keyMap.byNode);
   const promoted = keys.filter((info) => info.promoted).length;
   const lengths = keys.map((info) => info.length);
@@ -36,6 +40,7 @@ export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: Diagnostics
     `- tree: ${doc.name} (v${doc.version})`,
     `- nodes: ${countNodes(doc)} / ${NODE_CAP}, depth ${maxDepth(doc)}`,
     `- keys: length ${keyLength}, promoted ${promoted}, collisions ${keyMap.collisions.length}`,
+    `- status: open ${statusCounts.open ?? 0}, complete ${statusCounts.complete ?? 0}`,
     `- settings: keys in editor ${settings.showKeysInEditor}, keys in export ${settings.showKeysInExport}, overview ${settings.includeOverviewSlide}, key index ${settings.includeKeyIndexSlide}`,
     "",
     "<details><summary>Tree JSON</summary>",

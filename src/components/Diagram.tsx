@@ -83,10 +83,18 @@ export function Diagram({ ws, onExport }: Props) {
                   stroke={ws.selection === node.id ? "#2F6FEB" : style.border}
                   strokeWidth={ws.selection === node.id ? 0.022 : 0.009}
                 />
+                <circle
+                  cx={node.x + 0.1}
+                  cy={node.y + 0.05 + lineHeight * 0.8}
+                  r={0.038}
+                  fill={node.status === "complete" ? "#2f6feb" : "none"}
+                  stroke={node.status === "complete" ? "#2f6feb" : "#94A3B8"}
+                  strokeWidth={0.012}
+                />
                 {node.lines.map((line, index) => (
                   <text
                     key={index}
-                    x={node.x + 0.05}
+                    x={node.x + 0.17}
                     y={node.y + 0.05 + lineHeight * (index + 0.8)}
                     fontSize={node.fontSize / 72}
                     fontFamily="Segoe UI, system-ui, sans-serif"

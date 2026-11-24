@@ -1185,3 +1185,45 @@ kbd {
     scroll-behavior: auto !important;
   }
 }
+
+.status-box {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 4px;
+  border: 1.5px solid #c2ccd9;
+  background: #fff;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.status-box:hover {
+  border-color: #2f6feb;
+}
+
+.status-box.complete {
+  background: #2f6feb;
+  border-color: #2f6feb;
+}
+
+.status-toggle {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 5px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.status-toggle.complete {
+  background: #eef4ff;
+  border-color: #b9d0f7;
+  color: #2f6feb;
+}

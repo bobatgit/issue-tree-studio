@@ -6,7 +6,7 @@
  * them with a viewBox.
  */
 
-import type { KeyMap, TreeDoc } from "./types";
+import type { KeyMap, NodeStatus, TreeDoc } from "./types";
 
 export interface LayoutOptions {
   maxWidth: number;
@@ -22,6 +22,7 @@ export interface LayoutOptions {
 export interface LayoutNode {
   id: string;
   label: string;
+  status: NodeStatus;
   key: string;
   x: number;
   y: number;
@@ -120,6 +121,7 @@ export function layoutTree(
     parentId: string | null;
     children: string[];
     label: string;
+    status: NodeStatus;
     key: string;
   }
 
@@ -136,6 +138,7 @@ export function layoutTree(
       parentId,
       children: node.children.filter((childId) => !included || included.has(childId)),
       label: node.label,
+      status: node.status,
       key: keyMap.byNode[id]?.key ?? "----",
     });
     maxDepth = Math.max(maxDepth, depth);
@@ -224,6 +227,7 @@ export function layoutTree(
     nodes.push({
       id: entry.id,
       label: entry.label,
+      status: entry.status,
       key: entry.key,
       x: (entry.depth - 1) * (boxWidth + gapX),
       y: cy - boxH / 2,

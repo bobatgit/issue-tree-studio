@@ -75,3 +75,23 @@ describe("markdown export", () => {
     expect(shape(again)).toEqual(shape(doc));
   });
 });
+
+describe("markdown status", () => {
+  it("reads task-list checkboxes and writes them back", () => {
+    const doc = parseMarkdown("- Root?\n  - [x] Done?\n  - [ ] Still open?\n").doc;
+    const byLabel = (label: string) => Object.values(doc.nodes).find((node) => node.label === label);
+    expect(byLabel("Root?")?.status).toBe("open");
+    expect(byLabel("Done?")?.status).toBe("complete");
+    expect(byLabel("Still open?")?.status).toBe("open");
+
+    const md = toMarkdown(doc);
+    expect(md).toContain("- [ ] Root?");
+    expect(md).toContain("  - [x] Done?");
+    expect(md).toContain("  - [ ] Still open?");
+  });
+
+  it("ignores a key prefix written before a label", () => {
+    const doc = parseMarkdown("- K7M2 · Root?\n  - B8YV · Child?\n").doc;
+    expect(shape(doc)).toEqual(["Root?", "·Child?"]);
+  });
+});

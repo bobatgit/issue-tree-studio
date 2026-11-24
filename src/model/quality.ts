@@ -99,6 +99,19 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
         node.id,
       );
     }
+    if (node.status === "complete") {
+      const openChild = node.children.map((childId) => doc.nodes[childId]).find((child) => child && child.status !== "complete");
+      if (openChild) {
+        push(
+          "COMPLETE_WITH_OPEN_CHILD",
+          "warn",
+          "A complete node has an open child",
+          `"${node.label}" is complete, but "${openChild.label}" is still open. Finish it, reopen the parent, or accept the gap.`,
+          node.id,
+        );
+      }
+    }
+
     if (node.children.length === 1) singleChild.push(node.id);
 
     for (let i = 0; i < node.children.length; i += 1) {

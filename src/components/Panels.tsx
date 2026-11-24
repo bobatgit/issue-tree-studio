@@ -496,6 +496,16 @@ export function NodePanel({ ws }: { ws: Workspace }) {
           />
         </div>
         <div className="field">
+          <label>Status</label>
+          <button
+            type="button"
+            className={`status-toggle ${node.status}`}
+            onClick={() => ws.setStatus(node.id, node.status === "complete" ? "open" : "complete")}
+          >
+            {node.status === "complete" ? "Complete" : "Open"}
+          </button>
+        </div>
+        <div className="field">
           <label htmlFor="node-note">Note</label>
           <textarea
             id="node-note"

@@ -202,10 +202,22 @@ function drawNode(
     line: { color: style.border, width: isRoot ? 1.6 : 0.9 },
   });
 
+  slide.addText(node.status === "complete" ? "●" : "○", {
+    x: box.x + 0.04,
+    y: box.y + 0.03,
+    w: 0.16,
+    h: 0.16,
+    fontSize: Math.max(5, Math.min(7.5, box.fontSize * 0.7)),
+    color: isRoot ? "E2E8F0" : MUTED,
+    fontFace: "Segoe UI",
+    align: "left",
+    valign: "top",
+  });
+
   slide.addText(node.label || "Untitled node", {
-    x: box.x + 0.05,
+    x: box.x + 0.17,
     y: box.y + 0.04,
-    w: Math.max(0.2, box.w - (box.showKeys && !box.dense ? 0.52 : 0.1)),
+    w: Math.max(0.2, box.w - (box.showKeys && !box.dense ? 0.66 : 0.24)),
     h: Math.max(0.15, box.h - 0.08 - metaH),
     fontSize: box.fontSize,
     bold: isRoot,

@@ -42,7 +42,7 @@ describe("quality checks", () => {
       ...doc,
       nodes: {
         ...doc.nodes,
-        blank: { id: "blank", label: "   ", children: [] },
+        blank: { id: "blank", label: "   ", status: "open" as const, children: [] },
         [rootId]: { ...doc.nodes[rootId], children: ["blank"] },
       },
     };
@@ -88,5 +88,21 @@ describe("quality checks", () => {
     const doc = generateTree(60);
     const keys = Object.values(computeKeyMap(doc).byNode).map((info) => info.key);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+});
+
+describe("status checks", () => {
+  it("warns when a complete node still has an open child", () => {
+    const doc = parseMarkdown("- Root?\n  - Child?\n").doc;
+    doc.nodes[doc.rootId as string].status = "complete";
+    const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
+    expect(codes).toContain("COMPLETE_WITH_OPEN_CHILD");
+  });
+
+  it("stays quiet when the whole branch is complete", () => {
+    const doc = parseMarkdown("- Root?\n  - Child?\n").doc;
+    for (const node of Object.values(doc.nodes)) node.status = "complete";
+    const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
+    expect(codes).not.toContain("COMPLETE_WITH_OPEN_CHILD");
   });
 });

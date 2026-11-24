@@ -236,6 +236,20 @@ export function Outline({ ws, onImport }: Props) {
                     onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
                   />
 
+                  <button
+                    type="button"
+                    className={`status-box ${node.status}`}
+                    aria-label={node.status === "complete" ? "Mark this node open" : "Mark this node complete"}
+                    aria-pressed={node.status === "complete"}
+                    title={node.status === "complete" ? "Complete. Click to reopen." : "Open. Click to mark complete."}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      ws.setStatus(node.id, node.status === "complete" ? "open" : "complete");
+                    }}
+                  >
+                    {node.status === "complete" ? "✓" : ""}
+                  </button>
+
                   <div className="row-actions">
                     <button
                       type="button"

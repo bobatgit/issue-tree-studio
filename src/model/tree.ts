@@ -1,6 +1,6 @@
 /** Pure, immutable tree operations. Every function returns a new document. */
 
-import type { DocSettings, FlatNode, MeceFlags, TreeDoc, TreeNode } from "./types";
+import type { DocSettings, FlatNode, MeceFlags, NodeStatus, TreeDoc, TreeNode } from "./types";
 import { DEFAULT_SETTINGS, NODE_CAP } from "./types";
 
 export function newId(): string {
@@ -33,7 +33,7 @@ export function createDoc(
     name,
     rootId,
     nodes: {
-      [rootId]: { id: rootId, label: rootLabel, children: [] },
+      [rootId]: { id: rootId, label: rootLabel, status: "open", children: [] },
     },
     version: 1,
     createdAt: timestamp,
@@ -121,6 +121,10 @@ export function updateLabel(doc: TreeDoc, id: string, label: string): TreeDoc {
   return withNode(doc, id, { label });
 }
 
+export function setStatus(doc: TreeDoc, id: string, status: NodeStatus): TreeDoc {
+  return withNode(doc, id, { status });
+}
+
 export function setNote(doc: TreeDoc, id: string, note: string): TreeDoc {
   return withNode(doc, id, { note });
 }
@@ -151,7 +155,7 @@ export function addChild(
   if (!parent || atCap(doc)) return null;
   const id = newId();
   const next = touch(doc, (draft) => {
-    draft.nodes[id] = { id, label, children: [] };
+    draft.nodes[id] = { id, label, status: "open", children: [] };
     const currentParent = draft.nodes[parentId];
     draft.nodes[parentId] = { ...currentParent, children: [...currentParent.children, id] };
   });
@@ -173,7 +177,7 @@ export function addSibling(
   const children = [...parent.children];
   children.splice(index + 1, 0, id);
   const next = touch(doc, (draft) => {
-    draft.nodes[id] = { id, label, children: [] };
+    draft.nodes[id] = { id, label, status: "open", children: [] };
     draft.nodes[parentId] = { ...draft.nodes[parentId], children };
   });
   return { doc: next, id };
@@ -246,7 +250,7 @@ export function outdentNode(doc: TreeDoc, id: string): TreeDoc {
 /** Rebuild a document from a flat depth list. Used by the markdown importer. */
 export function buildDoc(
   name: string,
-  items: { label: string; depth: number }[],
+  items: { label: string; depth: number; status?: NodeStatus }[],
   options: { settings?: DocSettings; syntheticRoot?: string } = {},
 ): TreeDoc {
   const settings = options.settings ?? DEFAULT_SETTINGS;
@@ -257,7 +261,7 @@ export function buildDoc(
 
   for (const item of items) {
     const id = newId();
-    nodes[id] = { id, label: item.label, children: [] };
+    nodes[id] = { id, label: item.label, status: item.status ?? "open", children: [] };
     while (stack.length > 0 && stack[stack.length - 1].depth >= item.depth) stack.pop();
     const parent = stack[stack.length - 1];
     if (parent) nodes[parent.id].children.push(id);
@@ -271,6 +275,7 @@ export function buildDoc(
     nodes[synthetic] = {
       id: synthetic,
       label: options.syntheticRoot ?? "Root question",
+      status: "open",
       children: roots,
     };
     rootId = synthetic;

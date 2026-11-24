@@ -25,6 +25,7 @@ import {
   setMece as setMeceOp,
   setNote as setNoteOp,
   setSettings as setSettingsOp,
+  setStatus as setStatusOp,
   snapshotOf,
   updateLabel,
 } from "../model/tree";
@@ -34,6 +35,7 @@ import type {
   KeyAlias,
   KeyMap,
   MeceFlags,
+  NodeStatus,
   TreeDoc,
   VersionEntry,
   VersionTrigger,
@@ -79,6 +81,7 @@ export interface Workspace {
   outdent: (id: string) => void;
   move: (id: string, parentId: string, index: number) => void;
   editLabel: (id: string, label: string) => void;
+  setStatus: (id: string, status: NodeStatus) => void;
   setNote: (id: string, note: string) => void;
   setMece: (id: string, flags: MeceFlags) => void;
   setSettings: (settings: Partial<DocSettings>) => void;
@@ -460,6 +463,21 @@ export function useWorkspace(): Workspace {
     [commit],
   );
 
+  const setStatus = useCallback(
+    (id: string, status: NodeStatus) => {
+      const current = docRef.current;
+      if (!current) return;
+      const node = current.nodes[id];
+      if (!node || node.status === status) return;
+      commit(
+        setStatusOp(current, id, status),
+        "status",
+        status === "complete" ? "marked a node complete" : "reopened a node",
+      );
+    },
+    [commit],
+  );
+
   const setNote = useCallback(
     (id: string, note: string) => {
       const current = docRef.current;
@@ -698,6 +716,7 @@ export function useWorkspace(): Workspace {
     outdent,
     move,
     editLabel,
+    setStatus,
     setNote,
     setMece,
     setSettings: (settings) => setSettings({ ...defaults, ...settings }),

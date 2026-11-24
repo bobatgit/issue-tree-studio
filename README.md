@@ -101,8 +101,9 @@ Any import opens as a **new** tree, so the current one is never overwritten.
 | Undo / redo | toolbar | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Open export | toolbar | `Ctrl+E` |
 
-Node types are **Question**, **Hypothesis** and **Issue**. New nodes start as a hypothesis; giving a
-hypothesis children turns it into a question automatically. Leaves stay hypotheses until you change them.
+Every node is a question. Each node also has a status, **Open** or **Complete**: the checkbox on the row
+toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete node with an open child raises a
+warning instead of changing anything automatically.
 
 The hard cap is **100 nodes**. The 101st add is blocked with a message, and the counter turns amber at 80.
 
@@ -116,7 +117,7 @@ The panel runs on every change and is fully deterministic:
 | --- | --- |
 | Empty label | error |
 | Two siblings with identical wording | error |
-| A hypothesis that has children | error |
+| A complete node with an open child | warning |
 | Two nodes with identical wording on the same path | error |
 | Siblings that share most of their wording (token overlap of 0.6 or more) | warning |
 | Root that is not phrased as a question | warning |
@@ -188,18 +189,19 @@ Native, editable shapes written by PptxGenJS. No images, no screenshots.
 ### CSV
 
 ```
-key,parent_key,level,type,label,path,branch_index,version
+key,parent_key,level,status,label,path,branch_index,version
 ```
 
 * UTF-8 **with BOM** and CRLF, so Excel on Windows reads non-ASCII labels correctly.
 * RFC 4180 quoting: commas, quotes and line breaks inside labels are escaped.
+* `status` is `open` or `complete`.
 * `path` is the key path (`R4KQ/K7M2/T3PW`); `branch_index` is the 1-based position among siblings, and 0 for
   the root; `version` is the version the export was taken from.
 
 ### Markdown
 
-A generic nested list with a version comment. It round-trips through the importer without losing wording or
-structure.
+A task list with a version comment: `- [ ]` for open and `- [x]` for complete. It round-trips through the
+importer without losing wording, structure or status, and a leading key in the form `K7M2 · ` is ignored.
 
 ### Project JSON
 
@@ -346,7 +348,7 @@ In the app: Export, then **Copy diagnostics**. The clipboard gets one block:
 - build, page URL, browser and viewport
 - tree name, version, node count and depth
 - key length, promoted keys and collisions
-- node type counts and document settings
+- open and complete counts, and document settings
 - the tree JSON, collapsed
 
 Paste it into the issue. The tree JSON is enough to reproduce the exact state, without sending anything to a

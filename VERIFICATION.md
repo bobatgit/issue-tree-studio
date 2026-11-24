@@ -36,7 +36,7 @@ Date: 2026-11-24. Environment: Windows 11, Node 22.23.2, npm 10.9.8.
 | Three-pane shell with version, node counter, undo/redo, import, export | `app.test.tsx` renders the tree, key chips, tree name and Export button |
 | Add child by button, add sibling by Enter | `app.test.tsx` interaction tests |
 | Inline editing, indent/outdent, drag reorder, delete | Implemented; structural operations covered in `tree.test.ts`; drag and focus behaviour is manual |
-| Node typing with hypothesis-to-question promotion on split | `tree.test.ts`, `markdown.test.ts` |
+| Node status: row checkbox, markdown checkboxes, CSV column, version entry | `app.test.tsx`, `markdown.test.ts`, `csv.test.ts`, `tree.test.ts` |
 | Undo/redo | Implemented with a 100-step stack; not automated |
 | Multi-document library, IndexedDB autosave | IndexedDB wrapper with in-memory fallback; persistence across reload is manual |
 | Cap blocks node 101 | `tree.test.ts` |
@@ -48,7 +48,7 @@ Date: 2026-11-24. Environment: Windows 11, Node 22.23.2, npm 10.9.8.
 | Key chip on every node | `app.test.tsx` counts key chips; key chips present in the PPTX XML |
 | Key index and search resolving current keys | `KeyPanel` code; key maths covered by `keys.test.ts` |
 | Alias history and old-key resolution | Store records aliases on every version flush; resolution logic is in `KeyPanel`; manual |
-| Deterministic quality checks | `quality.test.ts`: duplicate siblings, overlap, root phrasing, single child, hypothesis with children, empty label, depth imbalance, cap |
+| Deterministic quality checks | `quality.test.ts`: duplicate siblings, overlap, root phrasing, single child, complete node with an open child, empty label, depth imbalance, cap |
 | MECE checklist per node | Implemented with settings persisted in the tree and exported in JSON; manual |
 | AI reviewer seam, disabled with a visible reason | `mece.ts` interface plus `disabledAiReviewer`; `app.test.tsx` asserts the panel shows the disabled state |
 

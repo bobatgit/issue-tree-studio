@@ -47,3 +47,12 @@ describe("app shell", () => {
     expect(screen.getByText(/MECE self-check/)).toBeTruthy();
   });
 });
+
+describe("node status", () => {
+  it("marks a node complete from its row checkbox", async () => {
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
+    fireEvent.click(screen.getAllByLabelText("Mark this node complete")[0]);
+    await waitFor(() => expect(screen.getAllByLabelText("Mark this node open").length).toBeGreaterThan(0));
+  });
+});

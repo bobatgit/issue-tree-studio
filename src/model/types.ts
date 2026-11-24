@@ -7,9 +7,14 @@ export interface MeceFlags {
   exclusive?: boolean;
 }
 
+export type NodeStatus = "open" | "complete";
+
+export const NODE_STATUSES: NodeStatus[] = ["open", "complete"];
+
 export interface TreeNode {
   id: string;
   label: string;
+  status: NodeStatus;
   /** Child ids in display order. */
   children: string[];
   note?: string;
@@ -52,6 +57,7 @@ export type VersionTrigger =
   | "structure"
   | "type"
   | "mece"
+  | "status"
   | "import"
   | "restore"
   | "checkpoint";

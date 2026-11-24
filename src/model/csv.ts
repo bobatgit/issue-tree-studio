@@ -1,6 +1,6 @@
 /** CSV export and import for issue trees. */
 
-import type { KeyMap, TreeDoc, TreeNode } from "./types";
+import type { KeyMap, NodeStatus, TreeDoc, TreeNode } from "./types";
 import { NODE_CAP } from "./types";
 import { buildDoc, flatten, newId, now } from "./tree";
 
@@ -8,6 +8,7 @@ export const CSV_HEADER = [
   "key",
   "parent_key",
   "level",
+  "status",
   "label",
   "path",
   "branch_index",
@@ -43,6 +44,7 @@ export function exportCsv(doc: TreeDoc, keyMap: KeyMap, version = doc.version): 
       key,
       parentKey,
       entry.depth,
+      entry.node.status,
       entry.node.label,
       pathKeys.join("/"),
       entry.parentId ? entry.index + 1 : 0,
@@ -97,6 +99,11 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
 }
 
+function asStatus(value: string | undefined): NodeStatus {
+  const clean = (value ?? "").trim().toLowerCase();
+  return ["complete", "completed", "done", "x", "closed"].includes(clean) ? "complete" : "open";
+}
+
 function headerIndex(header: string[], names: string[]): number {
   const normalised = header.map((cell) => cell.trim().toLowerCase().replace(/[\s-]+/g, "_"));
   for (const name of names) {
@@ -119,6 +126,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     parent: headerIndex(header, ["parent_key", "parent", "parent_id"]),
     label: headerIndex(header, ["label", "text", "question", "issue", "name"]),
     level: headerIndex(header, ["level", "depth"]),
+    status: headerIndex(header, ["status", "state", "done"]),
   };
 
   if (col.label < 0) {
@@ -147,7 +155,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     const id = newId();
     const label = (row[col.label] ?? "").trim();
     const externalKey = col.key >= 0 ? (row[col.key] ?? "").trim() : "";
-    nodes[id] = { id, label, children: [] };
+    nodes[id] = { id, label, status: asStatus(col.status >= 0 ? row[col.status] : undefined), children: [] };
     ids.push(id);
     if (externalKey) {
       if (externalToId.has(externalKey)) {
@@ -185,7 +193,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
   let rootId: string | null = roots.length === 1 ? roots[0] : null;
   if (roots.length > 1) {
     const synthetic = newId();
-    nodes[synthetic] = { id: synthetic, label: name, children: [...roots] };
+    nodes[synthetic] = { id: synthetic, label: name, status: "open", children: [...roots] };
     rootId = synthetic;
     warnings.push(`Found ${roots.length} top-level rows. Added a shared root so the rows form one tree.`);
   }

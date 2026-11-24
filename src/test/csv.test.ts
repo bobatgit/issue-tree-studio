@@ -59,7 +59,7 @@ describe("csv export", () => {
     doc.nodes[doc.rootId as string].label = "¿Por qué cayó el beneficio? – año 2025";
     const csv = exportCsv(doc, computeKeyMap(doc));
     const rows = parseCsv(csv);
-    expect(rows[1][3]).toBe("¿Por qué cayó el beneficio? – año 2025");
+    expect(rows[1][4]).toBe("¿Por qué cayó el beneficio? – año 2025");
     expect(csv.charCodeAt(0)).toBe(0xfeff);
   });
 });
@@ -104,5 +104,29 @@ describe("csv import", () => {
   it("reports a missing label column", () => {
     const result = importCsv("key,parent_key\nr,");
     expect(result.warnings.join(" ")).toContain("label column");
+  });
+});
+
+describe("csv status", () => {
+  it("writes status in the fourth column", () => {
+    const doc = sampleDoc();
+    doc.nodes[doc.rootId as string].status = "complete";
+    const rows = parseCsv(exportCsv(doc, computeKeyMap(doc)));
+    expect(rows[0]).toEqual([...CSV_HEADER]);
+    expect(rows[0][3]).toBe("status");
+    expect(rows[1][3]).toBe("complete");
+    expect(rows[2][3]).toBe("open");
+  });
+
+  it("reads status back and defaults unknown values to open", () => {
+    const csv = [
+      "key,parent_key,level,status,label",
+      "a,,1,complete,Root?",
+      "b,a,2,weird,Child?",
+    ].join("\r\n");
+    const doc = importCsv(csv).doc;
+    const byLabel = (label: string) => Object.values(doc.nodes).find((node) => node.label === label);
+    expect(byLabel("Root?")?.status).toBe("complete");
+    expect(byLabel("Child?")?.status).toBe("open");
   });
 });

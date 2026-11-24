@@ -1,6 +1,6 @@
 /** Generic markdown nested-list import and export. */
 
-import type { TreeDoc } from "./types";
+import type { NodeStatus, TreeDoc } from "./types";
 import { NODE_CAP } from "./types";
 import { buildDoc, flatten } from "./tree";
 
@@ -31,6 +31,19 @@ export function cleanInline(raw: string): string {
 interface ListItem {
   indent: number;
   label: string;
+  status: NodeStatus;
+}
+
+/**
+ * A leading key, in the form the in-app markdown view writes it: "K7M2 · Label".
+ * The middle dot (or two spaces) is required, so a label that happens to start
+ * with four capital letters is never mistaken for a key.
+ */
+const KEY_PREFIX = /^[0-9A-HJKMNP-TV-Z]{4,5}(?: · | {2,})(.+)$/;
+
+export function stripKeyPrefix(text: string): string {
+  const match = KEY_PREFIX.exec(text.trim());
+  return match ? match[1] : text;
 }
 
 export function parseMarkdown(text: string, name = "Imported outline"): OutlineParseResult {
@@ -75,12 +88,16 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
     if (listMatch) {
       const indentText = listMatch[1];
       const indent = indentText.replace(/\t/g, "    ").length;
-      const label = cleanInline(listMatch[2]);
+      const raw = listMatch[2];
+      const task = /^\[([ xX])\][ \t]+/.exec(raw);
+      const status: NodeStatus = task && task[1].toLowerCase() === "x" ? "complete" : "open";
+      const body = task ? raw.slice(task[0].length) : raw;
+      const label = cleanInline(stripKeyPrefix(body));
       if (!label) {
         warnings.push("Skipped an empty list item.");
         continue;
       }
-      const item: ListItem = { indent, label };
+      const item: ListItem = { indent, label, status };
       items.push(item);
       current = item;
       currentIndent = indent;
@@ -115,11 +132,11 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
   }
 
   const stack: number[] = [];
-  const flat: { label: string; depth: number }[] = [];
+  const flat: { label: string; depth: number; status: NodeStatus }[] = [];
   for (const item of capped) {
     while (stack.length > 0 && stack[stack.length - 1] >= item.indent) stack.pop();
     stack.push(item.indent);
-    flat.push({ label: item.label, depth: stack.length });
+    flat.push({ label: item.label, depth: stack.length, status: item.status });
   }
 
   const topLevel = flat.filter((entry) => entry.depth === 1).length;
@@ -142,7 +159,8 @@ export function toMarkdown(doc: TreeDoc, version = doc.version): string {
     lines.push(`# ${doc.name}`, "");
   }
   for (const entry of flat) {
-    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- ${entry.node.label || "Untitled node"}`);
+    const box = entry.node.status === "complete" ? "x" : " ";
+    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- [${box}] ${entry.node.label || "Untitled node"}`);
   }
   return `${lines.join("\n")}\n`;
 }
