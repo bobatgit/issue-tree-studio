@@ -531,11 +531,14 @@ a.text-btn {
 
 .label-input {
   border: 1px solid transparent;
+  resize: none;
+  overflow-y: auto;
+  display: block;
   background: transparent;
   border-radius: 5px;
   padding: 5px 7px;
-  font-size: 13.5px;
-  line-height: 1.35;
+  font-size: 16px;
+  line-height: 1.4;
   width: 100%;
   min-width: 0;
 }
@@ -553,7 +556,7 @@ a.text-btn {
 
 .label-input.root-label {
   font-weight: 620;
-  font-size: 14.5px;
+  font-size: 17px;
 }
 
 .row-actions {

@@ -30,9 +30,9 @@ describe("app shell", () => {
   it("adds a sibling with the Enter key", async () => {
     render(<App />);
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
-    const input = document.querySelector<HTMLInputElement>("input[data-label-id]");
+    const input = document.querySelector<HTMLTextAreaElement>("textarea[data-label-id]");
     expect(input).toBeTruthy();
-    fireEvent.keyDown(input as HTMLInputElement, { key: "Enter" });
+    fireEvent.keyDown(input as HTMLTextAreaElement, { key: "Enter" });
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(1));
   });
 

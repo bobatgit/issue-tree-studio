@@ -26,7 +26,7 @@ export function Outline({ ws, onImport }: Props) {
 
   useEffect(() => {
     if (!focusRequest.current || !ws.selection) return;
-    const input = document.querySelector<HTMLInputElement>(`input[data-label-id="${ws.selection}"]`);
+    const input = document.querySelector<HTMLTextAreaElement>(`textarea[data-label-id="${ws.selection}"]`);
     if (input) {
       focusRequest.current = false;
       input.focus();
@@ -38,7 +38,7 @@ export function Outline({ ws, onImport }: Props) {
 
   const focusNode = (id: string | null): void => {
     if (!id) return;
-    const input = document.querySelector<HTMLInputElement>(`input[data-label-id="${id}"]`);
+    const input = document.querySelector<HTMLTextAreaElement>(`textarea[data-label-id="${id}"]`);
     input?.focus();
     input?.select();
   };
@@ -49,7 +49,7 @@ export function Outline({ ws, onImport }: Props) {
   };
 
   const onKeyDown = (
-    event: KeyboardEvent<HTMLInputElement>,
+    event: KeyboardEvent<HTMLTextAreaElement>,
     nodeId: string,
     label: string,
     index: number,
@@ -243,7 +243,8 @@ export function Outline({ ws, onImport }: Props) {
                   )}
 
                   <div className="label-wrap">
-                  <input
+                  <textarea
+                    rows={1}
                     className={`label-input ${isRoot ? "root-label" : ""}`}
                     data-label-id={node.id}
                     value={node.label}
@@ -252,6 +253,16 @@ export function Outline({ ws, onImport }: Props) {
                     onChange={(event) => ws.editLabel(node.id, event.target.value)}
                     onFocus={() => ws.select(node.id)}
                     onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
+                    onInput={(event) => {
+                      const field = event.currentTarget;
+                      field.style.height = "auto";
+                      field.style.height = `${Math.min(field.scrollHeight, 72)}px`;
+                    }}
+                    ref={(field) => {
+                      if (!field) return;
+                      field.style.height = "auto";
+                      field.style.height = `${Math.min(field.scrollHeight, 72)}px`;
+                    }}
                   />
                   {ws.collapsed.has(node.id) && descendantIds(doc, node.id).length > 0 ? (
                     <span className="collapsed-count" title="Hidden nodes beneath this one">
