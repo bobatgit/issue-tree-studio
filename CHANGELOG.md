@@ -3,6 +3,24 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.4.0] - 2026-11-25
+
+### Added
+
+- A Markdown view beside the tree: a task list with `- [ ]` and `- [x]`, an optional `K7M2 · ` key prefix,
+  explicit Apply or Ctrl+Enter with a change preview, and Esc to revert. One apply is one version and one
+  undo step; switching views keeps the draft and never commits.
+- Applying an outline keeps the note and MECE flags of every node whose label path or position survived.
+
+### Changed
+
+- One tree per tab. The document library, sidebar, samples drawer and rename are gone; `sessionStorage` holds
+  the tree and its byte-budgeted history, and closing the tab ends both.
+- The title is the root question, so the name field, the export filenames and the markdown heading all follow
+  the root.
+- The first load adopts the most recent IndexedDB tree, downloads the rest as one JSON bundle, and deletes the
+  old database.
+
 ## [0.3.1] - 2026-11-24
 
 ### Added

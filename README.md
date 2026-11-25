@@ -161,7 +161,7 @@ on a server or a local proxy; never ship it in the browser bundle.
   **immediately**.
 * Each version stores the full snapshot, the per-node keys, and a diff summary such as
   "2 relabelled, 1 moved, 3 keys changed".
-* History keeps the latest **5,000** versions in IndexedDB. Oldest non-checkpoint versions are pruned first.
+* History keeps as many versions as fit in the tab's `sessionStorage` budget. The oldest automatic version is pruned first; named checkpoints never are.
 * A **checkpoint** is a named version that is never pruned.
 * **Restore** takes an old snapshot and writes it as a new version. Nothing is ever overwritten.
 * The history panel compares any version with the current tree: added, removed, relabelled, moved, re-typed
@@ -225,7 +225,8 @@ src/
     diff.ts     version comparison
     sample.ts   two sample trees
   store/
-    db.ts               IndexedDB with an in-memory fallback
+    storage.ts          per-tab sessionStorage: one tree, one history
+    db.ts               legacy IndexedDB, read once for migration
     useWorkspace.ts     documents, editing, undo, versions, autosave
   export/pptx.ts        native-shape PowerPoint builder
   components/           TopBar, Sidebar, Outline, Diagram, Panels, Dialogs
@@ -242,7 +243,7 @@ framework-free and could be reused by another UI.
 * 100 nodes per tree; 4-character keys; 5,000 versions.
 * One browser profile holds the library. Export a project file to move or back up a tree.
 * No network calls at all. Nothing is sent anywhere; there is no analytics and no telemetry.
-* IndexedDB is the store. Private browsing may clear it when the window closes.
+* `sessionStorage` is the store. Closing the tab ends the tree; private browsing clears it sooner.
 
 ---
 
@@ -408,7 +409,7 @@ native `p:sp` shapes only.
 | Slide plan | Structure overview, then packed branch slides (2-5 levels each) |
 | Key display | Chip on every node, on screen and on the slide |
 | CSV | key, parent_key, level, type, label, path, branch_index, version |
-| Storage | Multiple trees in IndexedDB plus JSON project files |
+| Storage | One tree per tab in `sessionStorage`; project JSON is the archive |
 | Versioning | Auto-version per change, 5,000 kept, named checkpoints never pruned |
 | MECE | Deterministic checks now, AI reviewer behind a defined interface |
 | Stack | React, TypeScript, Vite, PptxGenJS |

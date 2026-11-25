@@ -70,6 +70,44 @@ describe("node status", () => {
   });
 });
 
+describe("markdown view", () => {
+  it("applies an edited outline on Ctrl+Enter", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(2));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    const area = (await screen.findByLabelText("Markdown outline")) as HTMLTextAreaElement;
+    expect(area.value).toContain("- [ ] Root?");
+
+    fireEvent.change(area, { target: { value: "- Root?\n  - A?\n  - B?\n" } });
+    fireEvent.keyDown(area, { key: "Enter", ctrlKey: true });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
+  });
+
+  it("keeps a draft when the view changes", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    const area = (await screen.findByLabelText("Markdown outline")) as HTMLTextAreaElement;
+    fireEvent.change(area, { target: { value: "- Root?\n  - Draft?\n" } });
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    const again = (await screen.findByLabelText("Markdown outline")) as HTMLTextAreaElement;
+    expect(again.value).toContain("Draft?");
+  });
+});
+
 describe("branch collapse", () => {
   it("hides a branch and restores it", async () => {
     seedTree([

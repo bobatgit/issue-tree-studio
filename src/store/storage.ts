@@ -132,3 +132,45 @@ export function tabUsage(): { docCharacters: number; historyCharacters: number }
   const versions = sessionStorage.getItem(VERSIONS_KEY) ?? "";
   return { docCharacters: doc.length, historyCharacters: versions.length };
 }
+
+export interface LegacyMigration {
+  adopted: string | null;
+  archived: number;
+  archive: string | null;
+}
+
+/**
+ * Move the trees that used to live in IndexedDB into this tab.
+ *
+ * The most recent tree is adopted. The others are returned as one JSON bundle
+ * so the caller can hand them to the user before the old database is deleted.
+ */
+export async function migrateLegacy(): Promise<LegacyMigration> {
+  if (typeof indexedDB === "undefined") return { adopted: null, archived: 0, archive: null };
+  const legacy = await import("./db");
+  const summaries = await legacy.listDocs();
+  if (summaries.length === 0) {
+    await legacy.deleteDatabase();
+    return { adopted: null, archived: 0, archive: null };
+  }
+  const trees: { doc: TreeDoc; versions: VersionEntry[] }[] = [];
+  for (const summary of summaries) {
+    const doc = await legacy.getDoc(summary.id);
+    if (doc) trees.push({ doc, versions: await legacy.getAllVersions(summary.id) });
+  }
+  const newest = trees[0];
+  if (newest) {
+    write(DOC_KEY, newest.doc);
+    write(VERSIONS_KEY, fitToBudget(newest.versions, BUDGET));
+  }
+  const rest = trees.slice(1);
+  const archive = rest.length
+    ? JSON.stringify(
+        { app: "issue-tree-studio", schema: 1, exportedAt: new Date().toISOString(), trees: rest },
+        null,
+        2,
+      )
+    : null;
+  await legacy.deleteDatabase();
+  return { adopted: newest?.doc.name ?? null, archived: rest.length, archive };
+}

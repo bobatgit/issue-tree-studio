@@ -197,3 +197,17 @@ export async function countVersions(docId: string): Promise<number> {
   const index = db.transaction("versions", "readonly").objectStore("versions").index("by_doc");
   return wrap(index.count(IDBKeyRange.only(docId)));
 }
+
+/** Remove the legacy database once its trees have been adopted. */
+export async function deleteDatabase(): Promise<void> {
+  memory.docs.clear();
+  memory.versions.clear();
+  dbPromise = null;
+  if (!hasIndexedDb()) return;
+  await new Promise<void>((resolve) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => resolve();
+    request.onblocked = () => resolve();
+  });
+}

@@ -2,7 +2,7 @@
 
 import type { NodeStatus, TreeDoc } from "./types";
 import { NODE_CAP } from "./types";
-import { buildDoc, flatten } from "./tree";
+import { buildDoc, flatten, titleOf } from "./tree";
 
 export interface OutlineParseResult {
   doc: TreeDoc;
@@ -151,16 +151,22 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
 }
 
 /** Export as a generic nested list that the importer can read back. */
-export function toMarkdown(doc: TreeDoc, version = doc.version): string {
+export function toMarkdown(
+  doc: TreeDoc,
+  version = doc.version,
+  options: { keys?: (id: string) => string } = {},
+): string {
   const flat = flatten(doc);
   const stamp = new Date().toISOString().slice(0, 19).replace("T", " ");
   const lines = [`<!-- issue-tree-studio v${version} · ${stamp} -->`, ""];
-  if (doc.name) {
-    lines.push(`# ${doc.name}`, "");
+  const heading = titleOf(doc);
+  if (heading) {
+    lines.push(`# ${heading}`, "");
   }
   for (const entry of flat) {
     const box = entry.node.status === "complete" ? "x" : " ";
-    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- [${box}] ${entry.node.label || "Untitled node"}`);
+    const prefix = options.keys ? `${options.keys(entry.node.id)} · ` : "";
+    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- [${box}] ${prefix}${entry.node.label || "Untitled node"}`);
   }
   return `${lines.join("\n")}\n`;
 }

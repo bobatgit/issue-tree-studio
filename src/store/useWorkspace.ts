@@ -5,6 +5,7 @@ import { exportCsv } from "../model/csv";
 import { diffSnapshots } from "../model/diff";
 import { computeKeyMap } from "../model/keys";
 import { parseMarkdown, toMarkdown } from "../model/markdown";
+import { mergeParsed } from "../model/apply";
 import { importCsv } from "../model/csv";
 import { findingCounts, reviewTree, type Finding } from "../model/quality";
 import { SAMPLES } from "../model/sample";
@@ -41,9 +42,10 @@ import type {
   VersionEntry,
   VersionTrigger,
 } from "../model/types";
-import { ALIAS_CAP, DEFAULT_SETTINGS } from "../model/types";
+import { ALIAS_CAP, DEFAULT_SETTINGS, NODE_CAP } from "../model/types";
 import { parseProject } from "../model/project";
 import * as db from "./storage";
+import { migrateLegacy } from "./storage";
 
 export interface Toast {
   id: string;
@@ -77,6 +79,7 @@ export interface Workspace {
   move: (id: string, parentId: string, index: number) => void;
   editLabel: (id: string, label: string) => void;
   setStatus: (id: string, status: NodeStatus) => void;
+  applyMarkdown: (text: string) => boolean;
   setNote: (id: string, note: string) => void;
   collapsed: Set<string>;
   toggleCollapse: (id: string) => void;
@@ -426,6 +429,33 @@ export function useWorkspace(): Workspace {
     [commit],
   );
 
+  const applyMarkdown = useCallback(
+    (text: string): boolean => {
+      const current = docRef.current;
+      if (!current) return false;
+      if (!text.trim()) {
+        toast("error", "The outline is empty. Revert to keep the tree.");
+        return false;
+      }
+      const parsed = parseMarkdown(text, current.name).doc;
+      const merged = mergeParsed(current, parsed);
+      const total = countNodes(merged);
+      if (total === 0) {
+        toast("error", "The outline has no nodes.");
+        return false;
+      }
+      if (total > NODE_CAP) {
+        toast("error", `That outline has ${total} nodes. The cap is ${NODE_CAP}.`);
+        return false;
+      }
+      commit(merged, "import", "applied markdown");
+      setSelection(merged.rootId);
+      toast("success", `Applied the outline: ${total} node${total === 1 ? "" : "s"}.`);
+      return true;
+    },
+    [commit, toast],
+  );
+
   const toggleCollapse = useCallback((id: string) => {
     setCollapsed((previous) => {
       const next = new Set(previous);
@@ -648,6 +678,22 @@ export function useWorkspace(): Workspace {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      const migration = await migrateLegacy();
+      if (migration.archive) {
+        const blob = new Blob([migration.archive], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "issue-tree-studio-archive.json";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+      if (migration.adopted && !cancelled) {
+        toast(
+          "info",
+          `Adopted "${migration.adopted}"${migration.archived ? ` and archived ${migration.archived} older tree${migration.archived === 1 ? "" : "s"}` : ""}.`,
+        );
+      }
       const docs = await db.listDocs();
       if (cancelled) return;
       if (docs.length > 0) {
@@ -710,6 +756,7 @@ export function useWorkspace(): Workspace {
     move,
     editLabel,
     setStatus,
+    applyMarkdown,
     collapsed,
     toggleCollapse,
     setBranchCollapsed,
