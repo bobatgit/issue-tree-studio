@@ -5,14 +5,13 @@ import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
   ws: Workspace;
-  onExport: () => void;
 }
 
 const NODE_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
 
 const ROOT = { fill: "#1E293B", border: "#0F172A", text: "#FFFFFF" };
 
-export function Diagram({ ws, onExport }: Props) {
+export function Diagram({ ws }: Props) {
   const doc = ws.doc;
   const showKeys = doc?.settings.showKeysInEditor ?? true;
 
@@ -139,9 +138,6 @@ export function Diagram({ ws, onExport }: Props) {
           {groups.length > 6 ? <li>…and {groups.length - 6} more</li> : null}
         </ol>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" className="text-btn" onClick={onExport}>
-            Export PowerPoint
-          </button>
           <label className="small muted" style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <input
               type="checkbox"

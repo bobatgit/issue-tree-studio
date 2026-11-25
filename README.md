@@ -100,6 +100,8 @@ Any import opens as a **new** tree, so the current one is never overwritten.
 | Reorder / reparent | drag the handle | `Alt+Arrow` (use the handle for cross-level moves) |
 | Undo / redo | toolbar | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Open export | toolbar | `Ctrl+E` |
+| Switch view | Tree, Markdown, Diagram tabs | `Alt+1`, `Alt+2`, `Alt+3` |
+| Collapse the panel | chevron in the tab strip | `Ctrl+\` |
 
 Every node is a question. Each node also has a status, **Open** or **Complete**: the checkbox on the row
 toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete node with an open child raises a

@@ -29,7 +29,7 @@ describe("app shell", () => {
   it("adds a child from the row action and increments the version", async () => {
     render(<App />);
     await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
-    fireEvent.click(screen.getByRole("button", { name: "Add child" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Add child" })[0]);
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBe(2));
     await waitFor(() => expect(screen.getByTitle("Every change increments the version").textContent).toMatch(/v[2-9]/));
   });
@@ -124,5 +124,34 @@ describe("branch collapse", () => {
 
     fireEvent.click(screen.getByLabelText("Expand A?"));
     await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(4));
+  });
+});
+
+describe("workspace shell", () => {
+  it("switches to the diagram view", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg")).toBeTruthy());
+  });
+
+  it("collapses the panel to a rail and opens details again", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByLabelText("Collapse panel"));
+    await waitFor(() => expect(screen.getByLabelText("Open details")).toBeTruthy());
+    fireEvent.click(screen.getByLabelText("Open details"));
+    await waitFor(() => expect(screen.getByRole("tab", { name: /Details/ })).toBeTruthy());
+  });
+
+  it("opens Settings from the cogwheel", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByLabelText("Settings"));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy());
+    expect(screen.getByText("Keys", { selector: ".section-head span" })).toBeTruthy();
   });
 });

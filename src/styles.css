@@ -1376,3 +1376,69 @@ kbd {
 .markdown-foot.over {
   color: #b42318;
 }
+
+.body.panel-collapsed {
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding-top: 8px;
+}
+
+.rail-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: #5b6b80;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.rail-btn:hover {
+  background: #eef2f7;
+  color: #2f6feb;
+}
+
+.rail-dot {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d92d20;
+}
+
+.panel-collapse {
+  border: 0;
+  background: transparent;
+  color: #7c8798;
+  font-size: 15px;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.panel-collapse:hover {
+  background: #eef2f7;
+  color: #2f6feb;
+}
+
+.settings-modal {
+  width: min(720px, 92vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-modal .modal-body {
+  overflow: auto;
+}

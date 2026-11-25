@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { APP_VERSION, BUILD_SHA, NEW_ISSUE_URL, browserMeta } from "../lib/appInfo";
 import { buildDiagnostics } from "../model/diagnostics";
 import { copyText, downloadText, slugify } from "../lib/ui";
+import { KeyPanel } from "./Panels";
 import { exportCsv } from "../model/csv";
 import { toMarkdown } from "../model/markdown";
 import type { ImportFormat, Workspace } from "../store/useWorkspace";
@@ -182,6 +183,79 @@ export function ExportDialog({ ws, open, onClose }: DialogProps) {
           <button type="button" className="text-btn" onClick={onClose}>
             Close
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SettingsDialog({ ws, open, onClose }: DialogProps) {
+  if (!open || !ws.doc) return null;
+  const settings = ws.doc.settings;
+  const set = (patch: Partial<typeof settings>): void => ws.setSettings(patch);
+
+  return (
+    <div
+      className="modal-backdrop"
+      role="presentation"
+      onMouseDown={(event) => event.target === event.currentTarget && onClose()}
+    >
+      <div className="modal settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+        <div className="modal-head">
+          <div>
+            <h2>Settings</h2>
+            <p className="small muted">Keys, display and slides. Stored with the tree.</p>
+          </div>
+          <button type="button" className="icon-btn" aria-label="Close settings" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        <div className="modal-body">
+          <div className="section-head">
+            <span>Keys</span>
+          </div>
+          <KeyPanel ws={ws} />
+
+          <div className="section-head">
+            <span>Display</span>
+          </div>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={settings.showKeysInEditor}
+              onChange={(event) => set({ showKeysInEditor: event.target.checked })}
+            />
+            <span>Show keys in the tree and the diagram</span>
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={settings.showKeysInExport}
+              onChange={(event) => set({ showKeysInExport: event.target.checked })}
+            />
+            <span>Show keys on the slides</span>
+          </label>
+
+          <div className="section-head">
+            <span>Slides</span>
+          </div>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={settings.includeOverviewSlide}
+              onChange={(event) => set({ includeOverviewSlide: event.target.checked })}
+            />
+            <span>Start with a structure overview slide</span>
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={settings.includeKeyIndexSlide}
+              onChange={(event) => set({ includeKeyIndexSlide: event.target.checked })}
+            />
+            <span>Add key index slides at the end</span>
+          </label>
         </div>
       </div>
     </div>

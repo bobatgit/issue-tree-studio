@@ -6,9 +6,10 @@ interface Props {
   ws: Workspace;
   onImport: () => void;
   onExport: () => void;
+  onSettings: () => void;
 }
 
-export function TopBar({ ws, onImport, onExport }: Props) {
+export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
   const doc = ws.doc;
 
   if (!doc) return null;
@@ -65,6 +66,9 @@ export function TopBar({ ws, onImport, onExport }: Props) {
         ↻
       </button>
 
+      <button type="button" className="icon-btn" title="Settings" aria-label="Settings" onClick={onSettings}>
+        ⚙
+      </button>
       <button type="button" className="text-btn" onClick={onImport}>
         Import
       </button>

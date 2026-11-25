@@ -3,6 +3,21 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.5.0] - 2026-11-25
+
+### Added
+
+- Three workspace views: **Tree**, **Markdown** and **Diagram**, with Alt+1, Alt+2 and Alt+3. The diagram
+  leaves the side panel and takes the full width; clicking a box still selects its node.
+- The right panel collapses to a 44px rail with Ctrl+backslash or the chevron in the tab strip. It keeps the
+  active tab and the scroll position, persists per tab, and shows an error dot on the Details icon.
+
+### Changed
+
+- The right panel holds Details and History only. Quality is folded into Details, with the tree-level checks
+  always at the bottom.
+- Keys, display options and slide options move into a Settings dialog behind the cogwheel next to Import.
+
 ## [0.4.0] - 2026-11-25
 
 ### Added
