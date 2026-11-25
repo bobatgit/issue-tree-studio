@@ -23,17 +23,16 @@ import {
   outdentNode,
   parentOf,
   removeNode,
-  setDocName,
   setMece as setMeceOp,
   setNote as setNoteOp,
   setSettings as setSettingsOp,
   setStatus as setStatusOp,
   snapshotOf,
+  titleOf,
   updateLabel,
 } from "../model/tree";
 import type {
   DocSettings,
-  DocSummary,
   KeyAlias,
   KeyMap,
   MeceFlags,
@@ -44,7 +43,7 @@ import type {
 } from "../model/types";
 import { ALIAS_CAP, DEFAULT_SETTINGS } from "../model/types";
 import { parseProject } from "../model/project";
-import * as db from "./db";
+import * as db from "./storage";
 
 export interface Toast {
   id: string;
@@ -56,7 +55,6 @@ export type ImportFormat = "markdown" | "csv" | "json";
 
 export interface Workspace {
   ready: boolean;
-  library: DocSummary[];
   doc: TreeDoc | null;
   keyMap: KeyMap;
   findings: Finding[];
@@ -70,12 +68,7 @@ export interface Workspace {
   atCap: boolean;
   canUndo: boolean;
   canRedo: boolean;
-  openDoc: (id: string) => Promise<void>;
-  newDoc: () => Promise<void>;
   loadSample: (sampleId: string) => Promise<void>;
-  renameDoc: (name: string) => void;
-  duplicateDoc: () => Promise<void>;
-  deleteDoc: () => Promise<void>;
   addChild: (parentId: string) => void;
   addSibling: (id: string) => void;
   remove: (id: string) => void;
@@ -112,7 +105,6 @@ const EDIT_DEBOUNCE_MS = 2000;
 
 export function useWorkspace(): Workspace {
   const [ready, setReady] = useState(false);
-  const [library, setLibrary] = useState<DocSummary[]>([]);
   const [doc, setDoc] = useState<TreeDoc | null>(null);
   const [versions, setVersions] = useState<VersionEntry[]>([]);
   const [versionCount, setVersionCount] = useState(0);
@@ -180,16 +172,12 @@ export function useWorkspace(): Workspace {
     toastTimers.current.delete(id);
   }, []);
 
-  const refreshLibrary = useCallback(async () => {
-    setLibrary(await db.listDocs());
-  }, []);
-
   const persistSoon = useCallback((next: TreeDoc) => {
     if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
     persistTimerRef.current = setTimeout(() => {
-      void db.putDoc(next).then(refreshLibrary);
+      void db.putDoc(next);
     }, 300);
-  }, [refreshLibrary]);
+  }, []);
 
   const keysToRecord = (map: KeyMap): Record<string, string> =>
     Object.fromEntries(Object.entries(map.byNode).map(([id, info]) => [id, info.key]));
@@ -251,9 +239,8 @@ export function useWorkspace(): Workspace {
       await db.putVersion(entry);
       await db.putDoc(withVersion);
       await db.pruneVersions(withVersion.id);
-      await refreshLibrary();
     },
-    [refreshLibrary, setDocState],
+    [setDocState],
   );
 
   const queueVersion = useCallback(
@@ -279,7 +266,7 @@ export function useWorkspace(): Workspace {
       redoRef.current = [];
       setUndoDepth(undoRef.current.length);
       setRedoDepth(0);
-      const stamped = { ...next, updatedAt: Date.now() };
+      const stamped = { ...next, name: titleOf(next), updatedAt: Date.now() };
       setDocState(stamped);
       persistSoon(stamped);
       queueVersion(stamped, trigger, summary);
@@ -287,35 +274,12 @@ export function useWorkspace(): Workspace {
     [persistSoon, queueVersion, setDocState],
   );
 
-  const openDoc = useCallback(
-    async (id: string) => {
-      await flushVersion();
-      const loaded = await db.getDoc(id);
-      if (!loaded) {
-        toast("error", "That tree could not be opened.");
-        return;
-      }
-      undoRef.current = [];
-      redoRef.current = [];
-      setUndoDepth(0);
-      setRedoDepth(0);
-      setDocState(loaded);
-      versionRef.current = loaded.version;
-      lastSnapshotRef.current = snapshotOf(loaded);
-      const map = computeKeyMap(loaded);
-      keysRef.current = keysToRecord(map);
-      setVersions(await db.listVersions(id, 200));
-      setVersionCount(await db.countVersions(id));
-      setSelection(loaded.rootId);
-    },
-    [flushVersion, setDocState, toast],
-  );
-
   const createAndOpen = useCallback(
     async (next: TreeDoc) => {
       await flushVersion();
-      await db.putDoc(next);
-      const map = computeKeyMap(next);
+      const titled = { ...next, name: titleOf(next) };
+      await db.putDoc(titled);
+      const map = computeKeyMap(titled);
       keysRef.current = keysToRecord(map);
       versionRef.current = next.version;
       lastSnapshotRef.current = snapshotOf(next);
@@ -338,14 +302,9 @@ export function useWorkspace(): Workspace {
       redoRef.current = [];
       setUndoDepth(0);
       setRedoDepth(0);
-      await refreshLibrary();
     },
-    [flushVersion, refreshLibrary, setDocState],
+    [flushVersion, setDocState],
   );
-
-  const newDoc = useCallback(async () => {
-    await createAndOpen(createDoc("Untitled issue tree"));
-  }, [createAndOpen]);
 
   const loadSample = useCallback(
     async (sampleId: string) => {
@@ -358,41 +317,6 @@ export function useWorkspace(): Workspace {
     },
     [createAndOpen, toast],
   );
-
-  const renameDoc = useCallback(
-    (name: string) => {
-      const current = docRef.current;
-      if (!current || name === current.name) return;
-      commit(setDocName(current, name), "structure", "renamed");
-    },
-    [commit],
-  );
-
-  const duplicateDoc = useCallback(async () => {
-    const current = docRef.current;
-    if (!current) return;
-    const copy: TreeDoc = {
-      ...current,
-      id: newId(),
-      name: `${current.name} (copy)`,
-      version: 1,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    await createAndOpen(copy);
-    toast("success", "Duplicated the tree.");
-  }, [createAndOpen, toast]);
-
-  const deleteDoc = useCallback(async () => {
-    const current = docRef.current;
-    if (!current) return;
-    await db.deleteDoc(current.id);
-    const remaining = await db.listDocs();
-    setLibrary(remaining);
-    if (remaining.length > 0) await openDoc(remaining[0].id);
-    else await newDoc();
-    toast("info", "Deleted the tree.");
-  }, [newDoc, openDoc, toast]);
 
   const guard = useCallback((): TreeDoc | null => {
     const current = docRef.current;
@@ -726,13 +650,13 @@ export function useWorkspace(): Workspace {
     void (async () => {
       const docs = await db.listDocs();
       if (cancelled) return;
-      setLibrary(docs);
       if (docs.length > 0) {
         const latest = await db.getDoc(docs[0].id);
         if (latest && !cancelled) {
-          setDocState(latest);
-          versionRef.current = latest.version;
-          lastSnapshotRef.current = snapshotOf(latest);
+          const titled = { ...latest, name: titleOf(latest) };
+          setDocState(titled);
+          versionRef.current = titled.version;
+          lastSnapshotRef.current = snapshotOf(titled);
           keysRef.current = keysToRecord(computeKeyMap(latest));
           setVersions(await db.listVersions(latest.id, 200));
           setVersionCount(await db.countVersions(latest.id));
@@ -764,7 +688,6 @@ export function useWorkspace(): Workspace {
 
   return {
     ready,
-    library,
     doc,
     keyMap,
     findings,
@@ -778,12 +701,7 @@ export function useWorkspace(): Workspace {
     atCap: doc ? atCap(doc) : false,
     canUndo: undoDepth > 0,
     canRedo: redoDepth > 0,
-    openDoc,
-    newDoc,
     loadSample,
-    renameDoc,
-    duplicateDoc,
-    deleteDoc,
     addChild,
     addSibling,
     remove,

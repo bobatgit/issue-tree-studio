@@ -2,11 +2,18 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "../App";
+import { buildDoc } from "../model/tree";
 
 afterEach(() => {
   cleanup();
   sessionStorage.clear();
 });
+
+function seedTree(items: { label: string; depth: number }[]): void {
+  const doc = buildDoc("Seeded", items);
+  sessionStorage.setItem("its.doc", JSON.stringify(doc));
+  sessionStorage.setItem("its.versions", JSON.stringify([]));
+}
 
 describe("app shell", () => {
   it("opens with a tree, key chips and the outline", async () => {
@@ -15,7 +22,7 @@ describe("app shell", () => {
       expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0);
     });
     expect(document.querySelectorAll(".key-chip").length).toBeGreaterThan(0);
-    expect(screen.getByLabelText("Tree name")).toBeTruthy();
+    expect(document.querySelector(".doc-title")?.textContent?.trim().length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Export" })).toBeTruthy();
   });
 
@@ -36,11 +43,14 @@ describe("app shell", () => {
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(1));
   });
 
-  it("loads a sample tree from the sidebar", async () => {
+  it("restores the tree stored for this tab", async () => {
+    seedTree([
+      { label: "Stored root?", depth: 1 },
+      { label: "Child?", depth: 2 },
+    ]);
     render(<App />);
-    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
-    fireEvent.click(screen.getByTitle("Diagnostic tree: why did profit fall, split into revenue, cost and mix."));
-    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(18), { timeout: 5000 });
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(2));
+    expect(document.querySelector(".doc-title")?.textContent).toContain("Stored root?");
   });
 
   it("shows the four-argument quality panel with the MECE seam disabled", async () => {
@@ -62,20 +72,19 @@ describe("node status", () => {
 
 describe("branch collapse", () => {
   it("hides a branch and restores it", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+      { label: "A1?", depth: 3 },
+      { label: "B?", depth: 2 },
+    ]);
     render(<App />);
-    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
-    fireEvent.click(
-      screen.getByTitle("Diagnostic tree: why did profit fall, split into revenue, cost and mix."),
-    );
-    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(2), { timeout: 5000 });
-    const before = screen.getAllByRole("treeitem").length;
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(4));
 
-    fireEvent.click(screen.getAllByLabelText(/^Collapse /)[0]);
-    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeLessThan(before));
+    fireEvent.click(screen.getByLabelText("Collapse A?"));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
 
-    const folded = screen.getAllByRole("treeitem").length;
-    fireEvent.click(screen.getAllByLabelText(/^Expand /)[0]);
-    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBe(before));
-    expect(folded).toBeLessThan(before);
+    fireEvent.click(screen.getByLabelText("Expand A?"));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(4));
   });
 });

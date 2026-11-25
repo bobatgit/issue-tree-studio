@@ -3,7 +3,6 @@ import { ExportDialog, ImportDialog, Toasts } from "./components/Dialogs";
 import { Diagram } from "./components/Diagram";
 import { Outline } from "./components/Outline";
 import { HistoryPanel, KeyPanel, NodePanel, QualityPanel } from "./components/Panels";
-import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { useWorkspace } from "./store/useWorkspace";
 
@@ -58,7 +57,6 @@ export function App() {
       <TopBar ws={ws} onImport={() => setImportOpen(true)} onExport={() => setExportOpen(true)} />
 
       <div className="body">
-        <Sidebar ws={ws} />
         <Outline ws={ws} onImport={() => setImportOpen(true)} />
 
         <aside className="rightbar" aria-label="Tree panels">

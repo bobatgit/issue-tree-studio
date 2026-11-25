@@ -13,6 +13,12 @@ export function now(): number {
   return Date.now();
 }
 
+/** The tree is its own title: the root label, with a fallback while it is empty. */
+export function titleOf(doc: TreeDoc): string {
+  const root = doc.rootId ? doc.nodes[doc.rootId] : null;
+  return root?.label.trim() || "Untitled issue tree";
+}
+
 export function countNodes(doc: TreeDoc): number {
   return Object.keys(doc.nodes).length;
 }

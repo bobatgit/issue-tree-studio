@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { APP_VERSION, BUILD_SHA, REPO_URL } from "../lib/appInfo";
+import { titleOf } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -10,19 +10,8 @@ interface Props {
 
 export function TopBar({ ws, onImport, onExport }: Props) {
   const doc = ws.doc;
-  const [name, setName] = useState(doc?.name ?? "");
-
-  useEffect(() => {
-    setName(doc?.name ?? "");
-  }, [doc?.id, doc?.name]);
 
   if (!doc) return null;
-
-  const commitName = (): void => {
-    const next = name.trim();
-    if (next && next !== doc.name) ws.renameDoc(next);
-    else setName(doc.name);
-  };
 
   const capClass = ws.nodeCount >= 100 ? "full" : ws.nodeCount >= 80 ? "warn" : "";
 
@@ -40,20 +29,9 @@ export function TopBar({ ws, onImport, onExport }: Props) {
         Issue Tree Studio
       </div>
 
-      <input
-        className="doc-name"
-        value={name}
-        aria-label="Tree name"
-        onChange={(event) => setName(event.target.value)}
-        onBlur={commitName}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") event.currentTarget.blur();
-          if (event.key === "Escape") {
-            setName(doc.name);
-            event.currentTarget.blur();
-          }
-        }}
-      />
+      <span className="doc-title" title="The title is the root question">
+        {titleOf(doc)}
+      </span>
 
       <span className="pill version" title="Every change increments the version">
         v{doc.version}

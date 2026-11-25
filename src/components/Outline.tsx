@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { copyText } from "../lib/ui";
+import { SAMPLES } from "../model/sample";
 import { descendantIds, maxDepth, parentOf, visibleEntries } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
@@ -152,6 +153,19 @@ export function Outline({ ws, onImport }: Props) {
               <strong>This tree is empty.</strong>
             </p>
             <p className="muted">Paste a markdown list to start, or add a root question.</p>
+            <div className="sample-row">
+              {SAMPLES.map((sample) => (
+                <button
+                  key={sample.id}
+                  type="button"
+                  className="text-btn"
+                  title={sample.description}
+                  onClick={() => void ws.loadSample(sample.id)}
+                >
+                  {sample.name}
+                </button>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="outline" role="tree" aria-label="Issue tree outline">
