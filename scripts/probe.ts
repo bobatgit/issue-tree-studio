@@ -279,6 +279,33 @@ const CASES: ProbeCase[] = [
       { label: "the view does not scroll sideways", derived: "sideways", exact: 0 },
       { label: "the canvas is present", from: ".diagram-svg", field: "width", min: 200 },
       { label: "the resting outline is thin too", from: ".diagram-svg .nrect", field: "strokePx", max: 2 },
+      { label: "at Fit the canvas is exactly the frame", from: ".diagram-svg", field: "width", min: 200 },
+    ],
+  },
+  {
+    name: "diagram-zoom",
+    note: "the canvas grows with the level, and the wrapper scrolls (#21)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg", ".zoom-level", ".diagram-wrap"],
+    setup: `const plus = document.querySelector('[aria-label="Zoom in"]');
+      for (let step = 0; step < 12; step += 1) { if (plus) plus.click(); }`,
+    derived: {
+      /** The level the toolbar shows, which is what the twelve steps reached. */
+      zoomLevel: `(() => {
+        const label = document.querySelector(".zoom-level");
+        const value = Number.parseInt((label ? label.textContent : "") || "", 10);
+        return Number.isFinite(value) ? value : null;
+      })()`,
+      /** Wider than the wrapper means the wrapper can finally scroll. */
+      scrollsSideways: `(() => {
+        const wrap = document.querySelector(".diagram-wrap");
+        return wrap && wrap.scrollWidth > wrap.clientWidth + 1 ? 1 : 0;
+      })()`,
+    },
+    checks: [
+      { label: "twelve steps reach the ceiling", derived: "zoomLevel", exact: 400 },
+      { label: "the zoomed canvas is wider than its frame", derived: "scrollsSideways", exact: 1 },
     ],
   },
   {

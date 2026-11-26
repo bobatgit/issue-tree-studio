@@ -87,6 +87,14 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
   },
   {
+    name: "ticket-21-zoom-400",
+    note: "the canvas at 400 percent, where the wrapper scrolls (#21)",
+    view: "diagram",
+    size: [1440, 900],
+    setup: `const plus = document.querySelector('[aria-label="Zoom in"]');
+      for (let step = 0; step < 12; step += 1) { if (plus) plus.click(); }`,
+  },
+  {
     name: "ticket-24-inset-1440",
     note: "the diagram view inset to 16px, with its legend as a section label (#24)",
     view: "diagram",

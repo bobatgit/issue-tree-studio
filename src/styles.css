@@ -1071,6 +1071,59 @@ kbd {
   padding: 8px;
   overflow: auto;
   max-height: 58vh;
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  cursor: grab;
+}
+
+.diagram-wrap.panning {
+  cursor: grabbing;
+}
+
+/** The legend keeps the left edge; the zoom controls take the right. */
+.diagram-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diagram-zoom {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.diagram-zoom button {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  border-radius: 6px;
+  color: var(--text);
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.diagram-zoom button:hover {
+  background: #f2f5f9;
+  border-color: var(--border-strong);
+}
+
+.zoom-level {
+  min-width: 46px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.app.phone .diagram-zoom button {
+  min-width: 44px;
+  height: 44px;
 }
 
 .diagram-svg {

@@ -364,3 +364,73 @@ describe("the diagram outline", () => {
   });
 });
 
+describe("the diagram zoom", () => {
+  const enter = async (): Promise<void> => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg")).toBeTruthy());
+  };
+
+  const label = (): string => document.querySelector(".zoom-level")?.textContent ?? "";
+  const canvasWidth = (): string =>
+    (document.querySelector(".diagram-svg") as SVGSVGElement | null)?.style.width ?? "";
+
+  it("starts at Fit, remembers the level per tab, and sizes the canvas from it", async () => {
+    await enter();
+    expect(label()).toBe("100%");
+    expect(canvasWidth()).not.toBe("");
+
+    fireEvent.click(screen.getByLabelText("Zoom in"));
+    await waitFor(() => expect(label()).toBe("125%"));
+    expect(sessionStorage.getItem("its.zoom")).toBe("125");
+  });
+
+  it("clamps between 25 and 400 percent", async () => {
+    await enter();
+    for (let i = 0; i < 20; i += 1) fireEvent.click(screen.getByLabelText("Zoom out"));
+    await waitFor(() => expect(label()).toBe("25%"));
+    for (let i = 0; i < 40; i += 1) fireEvent.click(screen.getByLabelText("Zoom in"));
+    await waitFor(() => expect(label()).toBe("400%"));
+
+    // Four times the level is four times the canvas.
+    const atFull = Number.parseFloat(canvasWidth());
+    fireEvent.click(screen.getByLabelText("Fit the diagram"));
+    await waitFor(() => expect(label()).toBe("100%"));
+    expect(Number.parseFloat(canvasWidth()) * 4).toBeCloseTo(atFull, 0);
+  });
+
+  it("zooms with control and the wheel, and ignores a plain wheel", async () => {
+    await enter();
+    const wrap = document.querySelector(".diagram-wrap") as HTMLElement;
+
+    fireEvent.wheel(wrap, { deltaY: -100, ctrlKey: true });
+    await waitFor(() => expect(label()).toBe("125%"));
+    fireEvent.wheel(wrap, { deltaY: 100, ctrlKey: true });
+    await waitFor(() => expect(label()).toBe("100%"));
+
+    fireEvent.wheel(wrap, { deltaY: -100 });
+    await waitFor(() => expect(label()).toBe("100%"));
+  });
+
+  it("zooms from the keyboard while the canvas has focus", async () => {
+    await enter();
+    const wrap = document.querySelector(".diagram-wrap") as HTMLElement;
+    fireEvent.keyDown(wrap, { key: "+" });
+    await waitFor(() => expect(label()).toBe("125%"));
+    fireEvent.keyDown(wrap, { key: "0" });
+    await waitFor(() => expect(label()).toBe("100%"));
+  });
+
+  it("does not select the item it panned over", async () => {
+    await enter();
+    const wrap = document.querySelector(".diagram-wrap") as HTMLElement;
+    const box = document.querySelector(".diagram-svg .nrect") as SVGRectElement;
+    fireEvent.pointerDown(wrap, { pointerId: 1, pointerType: "mouse", button: 0, clientX: 10, clientY: 10 });
+    fireEvent.pointerMove(wrap, { pointerId: 1, clientX: 60, clientY: 60 });
+    fireEvent.pointerUp(wrap, { pointerId: 1 });
+    fireEvent.click(box);
+    expect(document.querySelector(".row.selected")).toBeNull();
+  });
+});

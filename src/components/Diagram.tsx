@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { layoutTree, packSlides } from "../model/layout";
 import { countItems } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
@@ -11,6 +11,21 @@ interface Props {
 const ITEM_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
 
 const ROOT = { fill: "#1E293B", border: "#0F172A", text: "#FFFFFF" };
+
+/** Zoom is remembered per tab, like the fold state, and never touches the document. */
+const ZOOM_KEY = "its.zoom";
+const ZOOM_MIN = 25;
+const ZOOM_MAX = 400;
+const ZOOM_STEP = 1.25;
+
+function readZoom(): number {
+  try {
+    const raw = Number.parseFloat(sessionStorage.getItem(ZOOM_KEY) ?? "");
+    return Number.isFinite(raw) ? Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, raw)) : 100;
+  } catch {
+    return 100;
+  }
+}
 
 export function Diagram({ ws }: Props) {
   const doc = ws.doc;
@@ -30,21 +45,246 @@ export function Diagram({ ws }: Props) {
 
   const groups = useMemo(() => (doc ? packSlides(doc) : []), [doc]);
 
-  if (!doc || !layout) return null;
-
   const pad = 0.14;
-  const viewW = Math.max(1, layout.width) + pad * 2;
-  const viewH = Math.max(1, layout.height) + pad * 2;
+  const viewW = layout ? Math.max(1, layout.width) + pad * 2 : 1;
+  const viewH = layout ? Math.max(1, layout.height) + pad * 2 : 1;
+  /** Height per unit of width, so the SVG keeps its aspect at any level. */
+  const ratio = viewH / viewW;
+
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [level, setLevel] = useState<number>(readZoom);
+  /** The live level, so a burst of clicks cannot each read a stale render. */
+  const levelRef = useRef(level);
+  const [fitWidth, setFitWidth] = useState(0);
+  const [panning, setPanning] = useState(false);
+  const pointers = useRef(new Map<number, { x: number; y: number }>());
+  const drag = useRef<{ x: number; y: number; left: number; top: number; moved: boolean } | null>(null);
+  const pinch = useRef<{ distance: number; level: number } | null>(null);
+  /** A click that ends a pan must not also select the box under the pointer. */
+  const panned = useRef(false);
+
+  const sized = fitWidth > 0;
+  const width = sized ? (fitWidth * level) / 100 : 0;
+  const height = sized ? (fitWidth * level * ratio) / 100 : 0;
+
+  // Fit follows the window, so a resize while zoomed keeps the level.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const measure = (): void => {
+      const style = getComputedStyle(wrap);
+      // A stylesheet may not be loaded yet, so a missing length counts as zero.
+      const pixels = (value: string): number => {
+        const parsed = Number.parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
+      const inner = wrap.clientWidth - pixels(style.paddingLeft) - pixels(style.paddingRight);
+      setFitWidth(Math.max(120, inner));
+    };
+    measure();
+    // Without a resize observer, one measurement is still correct at load.
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(ZOOM_KEY, String(Math.round(level)));
+    } catch {
+      /* storage is unavailable */
+    }
+  }, [level]);
+
+  /**
+   * Change the level, keeping whatever is under the focus point under it. The
+   * content coordinate under a point is (scroll + point) / width, so restoring
+   * the same fraction after the size changes is what holds the point still.
+   */
+  const zoomTo = useCallback(
+    (next: number, focusX?: number, focusY?: number): void => {
+      const wrap = wrapRef.current;
+      const current = levelRef.current;
+      const clamped = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(next)));
+      levelRef.current = clamped;
+      if (!wrap || !sized || clamped === current) {
+        setLevel(clamped);
+        return;
+      }
+      const pointX = focusX ?? wrap.clientWidth / 2;
+      const pointY = focusY ?? wrap.clientHeight / 2;
+      const fractionX = width > 0 ? (wrap.scrollLeft + pointX) / width : 0;
+      const fractionY = height > 0 ? (wrap.scrollTop + pointY) / height : 0;
+      setLevel(clamped);
+      requestAnimationFrame(() => {
+        const nextWidth = (fitWidth * clamped) / 100;
+        const nextHeight = (fitWidth * clamped * ratio) / 100;
+        wrap.scrollLeft = fractionX * nextWidth - pointX;
+        wrap.scrollTop = fractionY * nextHeight - pointY;
+      });
+    },
+    [fitWidth, height, ratio, sized, width],
+  );
+
+  /** A factor, read against the live level, so repeated clicks accumulate. */
+  const zoomBy = useCallback(
+    (factor: number, focusX?: number, focusY?: number): void => {
+      zoomTo(levelRef.current * factor, focusX, focusY);
+    },
+    [zoomTo],
+  );
+
+  const fit = useCallback((): void => {
+    levelRef.current = 100;
+    setLevel(100);
+    const wrap = wrapRef.current;
+    if (wrap) {
+      requestAnimationFrame(() => {
+        wrap.scrollLeft = 0;
+        wrap.scrollTop = 0;
+      });
+    }
+  }, []);
+
+  // A wheel listener has to be non-passive to cancel the browser's own zoom.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const onWheel = (event: WheelEvent): void => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+      const rect = wrap.getBoundingClientRect();
+      zoomBy(
+        event.deltaY < 0 ? ZOOM_STEP : 1 / ZOOM_STEP,
+        event.clientX - rect.left,
+        event.clientY - rect.top,
+      );
+    };
+    wrap.addEventListener("wheel", onWheel, { passive: false });
+    return () => wrap.removeEventListener("wheel", onWheel);
+  }, [zoomBy]);
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (pointers.current.size === 1) {
+      panned.current = false;
+      drag.current = {
+        x: event.clientX,
+        y: event.clientY,
+        left: wrap.scrollLeft,
+        top: wrap.scrollTop,
+        moved: false,
+      };
+      setPanning(true);
+      return;
+    }
+    if (pointers.current.size === 2) {
+      drag.current = null;
+      const [first, second] = [...pointers.current.values()];
+      pinch.current = { distance: Math.hypot(first.x - second.x, first.y - second.y), level };
+    }
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const wrap = wrapRef.current;
+    if (!wrap || !pointers.current.has(event.pointerId)) return;
+    pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    // Two fingers pinch about their own centre.
+    if (pointers.current.size === 2 && pinch.current) {
+      const [first, second] = [...pointers.current.values()];
+      const distance = Math.hypot(first.x - second.x, first.y - second.y);
+      const rect = wrap.getBoundingClientRect();
+      if (pinch.current.distance > 0) {
+        zoomTo(
+          (pinch.current.level * distance) / pinch.current.distance,
+          (first.x + second.x) / 2 - rect.left,
+          (first.y + second.y) / 2 - rect.top,
+        );
+      }
+      return;
+    }
+
+    const start = drag.current;
+    if (!start) return;
+    const dx = event.clientX - start.x;
+    const dy = event.clientY - start.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) start.moved = true;
+    wrap.scrollLeft = start.left - dx;
+    wrap.scrollTop = start.top - dy;
+  };
+
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>): void => {
+    pointers.current.delete(event.pointerId);
+    if (pointers.current.size < 2) pinch.current = null;
+    if (pointers.current.size === 0) {
+      panned.current = drag.current?.moved ?? false;
+      drag.current = null;
+      setPanning(false);
+    }
+  };
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === "-" || event.key === "_") {
+      event.preventDefault();
+      zoomBy(1 / ZOOM_STEP);
+      return;
+    }
+    if (event.key === "+" || event.key === "=") {
+      event.preventDefault();
+      zoomBy(ZOOM_STEP);
+      return;
+    }
+    if (event.key === "0") {
+      event.preventDefault();
+      fit();
+    }
+  };
+
+  if (!doc || !layout) return null;
 
   return (
     <div className="diagram-view">
-      <div className="legend">
-        <span>{layout.leaves} leaf rows</span>
+      <div className="diagram-bar">
+        <div className="legend">
+          <span>{layout.leaves} leaf rows</span>
+        </div>
+        <div className="diagram-zoom">
+          <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoomBy(1 / ZOOM_STEP)}>
+            −
+          </button>
+          <span className="zoom-level" aria-live="polite">
+            {Math.round(level)}%
+          </span>
+          <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoomBy(ZOOM_STEP)}>
+            +
+          </button>
+          <button type="button" aria-label="Fit the diagram" title="Fit" onClick={fit}>
+            Fit
+          </button>
+        </div>
       </div>
 
-      <div className="diagram-wrap">
+      <div
+        className={`diagram-wrap ${panning ? "panning" : ""}`}
+        ref={wrapRef}
+        tabIndex={0}
+        role="application"
+        aria-label="Diagram canvas. Control and the wheel zooms, drag pans."
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onKeyDown={onKeyDown}
+      >
         <svg
           className="diagram-svg"
+          style={sized ? { width: `${width}px`, height: `${height}px` } : undefined}
           viewBox={`-${pad} -${pad} ${viewW} ${viewH}`}
           preserveAspectRatio="xMidYMid meet"
           role="img"
@@ -68,6 +308,7 @@ export function Diagram({ ws }: Props) {
               <g
                 key={item.id}
                 onClick={() => {
+                  if (panned.current) return;
                   ws.select(item.id);
                   document.querySelector(`[data-row-id="${item.id}"]`)?.scrollIntoView({ block: "center" });
                 }}
