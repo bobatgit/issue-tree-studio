@@ -443,59 +443,58 @@ export function Diagram({ ws }: Props) {
               </g>
             );
           })}
-        </svg>
-
-        {layout.items
-          .filter((item) => (doc.items[item.id]?.children.length ?? 0) > 0)
-          .map((item) => {
-            const folded = ws.collapsed.has(item.id);
-            const centreX = item.x + item.w + 0.12;
-            const centreY = item.y + item.h / 2;
-            return (
-              <g
-                key={`fold-${item.id}`}
-                className="diagram-fold"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  ws.toggleCollapse(item.id);
-                }}
-                role="button"
-                aria-label={folded ? `Expand ${item.label || "item"}` : `Collapse ${item.label || "item"}`}
-              >
-                {/* A hit area the size of a Tree row's target, in diagram units. */}
-                <rect
-                  className="fold-hit"
-                  x={centreX - 0.1}
-                  y={centreY - 0.1}
-                  width={0.2}
-                  height={0.2}
-                  rx={0.05}
-                />
-                {/* The Tree view's two shapes, in diagram units rather than pixels. */}
-                <svg
-                  x={centreX - 0.055}
-                  y={centreY - 0.055}
-                  width={0.11}
-                  height={0.11}
-                  viewBox="0 0 12 12"
-                  aria-hidden="true"
+          {layout.items
+            .filter((item) => (doc.items[item.id]?.children.length ?? 0) > 0)
+            .map((item) => {
+              const folded = ws.collapsed.has(item.id);
+              const centreX = item.x + item.w + 0.12;
+              const centreY = item.y + item.h / 2;
+              return (
+                <g
+                  key={`fold-${item.id}`}
+                  className="diagram-fold"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    ws.toggleCollapse(item.id);
+                  }}
+                  role="button"
+                  aria-label={folded ? `Expand ${item.label || "item"}` : `Collapse ${item.label || "item"}`}
                 >
-                  {folded ? (
-                    <path d="M4 2.5L9 6L4 9.5Z" fill="#4a5666" />
-                  ) : (
-                    <path
-                      d="M2.5 4.5L6 8.5L9.5 4.5"
-                      fill="none"
-                      stroke="#9aa5b4"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  )}
-                </svg>
-              </g>
-            );
-          })}
+                  {/* A hit area the size of a Tree row's target, in diagram units. */}
+                  <rect
+                    className="fold-hit"
+                    x={centreX - 0.1}
+                    y={centreY - 0.1}
+                    width={0.2}
+                    height={0.2}
+                    rx={0.05}
+                  />
+                  {/* The Tree view's two shapes, in diagram units rather than pixels. */}
+                  <svg
+                    x={centreX - 0.055}
+                    y={centreY - 0.055}
+                    width={0.11}
+                    height={0.11}
+                    viewBox="0 0 12 12"
+                    aria-hidden="true"
+                  >
+                    {folded ? (
+                      <path d="M4 2.5L9 6L4 9.5Z" fill="#4a5666" />
+                    ) : (
+                      <path
+                        d="M2.5 4.5L6 8.5L9.5 4.5"
+                        fill="none"
+                        stroke="#9aa5b4"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+                  </svg>
+                </g>
+              );
+            })}
+        </svg>
       </div>
 
       <div className="section" style={{ marginTop: 14 }}>

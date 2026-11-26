@@ -3,6 +3,16 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.4] - 2026-11-26
+
+### Fixed
+
+- The Diagram's fold controls were rendered as children of the canvas wrapper rather than inside the SVG, so they
+  were HTML elements playing an SVG role: they accepted a click against a local server, where the probe found them
+  and the fold appeared to work, but they never painted and the deployed bundle did not fold at all. This is the
+  defect the production probe caught, which is the whole reason the probe runs against the deployed site and not
+  only against a local server.
+
 ## [0.10.3] - 2026-11-26
 
 ### Added

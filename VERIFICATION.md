@@ -454,3 +454,16 @@ against a local server.
 Two things remain open, both recorded and neither blocking: **#28**, the item map's order not being the tree's
 order, which the slide packing reads; and the human checks this batch cannot perform for itself, which are the
 exported deck in PowerPoint, pinch and two-finger pan on real touch hardware, and the diagram at 500 items.
+
+## 0.10.4 - the fold controls, after the production probe
+
+The probe suite runs against the deployed bundle as well as against a local server, and that is the only reason
+this was caught. Locally the fold controls were found by their accessible name and took a click, so the fold
+measured correctly. In the deployed bundle the same query found nothing and the fold did not happen. The controls
+were children of the canvas wrapper rather than of the SVG: React created the elements either way, and a local
+click reached the handler, but they were never drawn and the difference only showed in the built bundle.
+
+Two lessons worth keeping. A measurement that passes locally is not evidence about the deployed artifact, which is
+why the gate has both. And a `grep` pipeline over a build hides its failure: an earlier push in this phase went out
+with `tsc` failing because the pipeline swallowed the error and the shell continued past it. Exit codes are checked
+directly now.
