@@ -7,6 +7,7 @@
  * stored shape, which means the fixture cannot drift away from the model.
  */
 
+import { buildDoc } from "../src/model/tree";
 import { parseMarkdown } from "../src/model/markdown";
 import { SAMPLES } from "../src/model/sample";
 import type { TreeDoc } from "../src/model/types";
@@ -24,6 +25,9 @@ export const VIEW_LABELS: Record<ViewId, string> = {
 export const FIXTURE_SAMPLE = SAMPLES[0];
 
 export const FIXTURE_DOC: TreeDoc = parseMarkdown(FIXTURE_SAMPLE.markdown, FIXTURE_SAMPLE.name).doc;
+
+/** A document with no items at all, which is the empty state of the outline. */
+export const EMPTY_DOC: TreeDoc = buildDoc("Empty tree", []);
 
 const DOC_KEY = "its.doc";
 const VERSIONS_KEY = "its.versions";

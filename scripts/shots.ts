@@ -14,7 +14,8 @@
 import path from "node:path";
 import { stat } from "node:fs/promises";
 import { Page } from "./cdp";
-import { seedSource, selectView, type ViewId } from "./fixtures";
+import { EMPTY_DOC, seedSource, selectView, type ViewId } from "./fixtures";
+import type { TreeDoc } from "../src/model/types";
 
 interface Shot {
   name: string;
@@ -22,6 +23,8 @@ interface Shot {
   view?: ViewId;
   size?: [number, number];
   mobile?: boolean;
+  /** Overrides the seeded document, for a state the fixture cannot show. */
+  doc?: TreeDoc;
   /** Page source run before the shot, for a state such as folded. */
   setup?: string;
   /** An element to put a real pointer over before the shot. */
@@ -58,6 +61,13 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
   },
   {
+    name: "ticket-18-empty-1440",
+    note: "the empty state a tab from before the rename lands on (#18)",
+    view: "tree",
+    size: [1440, 900],
+    doc: EMPTY_DOC,
+  },
+  {
     name: "ticket-26-settings-1440",
     note: "the settings dialog after the Keys section was deleted (#26)",
     view: "tree",
@@ -92,7 +102,7 @@ function slug(value: string): string {
 async function runShot(shot: Shot): Promise<void> {
   const [width, height] = shot.size ?? [1440, 900];
   const page = await Page.open({
-    seed: seedSource(),
+    seed: seedSource(shot.doc),
     width,
     height,
     mobile: shot.mobile ?? false,
