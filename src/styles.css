@@ -426,7 +426,7 @@ a.text-btn {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 52px 20px 24px minmax(0, 1fr) 28px 64px 68px;
+  grid-template-columns: 52px 20px 24px minmax(0, 1fr) 28px 82px 68px;
   margin-left: var(--indent, 0px);
   align-items: center; gap: 8px; padding: 4px 8px 4px 2px;
   border-radius: 7px;
@@ -1463,7 +1463,7 @@ kbd {
 }
 
 .app.phone .row {
-  grid-template-columns: 24px 28px 34px 64px 44px;
+  grid-template-columns: 24px 28px 34px 82px 44px;
   grid-template-areas:
     "chev label label label more"
     "chev status num key more";

@@ -68,6 +68,25 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-27-keys-1440",
+    note: "key chips reading A3E-B88 shape, and the row wide enough to hold them (#27)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-27-keys-360",
+    note: "the phone row with a dashed key on the second line (#27)",
+    view: "tree",
+    size: [360, 780],
+    mobile: true,
+  },
+  {
+    name: "ticket-27-diagram-1440",
+    note: "dashed keys in the diagram boxes (#27)",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
     name: "ticket-12-numbers-1440",
     note: "the number column, Q0 to Q2.2.2, at desktop width (#12)",
     view: "tree",

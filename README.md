@@ -36,28 +36,30 @@ Requirements: Node 20 or newer. Tested on Node 22 and Windows 11.
 
 ## 1. The key scheme
 
-Every item carries a key such as `K7M2`.
+Every item carries a key such as `A3E-B88`.
 
 ```
 normalise(label)                     "  Why did PRICE fall? "  ->  "why did price fall?"
 path = ancestors + self              "why did profit fall? \u001f revenue fell? \u001f price fell?"
 digest = SHA-256(utf8(path))         e3 5c 1b ...
-key = Crockford Base32(digest)[0..4] K7M2
+key = Crockford Base32(digest)[0..5] A3E-B88
 ```
 
 * **Crockford Base32** uses the alphabet `0-9 A-Z` without `I`, `L`, `O` and `U`, so a key survives being
   read aloud, copied by hand or typed from a screenshot.
-* **Five characters** give 33,554,432 values. At the hard cap of 500 items the chance that any two items share
-  a key is 0.37 percent (birthday bound: `n(n-1) / 2 / 32^5`).
+* **Six characters** give 1,073,741,824 values, written as `A3E-B88` so a person can say `A3E` or `B88`. At
+  the hard cap of 500 items the chance that any two items share a key is 0.012 percent (birthday bound:
+  `n(n-1) / 2 / 32^6`).
 * **Path scope** means the same wording under two different parents gets two different keys, and a sibling
   reorder never changes a key.
 * **Editing changes keys.** Change a label and that item plus all of its descendants get new keys, because
-  their path changed. The old key is kept as an alias, so `K7M2` still resolves and reports "now `B8YVN`".
-* **A real collision is never silent.** If two items truncate to the same five characters, the item with the
-  larger full digest is promoted to five characters (then six, if needed). Promotion is ordered by digest, so
-  it is stable across reorders and reloads. The quality panel and the item inspector mark promoted keys.
+  their path changed. Nothing keeps the old key: a key written before a change no longer resolves.
+* **A real collision is never silent.** If two items truncate to the same six characters, the item with the
+  larger full digest is promoted: the first group stays three characters and the second extends, so `A3E-B88`
+  becomes `A3E-B88C`. Promotion is ordered by digest, so it is stable across reorders and reloads. The quality
+  panel and the item inspector mark promoted keys.
 * **Duplicate wording on the same path** (two siblings both called "Other") gets an ordinal mixed into the
-  digest, so both keep a four-character key and the quality panel flags the duplication.
+  digest, so both keep a six-character key and the quality panel flags the duplication.
 
 Nothing is abbreviated by hand: the whole item wording takes part in the hash, after normalisation that
 ignores case, spacing, typographic dashes and curly quotes.
@@ -91,7 +93,7 @@ Rows are attached by parent reference. Unknown parents are attached to the top l
 
 ### Project JSON
 
-The full project file (tree, settings, MECE flags, key aliases and every stored version) imports as a new
+The full project file (tree, settings, MECE flags and every stored version) imports as a new
 tree.
 
 Any import opens as a **new** tree, so the current one is never overwritten.
@@ -145,7 +147,7 @@ The panel runs on every change and is fully deterministic:
 | Item with a single child | note |
 | Uneven leaf depth (three or more levels apart) | note |
 | More than seven branches on one item | note |
-| Key promoted past five characters | note |
+| Key promoted past six characters | note |
 | 80 items used, or the cap reached | note / warning |
 | Splits not yet confirmed as MECE | note |
 
@@ -224,25 +226,26 @@ number,label,key,level,parent_key,status,path,branch_index,version
 * `status` is `open` or `complete`.
 * `number` leads, so the file reads as a report: `Q0` for the root, `Q2.4.1` where that is the position. The
   importer resolves columns by name, so a file exported before this column existed still imports.
-* `path` is the key path (`R4KQ/K7M2/T3PW`); `branch_index` is the 1-based position among siblings, and 0 for
+* `path` is the key path (`A3E-B88/B88-CDE/D4Q-B88`); `branch_index` is the 1-based position among siblings, and 0 for
   the root; `version` is the version the export was taken from.
 
 ### Markdown
 
 A task list with a version comment: `- [ ]` for open and `- [x]` for complete. Each line carries its number,
-then its wording, then its key at the end: `- [ ] Q2.1. How did revenue change? {[2GK88]}`. The export writes
+then its wording, then its key at the end: `- [ ] Q2.1. How did revenue change? {[A3E-B88]}`. The export writes
 no heading, so the root is the first list line. It round-trips byte for byte apart from the version stamp.
 
 A pasted outline is cleaned on the way in. An enumerator in front of a wording is dropped, so `1. Revenue`,
 `a) Revenue`, `Q2.1. Revenue`, `(3) Revenue`, `[4] Revenue` and `#7 Revenue` all become `Revenue`, and the
 report after the paste names each line with the number it received. An enumerator is only dropped when a
 separator follows it, so `2024 revenue fell 3%`, `3-way split` and `Q1 results` stay whole. A trailing
-`{[2GK88]}` is read on shape alone and dropped whether or not it resolves, because a key is always recomputed
-from the wording and its path. The older `K7M2 · Label` prefix is still read.
+`{[A3E-B88]}` is read on shape alone and dropped whether or not it resolves, because a key is always
+recomputed from the wording and its path. The older `K7M2 · Label` prefix is no longer read: an
+undashed five-character key is not a key any more.
 
 ### Project JSON
 
-The tree, settings, MECE flags, key aliases and the full version history. This is the file to move a tree
+The tree, settings, MECE flags and the full version history. This is the file to move a tree
 between machines or to archive it.
 
 ---
@@ -456,9 +459,9 @@ native `p:sp` shapes only.
 
 ## 12. Known trade-offs
 
-* Keys moved from four characters to five when the hard cap became 500: 0.37 percent collision risk at the cap,
-  against 38 percent for four characters at the same size.
+* Keys moved to six characters with a reading hyphen once people found five hard to say aloud: 0.012 percent
+  collision risk at the 500-item cap, against 0.37 percent for five.
 * Because keys follow the path, restructuring a tree renames keys. That is the price of "hash of the content
-  at its place in the argument". Old keys stay resolvable as aliases.
+  at its place in the argument". Old keys do not stay resolvable: the alias mechanism was removed.
 * The overview slide compresses large trees. The branch slides always carry every item.
 * The AI MECE review is intentionally absent; the seam and the UI state are in place.

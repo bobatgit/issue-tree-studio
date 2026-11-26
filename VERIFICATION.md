@@ -278,3 +278,44 @@ three: the export writes a number and reads one back, so a change to either side
   hit it.
 * The stripping rule is deliberately blunt on letters: `A. Smith owns the report` becomes `Smith owns the
   report`. The ticket accepted this because the report names every removal.
+
+## Phase J - six-character keys (0.10.0, breaking)
+
+| Ticket | What shipped |
+| --- | --- |
+| #27 | The hash is six Crockford Base32 characters and the key string carries a hyphen after the third, `A3E-B88`, everywhere a key appears. The alias mechanism is gone, and five-character keys no longer resolve anywhere |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.10.0 |
+| `npx vitest run` | 15 files, 175 tests, all passing (170 before, five added, none deleted) |
+| `npm run smoke` | Four decks and four CSVs; every CSV round-trips with dashes inside the key and path columns |
+| `npm run perf` | 500 items, deck 2.43 MB in 402 ms |
+| `npm run probe` | 23 of 23 checks, including the new chip check |
+| `npm run shots` | Tree, phone, diagram, markdown, rail, dialog and the empty state |
+
+## The chip grew, and the row grew with it
+
+The key string went from five characters to seven with the hyphen, so the key column in a tree row went from 64px to
+82px, and the phone row's key column with it. The probe now measures `chipsOverflowing`: the number of chips whose
+own text is wider than the box the row gives them. It is 0. That check exists because the first measurement showed
+the chip exactly filling its column with the text already at the edge, which is the failure the plan warned about.
+
+## What the tests hold
+
+* `keys.test.ts` proves the dashed shape, that the first group stays three characters however long the hash is
+  (`formatKey("A3EB88C9")` is `A3E-B88C9`), that all 500 keys at the cap are unique, and that the collision risk at
+  six characters is under one in a thousand and lower than at five.
+* `markdown.test.ts` proves `{[A3E-B88]}` is dropped whether or not it resolves, that the undashed five-character
+  form is no longer a key and stays as wording, and that the old `K7M2 · Label` prefix is not stripped.
+* `csv.test.ts` proves dashes in the key, the parent key and the path, and that the export still round-trips.
+* `app.test.tsx` proves there is no Previous keys list and no key-change count anywhere.
+
+## Known gaps in this phase
+
+* The deck was not opened in PowerPoint by hand for this phase. The smoke run writes it at 500 items without error,
+  and the byte sizes moved by about a hundred bytes, which is the wider key text.
+* Five-character keys, and the files that carry them, are refused rather than migrated. That is the decision.

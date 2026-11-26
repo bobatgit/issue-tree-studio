@@ -3,6 +3,20 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.0] - 2026-11-26
+
+### Changed
+
+- **Breaking: keys are six Crockford Base32 characters, and the key string carries a hyphen after the third**:
+  `A3E-B88`, so a person can say `A3E` or `B88`. Six characters hold 1,073,741,824 values, which puts a real
+  collision at the 500-item cap at about 0.012 percent instead of 0.37. The hyphen is part of the key everywhere
+  it appears: the CSV `key`, `parent_key` and `path` columns, the markdown token `{[A3E-B88]}`, the clipboard, the
+  row chip, the diagram box, the Details panel and the deck. On a real collision the first group stays three
+  characters and the second extends, `A3E-B88C`.
+- **Breaking: five-character keys no longer resolve, and the alias mechanism is gone.** No alias records, no
+  Previous keys list, no key-change count in History, and no `aliases` field in the saved document. The markdown
+  reader no longer accepts the older `K7M2 · Label` prefix. Version compatibility is explicitly not a concern.
+
 ## [0.9.0] - 2026-11-26
 
 ### Added

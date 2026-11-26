@@ -82,6 +82,8 @@ const CASES: ProbeCase[] = [
       rows: `document.querySelectorAll(".row").length`,
       partialClips: PARTIAL_CLIPS,
       numberedRows: `document.querySelectorAll(".row-number").length`,
+      /** A chip whose own text is wider than the box the row gives it. */
+      chipsOverflowing: `[...document.querySelectorAll(".row .key-chip")].filter((element) => element.scrollWidth > element.clientWidth + 1).length`,
       /** The spread of the numbers' left edges: a column has none. */
       numberSpread: `(() => {
         const lefts = [...document.querySelectorAll(".row-number")].map((element) => Math.round(element.getBoundingClientRect().left));
@@ -106,6 +108,7 @@ const CASES: ProbeCase[] = [
       { label: "a panel heading is 13px", from: ".section-head", field: "fontSize", exact: 13 },
       { label: "a button is 14px", from: ".icon-btn", field: "fontSize", exact: 14 },
       { label: "the key chip is 13px", from: ".row .key-chip", field: "fontSize", exact: 13 },
+      { label: "every key chip holds its whole key", derived: "chipsOverflowing", exact: 0 },
       { label: "the indent step is 15px", derived: "indentStep", exact: 15 },
     ],
   },
