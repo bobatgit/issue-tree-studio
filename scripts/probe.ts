@@ -15,7 +15,8 @@
  */
 
 import { Page } from "./cdp";
-import { seedSource, selectView, type ViewId } from "./fixtures";
+import { fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import type { TreeDoc } from "../src/model/types";
 import type { Metrics } from "./cdp";
 
 type Field = keyof Metrics;
@@ -50,6 +51,8 @@ interface ProbeCase {
   view?: ViewId;
   size?: [number, number];
   mobile?: boolean;
+  /** Overrides the seeded document, for a state the fixture cannot show. */
+  doc?: TreeDoc;
   /** Elements to report. */
   selectors?: string[];
   /** Page source run before measuring, for a state such as folded. */
@@ -309,6 +312,27 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "diagram-markers-1440",
+    note: "the shared status marker: a rounded square, and a tick when complete (#23)",
+    view: "diagram",
+    size: [1440, 900],
+    doc: fixtureWithComplete(),
+    selectors: [".diagram-svg .marker-square", ".diagram-svg .marker-tick", ".diagram-svg .nrect"],
+    derived: {
+      squares: `document.querySelectorAll(".diagram-svg .marker-square").length`,
+      ticks: `document.querySelectorAll(".diagram-svg .marker-tick").length`,
+      completeSquares: `document.querySelectorAll(".diagram-svg .marker-square.complete").length`,
+      /** The glyph the marker replaced was a circle; none should be left. */
+      circles: `document.querySelectorAll(".diagram-svg circle").length`,
+    },
+    checks: [
+      { label: "every box carries a marker square", derived: "squares", exact: 18 },
+      { label: "only the complete item carries a tick", derived: "ticks", exact: 1 },
+      { label: "the complete square says so", derived: "completeSquares", exact: 1 },
+      { label: "no circle marker is left", derived: "circles", exact: 0 },
+    ],
+  },
+  {
     name: "diagram-hover",
     note: "hover outline thickness, which must read 2 to 4px (#20)",
     view: "diagram",
@@ -388,7 +412,7 @@ function want(check: Check): string {
 async function runCase(probe: ProbeCase): Promise<Outcome[]> {
   const [width, height] = probe.size ?? [1440, 900];
   const page = await Page.open({
-    seed: seedSource(),
+    seed: seedSource(probe.doc),
     width,
     height,
     mobile: probe.mobile ?? false,

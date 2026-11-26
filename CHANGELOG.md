@@ -3,6 +3,29 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.2] - 2026-11-26
+
+### Fixed
+
+- The diagram's hover outline painted a band about a hundred and sixty pixels thick, because `stroke-width: 2` is
+  a user unit and this diagram draws in inches. All three outlines now live in CSS, in user units, so hover is a
+  thin band, and a hovered and selected box keeps the selected treatment rather than losing it to the pointer.
+- The deck's status marker on an open item is filled with the box it sits on rather than left unfilled, because
+  the library has no "no fill" value and silently substituted black for it. The smoke run printed one warning per
+  marker, which is how it was caught.
+
+### Added
+
+- Zoom and pan on the diagram canvas: control and the wheel zoom about the pointer, a drag pans, a pinch zooms
+  about the pinch centre and a two-finger drag pans. The toolbar carries minus, the percentage, plus and Fit, and
+  the keyboard carries minus, plus and zero. The level runs from 25 to 400 percent, starts at Fit and is
+  remembered per tab. The canvas keeps its inch-based viewBox and takes a CSS size, so the wrapper scrolls and
+  the layout coordinates never change with the level.
+- One shared status marker for the diagram and the deck: a rounded square, filled in the accent with a light tick
+  when an item is complete and empty when it is open, centred on the number line rather than on its baseline. One
+  module exports its geometry and colours, so the screen and the slide cannot disagree, and the deck draws
+  editable shapes instead of the `●` and `○` glyphs.
+
 ## [0.10.1] - 2026-11-26
 
 ### Changed

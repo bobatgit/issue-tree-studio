@@ -10,6 +10,8 @@ import PptxGenJS from "pptxgenjs";
 import { computeKeyMap } from "../model/keys";
 import { layoutTree, packSlides, type LayoutItem, type LayoutResult } from "../model/layout";
 import type { KeyMap, TreeDoc } from "../model/types";
+import { MARKER, markerFor, type MarkerGeometry } from "../model/marker";
+import type { ItemStatus } from "../model/types";
 
 export interface PptxExportOptions {
   showKeys: boolean;
@@ -206,14 +208,55 @@ function drawItem(
   // one line lower. The layout engine already reserves that line.
   const numberLine = Math.min(0.24, (box.fontSize * 1.24) / 72);
 
-  slide.addText(`${item.status === "complete" ? "●" : "○"} ${item.number}`, {
-    x: box.x + 0.04,
+  // The marker is the same geometry the diagram draws: a rounded square, and a
+  // tick when the item is complete. No text glyph, so both parts stay editable.
+  const marker = deckMarker(item.status, box.x, box.y + 0.05, box.fontSize);
+  slide.addShape(pptx.ShapeType.roundRect, {
+    x: marker.x,
+    y: marker.y,
+    w: marker.w,
+    h: marker.h,
+    rectRadius: marker.r,
+    fill: {
+      // The deck cannot take "none": it would fall back to black. An open marker
+      // is filled with the box it sits on, which is what empty means there.
+      color:
+        item.status === "complete"
+          ? MARKER.colour.completeFill
+          : style.fill.replace("#", ""),
+    },
+    line: {
+      color: item.status === "complete" ? MARKER.colour.completeFill : MARKER.colour.openBorder,
+      width: 0.75,
+    },
+  });
+  if (marker.tick.length === 3) {
+    // A check has a corner and this library has no freeform, so the tick is two
+    // editable line segments rather than one shape.
+    const arms: [number, number][] = [
+      [0, 1],
+      [1, 2],
+    ];
+    for (const [from, to] of arms) {
+      slide.addShape(pptx.ShapeType.line, {
+        x: marker.tick[from].x,
+        y: marker.tick[from].y,
+        w: marker.tick[to].x - marker.tick[from].x,
+        h: marker.tick[to].y - marker.tick[from].y,
+        line: { color: MARKER.colour.completeTick, width: 1.1 },
+      });
+    }
+  }
+
+  slide.addText(item.number, {
+    x: box.x + 0.17,
     y: box.y + 0.03,
-    w: Math.max(0.3, box.w - 0.24),
+    w: Math.max(0.3, box.w - 0.36),
     h: numberLine,
     fontSize: Math.max(5, Math.min(7.5, box.fontSize * 0.7)),
     color: isRoot ? "E2E8F0" : MUTED,
-    fontFace: "Segoe UI",
+    fontFace: "Consolas",
+    bold: true,
     align: "left",
     valign: "top",
   });
@@ -247,6 +290,19 @@ function drawItem(
     });
   }
 
+}
+
+/**
+ * The marker geometry the deck draws, from the module the diagram also uses.
+ * Exported so a test can prove the two callers share one definition.
+ */
+export function deckMarker(
+  status: ItemStatus,
+  boxX: number,
+  lineTop: number,
+  fontSize: number,
+): MarkerGeometry {
+  return markerFor(status, boxX, lineTop, (fontSize * 1.24) / 72);
 }
 
 function addKeyIndexSlides(

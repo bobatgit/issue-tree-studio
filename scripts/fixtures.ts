@@ -67,3 +67,15 @@ export async function selectView(page: Page, view: ViewId): Promise<void> {
   if (!clicked) throw new Error(`No view tab labelled ${label}. Did the view names change?`);
   await page.pause(300);
 }
+
+/**
+ * The fixture with the root's first branch complete, so a shot or a measurement
+ * can show a complete marker beside an open one.
+ */
+export function fixtureWithComplete(): TreeDoc {
+  const doc = parseMarkdown(FIXTURE_SAMPLE.markdown, FIXTURE_SAMPLE.name).doc;
+  const rootId = doc.rootId;
+  const firstChild = rootId ? doc.items[rootId].children[0] : undefined;
+  if (firstChild) doc.items[firstChild].status = "complete";
+  return doc;
+}

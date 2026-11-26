@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { layoutTree, packSlides } from "../model/layout";
 import { countItems } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
+import { MARKER, markerFor } from "../model/marker";
 import { Footer } from "./Footer";
 
 interface Props {
@@ -304,6 +305,7 @@ export function Diagram({ ws }: Props) {
             const isRoot = item.depth === 1;
             const style = isRoot ? ROOT : ITEM_STYLE;
             const lineHeight = (item.fontSize * 1.24) / 72;
+            const marker = markerFor(item.status, item.x, item.y + 0.05, lineHeight);
             return (
               <g
                 key={item.id}
@@ -328,14 +330,32 @@ export function Diagram({ ws }: Props) {
                   rx={0.04}
                   fill={style.fill}
                 />
-                <circle
-                  cx={item.x + 0.1}
-                  cy={item.y + 0.05 + lineHeight * 0.8}
-                  r={0.038}
-                  fill={item.status === "complete" ? "#2f6feb" : "none"}
-                  stroke={item.status === "complete" ? "#2f6feb" : "#94A3B8"}
-                  strokeWidth={0.012}
+                <rect
+                  className={`marker-square ${item.status}`}
+                  x={marker.x}
+                  y={marker.y}
+                  width={marker.w}
+                  height={marker.h}
+                  rx={marker.r}
+                  fill={item.status === "complete" ? `#${MARKER.colour.completeFill}` : MARKER.colour.openFill}
+                  stroke={
+                    item.status === "complete"
+                      ? `#${MARKER.colour.completeFill}`
+                      : `#${MARKER.colour.openBorder}`
+                  }
+                  strokeWidth={marker.stroke}
                 />
+                {marker.tick.length > 0 ? (
+                  <polyline
+                    className="marker-tick"
+                    points={marker.tick.map((point) => `${point.x},${point.y}`).join(" ")}
+                    fill="none"
+                    stroke={`#${MARKER.colour.completeTick}`}
+                    strokeWidth={marker.stroke}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ) : null}
                 {/* The number leads, beside the status marker, on its own line. */}
                 <text
                   x={item.x + 0.17}

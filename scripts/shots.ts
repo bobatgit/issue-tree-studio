@@ -14,7 +14,7 @@
 import path from "node:path";
 import { stat } from "node:fs/promises";
 import { Page } from "./cdp";
-import { EMPTY_DOC, seedSource, selectView, type ViewId } from "./fixtures";
+import { EMPTY_DOC, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 
 interface Shot {
@@ -85,6 +85,13 @@ const SHOTS: Shot[] = [
     note: "the Diagram footer carrying its counts and the build (#25)",
     view: "diagram",
     size: [1440, 900],
+  },
+  {
+    name: "ticket-23-markers-1440",
+    note: "a complete marker beside an open one, in the shared square (#23)",
+    view: "diagram",
+    size: [1440, 900],
+    doc: fixtureWithComplete(),
   },
   {
     name: "ticket-21-zoom-400",

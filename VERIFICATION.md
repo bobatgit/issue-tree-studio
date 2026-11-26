@@ -370,3 +370,50 @@ Four tickets in one visual pass, because three of them move the same row and the
   200 items would be better.
 * Nothing was opened in PowerPoint by hand, and the rails add drawn elements to every row, so the merged view at 500
   items has not been looked at.
+
+## Phase L - the diagram canvas (0.10.2)
+
+The three tickets that make a large tree readable on screen, and that give the screen and the slide one idea of
+what a finished item looks like.
+
+| Ticket | What shipped |
+| --- | --- |
+| #20 | All three box outlines moved into CSS in user units, so the hover band went from 165.75px to 1.61px, and a hovered and selected box keeps the selected treatment |
+| #21 | Zoom and pan: control and the wheel about the pointer, drag to pan, pinch and two-finger pan, a toolbar and a keyboard, 25 to 400 percent, starting at Fit and remembered per tab |
+| #23 | One shared marker module: a rounded square with a tick when complete, drawn as SVG on screen and as editable shapes in the deck |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.10.2 |
+| `npx vitest run` | 15 files, 192 tests, all passing (180 before the phase, twelve added, none deleted) |
+| `npm run smoke` | Four decks and four CSVs; the marker warnings the first attempt produced are gone |
+| `npm run perf` | 500 items, exporting without refusal |
+| `npm run probe` | 49 of 49 checks |
+| `npm run shots` | The canvas at 400 percent, a complete marker beside an open one, and the earlier views |
+
+## What the measurements and the smoke run caught
+
+* **A stale level.** Twelve rapid clicks on the zoom's plus button advanced the level by one step, because every
+  handler read the level from its render and React batched them. The probe measured `zoomLevel 125` where it
+  expected 400. The level now lives in a ref as well as in state, which also stopped the wheel listener
+  re-attaching on every zoom.
+* **A stylesheet that was not loaded.** The fit measurement treated a missing padding as `NaN`, so the canvas had
+  no size at all. A missing length now counts as zero.
+* **A silent black fill.** The deck's open marker was passed `"none"` as a fill colour, which the library rejects
+  and replaces with black, one warning per marker. It is filled with the box it sits on instead.
+* **The reason to pause #20's acceptance.** Its readings for resting and hover were both 1.61px, so the measurement
+  could not yet tell the two states apart. The acceptance spans zoom levels, and zoom did not exist yet. With #21
+  in place the same probe runs at 100 and 400 percent, and the checks now distinguish a fitted canvas from a
+  zoomed one.
+
+## Known gaps in this phase
+
+* Pinch and two-finger pan are implemented but have not been exercised on real touch hardware. The ticket says so
+  itself: the desktop pass cannot test them.
+* Nothing has been opened in PowerPoint by hand. The deck writes editable shapes, and the smoke run confirms the
+  file is produced at 500 items, but the marker as it appears in PowerPoint is unverified.
+* Panning at 500 items is not measured. The ticket asks for that to be reported rather than pre-emptively
+  optimised.
