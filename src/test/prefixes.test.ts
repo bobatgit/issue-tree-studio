@@ -48,8 +48,15 @@ const KEPT = [
   "Why did profit fall 20% year over year?",
 ];
 
+/**
+ * Labels in tree order.
+ *
+ * Deliberately not `Object.values(doc.items)`: an id is a UUID slice, so about one
+ * in fifty is all digits, and JavaScript orders integer-like keys first. That
+ * makes the map's order differ from the tree's on those runs.
+ */
 function labels(doc: TreeDoc): string[] {
-  return Object.values(doc.items).map((item) => item.label);
+  return flatten(doc).map((entry) => entry.item.label);
 }
 
 describe("pasted numbering", () => {
