@@ -68,6 +68,22 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-15-levels-1440",
+    note: "elbows and rails at four levels, and the arrow states (#15)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-15-folded-1440",
+    note: "a folded branch: the filled arrow and the count of what it hides (#15)",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const rows = [...document.querySelectorAll(".row")];
+      const second = rows.find((row) => row.getAttribute("aria-level") === "2");
+      const arrow = second ? second.querySelector(".chevron") : null;
+      if (arrow) arrow.click();`,
+  },
+  {
     name: "ticket-27-keys-1440",
     note: "key chips reading A3E-B88 shape, and the row wide enough to hold them (#27)",
     view: "tree",

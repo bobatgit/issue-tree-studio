@@ -426,8 +426,8 @@ a.text-btn {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 52px 20px 24px minmax(0, 1fr) 28px 82px 68px;
-  margin-left: var(--indent, 0px);
+  --step: 22px;
+  grid-template-columns: 52px 20px auto 30px minmax(0, 1fr) 28px 82px 68px;
   align-items: center; gap: 8px; padding: 4px 8px 4px 2px;
   border-radius: 7px;
   border: 1px solid transparent;
@@ -438,11 +438,70 @@ a.text-btn {
  * the same amount, so Q0, Q1 and Q1.2.1 all start at one left edge.
  */
 .row-number {
-  margin-left: calc(-1 * var(--indent, 0px));
   font-family: var(--mono);
   font-size: 13px;
   color: var(--faint);
   white-space: nowrap;
+}
+
+/** The elbow column carries the indent, so the numbers stay in one column. */
+.elbows {
+  position: relative;
+  align-self: stretch;
+  width: calc(var(--levels, 0) * var(--step));
+}
+
+.rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--i, 0) * var(--step) + var(--step) / 2);
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.elbow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--i, 0) * var(--step));
+  width: var(--step);
+}
+
+.elbow::before,
+.elbow::after {
+  content: "";
+  position: absolute;
+  background: var(--border-strong);
+}
+
+/** The vertical, which runs the whole row unless this row is the last child. */
+.elbow::before {
+  top: 0;
+  bottom: 0;
+  left: calc(var(--step) / 2);
+  width: 1px;
+}
+
+.elbow.last::before {
+  bottom: 50%;
+}
+
+/** The tick out to the item. */
+.elbow::after {
+  top: 50%;
+  left: calc(var(--step) / 2);
+  right: 0;
+  height: 1px;
+}
+
+.chevron-icon {
+  display: block;
+}
+
+/** A leaf keeps the arrow's width, so labels still line up column to column. */
+.chevron-slot {
+  width: 30px;
 }
 
 .row:hover {
@@ -489,14 +548,6 @@ a.text-btn {
 
 .grip:hover {
   color: var(--muted);
-}
-
-.tree-line {
-  color: var(--border-strong);
-  font-family: var(--mono);
-  font-size: 14px;
-  user-select: none;
-  text-align: center;
 }
 
 .key-chip {
@@ -1186,15 +1237,20 @@ kbd {
   border: 0;
   background: transparent;
   color: #7c8798;
-  font-size: 12px;
-  width: 24px; height: 24px; display: grid; place-items: center;
-  border-radius: 5px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
   cursor: pointer;
-  transition: transform 0.12s ease;
 }
 
 .chevron.open {
-  transform: rotate(90deg);
+  color: #9aa5b4;
+}
+
+.chevron.closed {
+  color: #4a5666;
 }
 
 .chevron:hover {
@@ -1215,12 +1271,9 @@ kbd {
 }
 
 .collapsed-count {
+  margin-left: auto;
   font-size: 12px;
-  font-weight: 700;
-  color: #5b6b80;
-  background: #eef2f7;
-  border-radius: 999px;
-  padding: 1px 6px;
+  color: var(--faint);
   white-space: nowrap;
 }
 
@@ -1463,10 +1516,11 @@ kbd {
 }
 
 .app.phone .row {
-  grid-template-columns: 24px 28px 34px 82px 44px;
+  --step: 12px;
+  grid-template-columns: auto 24px 28px 34px 82px 44px;
   grid-template-areas:
-    "chev label label label more"
-    "chev status num key more";
+    "bows chev label label label more"
+    "bows chev status num key more";
   row-gap: 4px;
   padding: 8px 8px 8px 4px;
 }
@@ -1489,6 +1543,10 @@ kbd {
 
 .app.phone .row .status-box {
   grid-area: status; width: 26px; height: 26px;
+}
+
+.app.phone .row .elbows {
+  grid-area: bows;
 }
 
 .app.phone .row .key-chip {

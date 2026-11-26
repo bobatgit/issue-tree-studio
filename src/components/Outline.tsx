@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type Keyboard
 import { copyText } from "../lib/ui";
 import { itemNumbers } from "../model/numbering";
 import { SAMPLES } from "../model/sample";
-import { descendantIds, maxDepth, parentOf, visibleEntries } from "../model/tree";
+import { maxDepth, parentOf, subtreeSizes, visibleEntries } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -42,6 +42,30 @@ interface DropTarget {
   position: DropPosition;
 }
 
+/**
+ * Two states and nothing that turns: a filled triangle pointing right when the
+ * branch is folded, an outline triangle pointing down when it is open. A leaf
+ * renders no arrow at all, so the slot keeps its width and labels still line up.
+ */
+function BranchArrow({ open }: { open: boolean }) {
+  return (
+    <svg className="chevron-icon" viewBox="0 0 12 12" width="16" height="16" aria-hidden="true" focusable="false">
+      {open ? (
+        <path
+          d="M2.5 4.5L6 8.5L9.5 4.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path d="M4 2.5L9 6L4 9.5Z" fill="currentColor" />
+      )}
+    </svg>
+  );
+}
+
 export function Outline({ ws, onImport }: Props) {
   const doc = ws.doc;
   const [dragId, setDragId] = useState<string | null>(null);
@@ -52,6 +76,26 @@ export function Outline({ ws, onImport }: Props) {
   const flat = useMemo(() => (doc ? visibleEntries(doc, ws.collapsed) : []), [doc, ws.collapsed]);
   const depth = useMemo(() => (doc ? maxDepth(doc) : 0), [doc]);
   const numbers = useMemo(() => (doc ? itemNumbers(doc) : {}), [doc]);
+  const hiddenCounts = useMemo(() => (doc ? subtreeSizes(doc) : {}), [doc]);
+
+  /**
+   * For each item, whether each ancestor above it still has a sibling below, so
+   * the rail that passes it can be drawn. The root's own entry is dropped when
+   * drawing, because the first column belongs to the item's parent.
+   */
+  const rails = useMemo(() => {
+    const out: Record<string, boolean[]> = {};
+    if (!doc) return out;
+    const walk = (id: string, above: boolean[]): void => {
+      const item = doc.items[id];
+      if (!item) return;
+      out[id] = above;
+      const last = item.children.length - 1;
+      item.children.forEach((childId, index) => walk(childId, [...above, index < last]));
+    };
+    if (doc.rootId) walk(doc.rootId, []);
+    return out;
+  }, [doc]);
 
   useEffect(() => {
     if (!focusRequest.current || !ws.selection) return;
@@ -206,6 +250,8 @@ export function Outline({ ws, onImport }: Props) {
               const item = entry.item;
               const keyInfo = ws.keyMap.byItem[item.id];
               const isRoot = entry.depth === 1;
+              const parent = entry.parentId ? doc.items[entry.parentId] : null;
+              const isLastChild = parent ? entry.index === parent.children.length - 1 : true;
               const dropClass = drop?.id === item.id ? ` drop-${drop.position}` : "";
               return (
                 <div
@@ -222,7 +268,7 @@ export function Outline({ ws, onImport }: Props) {
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  style={{ "--indent": `${(entry.depth - 1) * 15}px` } as CSSProperties}
+                  style={{ "--levels": entry.depth - 1 } as CSSProperties}
                   onClick={(event) => {
                     event.stopPropagation();
                     ws.select(item.id);
@@ -244,6 +290,23 @@ export function Outline({ ws, onImport }: Props) {
                   }}
                 >
                   <span className="row-number">{numbers[item.id] ?? ""}</span>
+                  <span
+                    className="elbows"
+                    style={{ "--levels": entry.depth - 1 } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    {(rails[item.id] ?? []).slice(1).map((hasRail, column) =>
+                      hasRail ? (
+                        <span key={column} className="rail" style={{ "--i": column } as CSSProperties} />
+                      ) : null,
+                    )}
+                    {entry.depth > 1 ? (
+                      <span
+                        className={`elbow ${isLastChild ? "last" : "more"}`}
+                        style={{ "--i": entry.depth - 2 } as CSSProperties}
+                      />
+                    ) : null}
+                  </span>
                   <button
                     type="button"
                     className="grip"
@@ -282,12 +345,10 @@ export function Outline({ ws, onImport }: Props) {
                       }}
                       onKeyDown={(event) => event.stopPropagation()}
                     >
-                      ▸
+                      <BranchArrow open={!ws.collapsed.has(item.id)} />
                     </button>
                   ) : (
-                    <span className="tree-line" aria-hidden="true">
-                      └
-                    </span>
+                    <span className="chevron-slot" aria-hidden="true" />
                   )}
 
                   <div className="label-wrap">
@@ -312,9 +373,9 @@ export function Outline({ ws, onImport }: Props) {
                       if (field) fitLabel(field);
                     }}
                   />
-                  {ws.collapsed.has(item.id) && descendantIds(doc, item.id).length > 0 ? (
-                    <span className="collapsed-count" title="Hidden items beneath this one">
-                      +{descendantIds(doc, item.id).length}
+                  {ws.collapsed.has(item.id) && (hiddenCounts[item.id] ?? 0) > 0 ? (
+                    <span className="collapsed-count" title="Items hidden inside this branch">
+                      {hiddenCounts[item.id]} hidden
                     </span>
                   ) : null}
                   </div>

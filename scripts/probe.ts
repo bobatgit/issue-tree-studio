@@ -82,6 +82,9 @@ const CASES: ProbeCase[] = [
       rows: `document.querySelectorAll(".row").length`,
       partialClips: PARTIAL_CLIPS,
       numberedRows: `document.querySelectorAll(".row-number").length`,
+      elbows: `document.querySelectorAll(".elbow").length`,
+      /** A leaf draws no arrow, so the slot count is the leaf count. */
+      slots: `document.querySelectorAll(".chevron-slot").length`,
       /** A chip whose own text is wider than the box the row gives it. */
       chipsOverflowing: `[...document.querySelectorAll(".row .key-chip")].filter((element) => element.scrollWidth > element.clientWidth + 1).length`,
       /** The spread of the numbers' left edges: a column has none. */
@@ -92,10 +95,9 @@ const CASES: ProbeCase[] = [
       })()`,
       indentStep: `(() => {
         const rows = [...document.querySelectorAll(".row")];
-        const first = rows.find((row) => row.getAttribute("aria-level") === "1");
         const second = rows.find((row) => row.getAttribute("aria-level") === "2");
-        if (!first || !second) return null;
-        return second.getBoundingClientRect().left - first.getBoundingClientRect().left;
+        const elbows = second ? second.querySelector(".elbows") : null;
+        return elbows ? Math.round(elbows.getBoundingClientRect().width) : null;
       })()`,
     },
     checks: [
@@ -109,7 +111,34 @@ const CASES: ProbeCase[] = [
       { label: "a button is 14px", from: ".icon-btn", field: "fontSize", exact: 14 },
       { label: "the key chip is 13px", from: ".row .key-chip", field: "fontSize", exact: 13 },
       { label: "every key chip holds its whole key", derived: "chipsOverflowing", exact: 0 },
-      { label: "the indent step is 15px", derived: "indentStep", exact: 15 },
+      { label: "the indent step is 22px", derived: "indentStep", exact: 22 },
+      { label: "every row below the root draws an elbow", derived: "elbows", exact: 17 },
+      { label: "every leaf keeps an empty arrow slot", derived: "slots", exact: 10 },
+    ],
+  },
+  {
+    name: "tree-folded-1440",
+    note: "a folded branch: the elbow, the rail, the arrow states and the hidden count (#15)",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const rows = [...document.querySelectorAll(".row")];
+      const second = rows.find((row) => row.getAttribute("aria-level") === "2");
+      const arrow = second ? second.querySelector(".chevron") : null;
+      if (arrow) arrow.click();`,
+    selectors: [".elbows", ".elbow", ".rail", ".chevron", ".chevron-icon", ".chevron-slot", ".collapsed-count"],
+    derived: {
+      elbows: `document.querySelectorAll(".elbow").length`,
+      slots: `document.querySelectorAll(".chevron-slot").length`,
+      /** The count is every item inside the branch, at any depth. */
+      hiddenCount: `(() => {
+        const element = document.querySelector(".collapsed-count");
+        if (!element) return null;
+        const value = Number.parseInt((element.textContent || "").trim(), 10);
+        return Number.isFinite(value) ? value : null;
+      })()`,
+    },
+    checks: [
+      { label: "a folded branch says what unfolding reveals", derived: "hiddenCount", exact: 6 },
     ],
   },
   {

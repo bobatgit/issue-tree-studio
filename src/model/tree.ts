@@ -120,6 +120,29 @@ export function subtreeIds(doc: TreeDoc, id: string): string[] {
   return out;
 }
 
+/**
+ * Every item inside each item's branch, at any depth, excluding the item itself.
+ *
+ * One pass over the map, so a folded row's count never becomes a tree walk per
+ * row. A folded branch says how many items opening it reveals, however deep they
+ * sit, which is why this is not a count of direct children.
+ */
+export function subtreeSizes(doc: TreeDoc): Record<string, number> {
+  const sizes: Record<string, number> = {};
+  const visit = (id: string): number => {
+    if (id in sizes) return sizes[id];
+    const item = doc.items[id];
+    if (!item) return 0;
+    sizes[id] = 0;
+    let total = 0;
+    for (const childId of item.children) total += 1 + visit(childId);
+    sizes[id] = total;
+    return total;
+  };
+  for (const id of Object.keys(doc.items)) visit(id);
+  return sizes;
+}
+
 function touch(doc: TreeDoc, mutate: (draft: TreeDoc) => void): TreeDoc {
   const draft: TreeDoc = {
     ...doc,
