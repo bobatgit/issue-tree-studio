@@ -421,9 +421,8 @@ native `p:sp` shapes only.
 
 ## 12. Known trade-offs
 
-* Four-character keys were an explicit requirement. They are safe at 100 nodes (0.47 percent), not at 1,000
-  (38 percent). Raising `DEFAULT_KEY_LENGTH` to 5 in `src/model/keys.ts` cuts the risk by a factor of 32
-  and needs no other change.
+* Keys moved from four characters to five when the hard cap became 500: 0.37 percent collision risk at the cap,
+  against 38 percent for four characters at the same size.
 * Because keys follow the path, restructuring a tree renames keys. That is the price of "hash of the content
   at its place in the argument". Old keys stay resolvable as aliases.
 * The overview slide compresses large trees. The branch slides always carry every node.
