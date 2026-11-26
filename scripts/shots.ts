@@ -58,6 +58,13 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
   },
   {
+    name: "ticket-26-settings-1440",
+    note: "the settings dialog after the Keys section was deleted (#26)",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const cog = document.querySelector('[aria-label="Settings"]'); if (cog) cog.click();`,
+  },
+  {
     name: "gate-markdown-1440",
     note: "the live markdown view",
     view: "markdown",

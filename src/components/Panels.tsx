@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { diffSnapshots } from "../model/diff";
 import { copyText, downloadText, formatTime, slugify } from "../lib/ui";
 import { MECE_SELF_CHECK, disabledAiReviewer, heuristicMeceReview } from "../model/mece";
-import { flatten, snapshotOf } from "../model/tree";
+import { snapshotOf } from "../model/tree";
 import type { VersionDiff } from "../model/diff";
 import type { Workspace } from "../store/useWorkspace";
 
@@ -125,129 +125,6 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
             Status: <em>not configured</em>. The deterministic checks above still run on every keystroke.
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------ keys ------------------------------ */
-
-export function KeyPanel({ ws }: { ws: Workspace }) {
-  const doc = ws.doc;
-  const [query, setQuery] = useState("");
-  const flat = useMemo(() => (doc ? flatten(doc) : []), [doc]);
-
-  if (!doc) return null;
-
-  const needle = query.trim().toUpperCase();
-  const currentMatch = needle
-    ? flat.find((entry) => ws.keyMap.byItem[entry.item.id]?.key === needle)
-    : undefined;
-  const aliasMatch =
-    !currentMatch && needle
-      ? [...doc.aliases].reverse().find((alias) => alias.from === needle || alias.to === needle)
-      : undefined;
-  const aliasItem = aliasMatch ? doc.items[aliasMatch.itemId] : undefined;
-
-  return (
-    <div>
-      <div className="section">
-        <div className="section-head">
-          <span>Resolve a key</span>
-          <span>{flat.length} keys</span>
-        </div>
-        <input
-          className="input"
-          placeholder="Type a key, e.g. K7M2"
-          value={query}
-          maxLength={12}
-          onChange={(event) => setQuery(event.target.value)}
-          aria-label="Search for a key"
-        />
-        {needle ? (
-          <div style={{ marginTop: 8 }}>
-            {currentMatch ? (
-              <button
-                type="button"
-                className="finding"
-                onClick={() => {
-                  ws.select(currentMatch.item.id);
-                  scrollToItem(ws, currentMatch.item.id);
-                }}
-              >
-                <span className="ftop">
-                  <span className="sev info" />
-                  <span className="ftitle">
-                    {needle}
-                  </span>
-                </span>
-                <span className="fdetail">{currentMatch.item.label || "Untitled"}</span>
-              </button>
-            ) : aliasMatch ? (
-              <div className="diff-block">
-                <strong>{needle}</strong> is an old key.{" "}
-                {aliasItem ? (
-                  <>
-                    It now points to <strong>{aliasMatch.to}</strong> ({aliasItem.label || "untitled"}).
-                  </>
-                ) : (
-                  <>That item was deleted.</>
-                )}
-                <div className="small muted">Changed in version {aliasMatch.v}.</div>
-              </div>
-            ) : (
-              <p className="empty-note">No item or alias has the key {needle}.</p>
-            )}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="section">
-        <div className="section-head">
-          <span>Key index</span>
-          <span>label + path → SHA-256 → Base32</span>
-        </div>
-        <table className="key-table">
-          <thead>
-            <tr>
-              <th>Key</th>
-              <th>Label</th>
-            </tr>
-          </thead>
-          <tbody>
-            {flat.map((entry) => {
-              const info = ws.keyMap.byItem[entry.item.id];
-              return (
-                <tr
-                  key={entry.item.id}
-                  onClick={() => {
-                    ws.select(entry.item.id);
-                    scrollToItem(ws, entry.item.id);
-                  }}
-                >
-                  <td className="key">
-                    <button
-                      type="button"
-                      className={`key-chip ${info?.promoted ? "promoted" : ""}`}
-                      title="Copy this key"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        copyKey(info?.key ?? "", ws, entry.item.label);
-                      }}
-                    >
-                      {info?.key ?? "····"}
-                    </button>
-                  </td>
-                  <td>{entry.item.label || <span className="muted">Untitled</span>}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <p className="small muted" style={{ marginTop: 8 }}>
-          A key changes when the item&apos;s own wording or an ancestor&apos;s wording changes. Old keys stay
-          resolvable above. Four characters hold 1,048,576 values; a real collision is extended to five and flagged.
-        </p>
       </div>
     </div>
   );
@@ -450,7 +327,7 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
       <div className="section">
         <div className="section-head">
           <span>Key</span>
-          <span>{info.promoted ? "extended after collision" : "4 characters"}</span>
+          <span>{info.promoted ? "extended after collision" : "5 characters"}</span>
         </div>
         <div className="key-big">
           <code>{info.key}</code>
@@ -459,9 +336,12 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
           </button>
         </div>
         <p className="key-explain">
-          SHA-256 of the normalised label path, cut to {info.length} Crockford Base32 characters.
+          SHA-256 of the normalised label path, cut to {info.length} Crockford Base32 characters. Five
+          characters hold 33,554,432 values; a real collision is promoted to six and flagged.
           <br />
           <code>{info.path.replace(/\u001f/g, " / ")}</code>
+          <br />
+          Editing this label, or an ancestor&apos;s wording, changes the key. Old keys stay resolvable.
         </p>
         <dl className="kv" style={{ marginTop: 10 }}>
           <dt>Key path</dt>

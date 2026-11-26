@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { APP_VERSION, BUILD_SHA, NEW_ISSUE_URL, browserMeta } from "../lib/appInfo";
 import { buildDiagnostics } from "../model/diagnostics";
 import { copyText, downloadText, slugify } from "../lib/ui";
-import { KeyPanel } from "./Panels";
 import { exportCsv } from "../model/csv";
 import { toMarkdown } from "../model/markdown";
 import type { ImportFormat, Workspace } from "../store/useWorkspace";
@@ -204,7 +203,7 @@ export function SettingsDialog({ ws, open, onClose }: DialogProps) {
         <div className="modal-head">
           <div>
             <h2>Settings</h2>
-            <p className="small muted">Keys, display and slides. Stored with the tree.</p>
+            <p className="small muted">Display and slides. Stored with the tree.</p>
           </div>
           <button type="button" className="icon-btn" aria-label="Close settings" onClick={onClose}>
             ×
@@ -212,11 +211,6 @@ export function SettingsDialog({ ws, open, onClose }: DialogProps) {
         </div>
 
         <div className="modal-body">
-          <div className="section-head">
-            <span>Keys</span>
-          </div>
-          <KeyPanel ws={ws} />
-
           <div className="section-head">
             <span>Display</span>
           </div>

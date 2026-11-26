@@ -146,13 +146,60 @@ describe("workspace shell", () => {
     await waitFor(() => expect(screen.getByRole("tab", { name: /Details/ })).toBeTruthy());
   });
 
-  it("opens Settings from the cogwheel", async () => {
+  it("opens Settings from the cogwheel, with settings in it and nothing else", async () => {
     seedTree([{ label: "Root?", depth: 1 }]);
     render(<App />);
     await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
     fireEvent.click(screen.getByLabelText("Settings"));
     await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy());
-    expect(screen.getByText("Keys", { selector: ".section-head span" })).toBeTruthy();
+
+    expect(screen.getByText("Display and slides. Stored with the tree.")).toBeTruthy();
+    expect(screen.getByText("Display", { selector: ".section-head span" })).toBeTruthy();
+    expect(screen.getByText("Slides", { selector: ".section-head span" })).toBeTruthy();
+
+    expect(screen.queryByText("Keys", { selector: ".section-head span" })).toBeNull();
+    expect(screen.queryByText("Resolve a key")).toBeNull();
+    expect(screen.queryByLabelText("Search for a key")).toBeNull();
+    expect(document.querySelector(".key-table")).toBeNull();
+  });
+
+  it("keeps a display toggle after the dialog is closed and reopened", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+    const toggle = screen.getByLabelText("Show keys in the tree and the diagram") as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    fireEvent.click(toggle);
+    expect(toggle.checked).toBe(false);
+    fireEvent.click(screen.getByLabelText("Close settings"));
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+    const reopened = (await screen.findByLabelText("Show keys in the tree and the diagram")) as HTMLInputElement;
+    expect(reopened.checked).toBe(false);
+  });
+
+  it("says item on every view, and never says the old word", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    const oldWord = /node/i;
+    expect(document.body.textContent).not.toMatch(oldWord);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    await waitFor(() => expect(document.querySelector(".markdown-area")).toBeTruthy());
+    expect(document.body.textContent).not.toMatch(oldWord);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg")).toBeTruthy());
+    expect(document.body.textContent).not.toMatch(oldWord);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    fireEvent.click(screen.getByLabelText("Settings"));
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy());
+    expect(document.body.textContent).not.toMatch(oldWord);
   });
 });
 

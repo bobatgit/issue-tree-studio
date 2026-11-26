@@ -24,9 +24,20 @@ Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, m
 - A vocabulary test fails when the word `node` appears anywhere in the source, ignoring comments, so it cannot
   creep back into the interface.
 
+### Removed
+
+- The Keys section of the Settings dialog: the key index table and the "Resolve a key" search, with the
+  `KeyPanel` component behind them. A settings dialog holds settings, and an item's key is already on its row
+  and on its key chip. Per-item key changes stay in the Details panel and per-version key counts stay in
+  History, so alias information remains visible. Searching for an item by a key or an old key is no longer
+  possible.
+
 ### Fixed
 
 - "a item" reads as "an item" in every message the rename touched.
+- The key rule moved to the Details panel and was corrected there: five characters hold 33,554,432 values and
+  a real collision is promoted to six and flagged. The paragraph it replaced still said four characters and
+  1,048,576 values.
 
 ## [0.7.0] - 2026-11-25
 

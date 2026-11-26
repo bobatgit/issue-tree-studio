@@ -121,3 +121,57 @@ could stall the first load. All three are fixed.
   collision at 500 nodes has not been observed (probability about 0.37 percent).
 * Undo depth, the 2 s text debounce and version pruning at the boundary remain code review plus manual checks.
 * The stall detector added to the local watchdog extension is documented in its own header, not in this repo.
+
+---
+
+# Verification record: 0.8.0 and later
+
+Date: 2026-11-26. Environment: Windows 11, Node 22.23.2, Edge 158 (headless, over the DevTools protocol),
+provider-independent.
+
+## Phase G - one word for one thing (0.8.0, breaking)
+
+| Ticket | What shipped |
+| --- | --- |
+| #18 | The word and the stored field both become **item**: 977 occurrences across 34 source files and the scripts. The saved map is `items` with no fallback, so a file exported before this release no longer imports and a tab open across the deploy returns as a fresh tree |
+| #26 | The Settings dialog holds settings only: the key index table, the "Resolve a key" search and `KeyPanel` are gone. The key rule moved to the Details panel and was corrected to five characters and 33,554,432 values |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean. It also proves the identifier rename is complete, because a stale reference fails |
+| `npm run build` | Clean; the bundle carries 0.8.0 |
+| `npx vitest run` | 13 files, 117 tests, all passing (107 before this phase, 10 added, none deleted) |
+| `npm run smoke` | Four `.pptx` and four `.csv`; every CSV round-trips to the same tree |
+| `npm run perf` | 500 items, 5-character keys, deck 2.42 MB in 374 ms |
+| `npm run probe` | 10 of 10 checks |
+| `npm run shots` | 8 PNGs; `ticket-18-items-1440.png` and `ticket-26-settings-1440.png` are the issue evidence |
+
+## Tests added in this phase
+
+| Test | What it proves |
+| --- | --- |
+| `vocabulary.test.ts` | No file under `src` or `scripts` contains the old word outside a comment. It earned its keep immediately: it caught a missed uppercase `NODE_CAP` in `scripts/perf.ts` that the first pass had renamed in `src` only |
+| `storage.test.ts` | A stored document from before the rename is an empty tab, never an error, and a payload that is not JSON behaves the same way |
+| `project.test.ts` | A file carrying the old field imports as nothing; a file written by this release round-trips |
+| `app.test.tsx` | A tab from before the rename starts a fresh tree; the dialog shows Display and Slides only; a display toggle survives closing the dialog; no view says the old word |
+
+## The break, checked rather than assumed
+
+The deliberate break is that a document written before 0.8.0 no longer loads. Three tests hold it in place: the
+project file import, the tab store, and the app boot. The app boots to a fresh tree with no stack trace, which
+is the same state a new tab starts in.
+
+## Baselines this phase recorded, for later phases
+
+* The diagram box outline computes to `0.02` user units, which is 1.66 px at Fit. The hover outline computes to
+  `2` user units, which is 165.75 px on screen: that is defect #20, measured rather than described.
+* The list row label is 16 px and the root label 17 px, so #17 has a starting number.
+* The indent step is 15 px per level, so #15 has a starting number.
+* The fixture is 18 items at four levels, so a count assertion has something to count.
+
+## Known gaps, unchanged from the previous record
+
+* The probe and the shots need a local browser on port 9222, so neither runs in CI. The five commands that do
+  run there are `tsc -b`, `build`, `vitest run`, `smoke` and `perf`.
