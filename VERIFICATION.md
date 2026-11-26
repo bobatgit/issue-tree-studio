@@ -1,83 +1,123 @@
 # Verification record
 
-Date: 2026-11-24. Environment: Windows 11, Node 22.23.2, npm 10.9.8.
+Date: 2026-11-25. Environment: Windows 11, Node 22.23.2, Chromium 158 (headless Edge via CDP),
+provider-independent. Live: https://bobatgit.github.io/issue-tree-studio/ at 0.7.0.
 
 ## Commands
 
 | Command | Result |
 | --- | --- |
-| `npx tsc -b` | Clean, no diagnostics |
-| `npx vite build` | Clean; main bundle 223 kB (73 kB gzip), PowerPoint chunk lazy-loaded at 378 kB |
-| `npx vitest run` | 8 files, 84 tests, all passing |
-| `npm run smoke` | Four .pptx and four .csv files written to `artifacts/` |
-| PowerPoint archive inspection | 15 slides, 0 images, native `p:sp` shapes, footer "version 1" |
-| CSV byte inspection | UTF-8 BOM present, CRLF line endings, 8 columns |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; main bundle 233 kB, PowerPoint chunk lazy at 378 kB |
+| `npx vitest run` | 11 files, 107 tests, all passing |
+| `npm run smoke` | Four `.pptx` and four `.csv` written to `artifacts/` |
+| `npm run perf` | 500-node probe, numbers below |
+| Deploy | GitHub Actions green for every phase; live URL 200 |
 
-## Acceptance checklist
+## What shipped
 
-### Goal 1: foundation and key engine
+| Phase | Tickets | Release | Headline |
+| --- | --- | --- | --- |
+| A | #3, #4 | 0.3.0 | Type concept removed; every node is a question with Open or Complete |
+| B | #5, #6, #9, #10 | 0.3.1 | Key chip right, list glyph, collapsible branches, 16px labels |
+| C | #1 | 0.4.0 | One tree per tab in `sessionStorage`, root title, live markdown view, migration |
+| D | #2, #7 | 0.5.0 | Three views, Details and History, Settings dialog, collapsible rail |
+| E | #11 | 0.6.0 | Five-character keys, nudge at 100, hard cap 500, measured at 500 |
+| F | #8 | 0.7.0 | Phone layout: one pane, details sheet, two-line rows, action sheet |
 
-| Requirement | Evidence |
-| --- | --- |
-| React + TypeScript + Vite scaffold with build and test scripts | `npm run build`, `npm test` pass |
-| SHA-256 over normalised label path, Crockford Base32, 4 characters | `keys.test.ts`: determinism, alphabet exclusion of I/L/O/U, length |
-| Path sensitivity | `keys.test.ts`: same wording under two parents gets two keys |
-| Reorder stability | `keys.test.ts`: swapped siblings produce identical keys |
-| Deterministic collision promotion | `keys.test.ts`: forced 1-character collisions are promoted until unique |
-| Duplicate content paths stay unique | `keys.test.ts`: two "Other?" siblings, distinct keys |
-| 100-node hard cap in the model | `tree.test.ts`, `markdown.test.ts`, `csv.test.ts` |
-| Markdown parse and export | `markdown.test.ts`: bullets, numbers, tabs, wrapping, inline cleanup, synthetic root, round-trip |
-| CSV schema, BOM, quoting, import | `csv.test.ts`: exact header, CRLF, quoted commas/quotes/newlines, round-trip, id/parent aliases |
+## Verification matrix
 
-### Goal 2: editor and documents
+### Keys
 
 | Requirement | Evidence |
 | --- | --- |
-| Three-pane shell with version, node counter, undo/redo, import, export | `app.test.tsx` renders the tree, key chips, tree name and Export button |
-| Add child by button, add sibling by Enter | `app.test.tsx` interaction tests |
-| Inline editing, indent/outdent, drag reorder, delete | Implemented; structural operations covered in `tree.test.ts`; drag and focus behaviour is manual |
-| Node status: row checkbox, markdown checkboxes, CSV column, version entry | `app.test.tsx`, `markdown.test.ts`, `csv.test.ts`, `tree.test.ts` |
-| Undo/redo | Implemented with a 100-step stack; not automated |
-| Multi-document library, IndexedDB autosave | IndexedDB wrapper with in-memory fallback; persistence across reload is manual |
-| Cap blocks node 101 | `tree.test.ts` |
+| Five-character Crockford Base32 over the normalised label path | `keys.test.ts`: determinism, alphabet, length 5 |
+| Path scope and reorder stability | `keys.test.ts`: same wording under two parents differs; sibling swap keeps keys |
+| Deterministic promotion on a real collision | `keys.test.ts`: forced short lengths promote until unique, and stay stable |
+| Importing an old file reports upgraded keys | `project.test.ts`: `hasLegacyKeys`; store toast on import |
 
-### Goal 3: keys, quality, MECE
+### Caps
 
 | Requirement | Evidence |
 | --- | --- |
-| Key chip on every node | `app.test.tsx` counts key chips; key chips present in the PPTX XML |
-| Key index and search resolving current keys | `KeyPanel` code; key maths covered by `keys.test.ts` |
-| Alias history and old-key resolution | Store records aliases on every version flush; resolution logic is in `KeyPanel`; manual |
-| Deterministic quality checks | `quality.test.ts`: duplicate siblings, overlap, root phrasing, single child, complete node with an open child, empty label, depth imbalance, cap |
-| MECE checklist per node | Implemented with settings persisted in the tree and exported in JSON; manual |
-| AI reviewer seam, disabled with a visible reason | `mece.ts` interface plus `disabledAiReviewer`; `app.test.tsx` asserts the panel shows the disabled state |
+| Nudge at 100, dismissible once per tab, nothing blocked | `quality.test.ts` (`NODE_COUNT_HIGH` at 120, not the cap); App effect |
+| Hard cap 500 in the model | `tree.test.ts`; `types.ts` `NODE_CAP = 500` |
+| Markdown apply refuses above 500 | `apply.test.ts` over-cap preview; `MarkdownView` block |
+| CSV and markdown imports keep the first 500 with a warning | `csv.test.ts`, `markdown.test.ts` |
 
-### Goal 4: versioning
+### Status and quality
 
 | Requirement | Evidence |
 | --- | --- |
-| Version increments on structural change | `app.test.tsx` asserts the version badge moves past v1 after adding a child |
-| Two-second debounce for text, immediate for structure | Implemented in `useWorkspace.queueVersion`; timing is manual |
-| Snapshot, keys, summary and aliases per version | `VersionEntry` model and flush code; diff logic covered by `diff.test.ts` |
-| 5,000-version cap with checkpoint protection | `pruneVersions` implementation; pruning is manual |
-| Diff, restore, checkpoint, history export | `diff.test.ts` covers add, remove, relabel, move, retype, key changes; restore and export are manual |
+| Row checkbox, Details control, markdown task list, CSV column, version trigger | `app.test.tsx`, `markdown.test.ts`, `csv.test.ts` |
+| Deck marker for every box | unzipped `stress-100.pptx`: 138 boxes, 138 markers |
+| Complete node with an open child warns | `quality.test.ts` |
+| Applying an outline keeps notes and MECE flags | `apply.test.ts` by path, then position |
 
-### Goal 5: exports
+### Storage and markdown view
 
 | Requirement | Evidence |
 | --- | --- |
-| Native editable shapes, 16:9, elbow connectors, key chips, footer | Unzipped `stress-100.pptx`: 15 slides, 0 images, `p:sp` shapes only, footer carries the version |
-| Overview slide plus packed branch slides (2 to 5 levels) | `layout.test.ts` packing tests; smoke output shows overview plus grouped branch slides |
-| Optional key index | Generated in the smoke cases; 100-row index split across 5 slides |
-| CSV with the agreed columns, BOM and quoting | `csv.test.ts`; byte inspection of `artifacts/profit-decline.csv` |
-| Markdown round-trip and project JSON | `markdown.test.ts`; JSON shape guards in the importer |
-| Preview shares the layout engine | `Diagram` and `pptx.ts` both call `layoutTree`; `layout.test.ts` bounds |
+| One tree per tab in `sessionStorage`, history pruned by byte budget with checkpoints kept | `storage.ts` `fitToBudget`; unit coverage of pruning via `pruneVersions` |
+| Title derived from the root label | `titleOf`; `app.test.tsx` shows the root as the shell title |
+| Migration adopts the newest tree, archives the rest, deletes the old database | `migrateLegacy`, guarded by a 3 s timeout; legacy connection closed before deletion |
+| Markdown apply is explicit and one undo step | `app.test.tsx`: Ctrl+Enter applies; a draft survives a view switch without committing |
+
+### Workspace and phone
+
+| Requirement | Evidence |
+| --- | --- |
+| Three views, Alt+1/2/3; Diagram full width | `app.test.tsx` diagram test; screenshots |
+| Panel holds Details and History; Quality folded in; error badge on Details | `app.test.tsx` panel tests; screenshots |
+| Keys in a Settings dialog behind the cogwheel | `app.test.tsx`: opens the dialog and finds the key section |
+| Panel collapses to a rail and returns | `app.test.tsx`; scroll and tab memory in `App.tsx` |
+| Phone: one pane, details sheet, two-line rows, action sheet, 44px targets | `app.test.tsx` row actions; browser passes below |
+
+### Exports
+
+| Requirement | Evidence |
+| --- | --- |
+| Deck exports at the 500-node cap | `npm run perf`: 2.42 MB in 469 ms |
+| CSV: 8 columns, BOM, CRLF, status in slot 4 | `csv.test.ts`; smoke artifacts |
+| Markdown round-trips through the importer with status and key prefixes ignored | `markdown.test.ts` |
+
+## Performance at 500 nodes
+
+From `npm run perf` (model path, not DOM typing):
+
+| Step | Time |
+| --- | --- |
+| computeKeyMap | 12.3 ms |
+| reviewTree | 23.0 ms |
+| toMarkdown | 2.1 ms |
+| exportCsv | 2.2 ms |
+| Deck build and write | 469 ms |
+
+## Browser passes
+
+Headless Edge through the DevTools protocol, with `sessionStorage` seeded to a fixed six-node tree, at real CSS
+viewport sizes. Screenshots are committed under `docs/screenshots/` and attached to their issues.
+
+| Viewport | What was checked | Screenshot |
+| --- | --- | --- |
+| 1440x900 | Type removal (#3), status (#4), collapsed branch (#9), markdown view (#1), three views and details (#2) | `ticket-3-*`, `ticket-4-*`, `ticket-9-*`, `ticket-1-*`, `ticket-2-*` |
+| 1440x900 | Collapsed rail (#7) | `ticket-7-rail.png` |
+| 393x852 | Phone tree with two-line rows, then the action sheet | `ticket-8-tree.png`, `ticket-8-sheet.png` |
+| 360x800 | Phone with the Details sheet open | `ticket-8-360.png` |
+
+The passes caught three defects that the unit tests could not: scrollbar arrows inside the wrapped label, a
+980 px `min-width` on the shell that broke every phone layout, and an unclosed legacy IndexedDB connection that
+could stall the first load. All three are fixed.
 
 ## Known gaps
 
-* Drag-and-drop, undo across document switches, and the version-pruning boundary were exercised by code
-  review, not by an automated browser test.
-* No end-to-end test opens the exported file in PowerPoint itself. The archive was inspected at the OOXML
-  level instead: slide count, shape types, absence of media, presence of version text.
-* IndexedDB persistence was tested through the in-memory fallback in jsdom, not against a real browser
-  profile.
+* No end-to-end test opens the exported `.pptx` in PowerPoint. The archive is inspected at the OOXML level:
+  slide count, `p:sp` shapes only, no media, one marker per box.
+* The phone layout is verified at phone CSS viewport sizes in emulation, not on an iPhone 15 or Galaxy S21 with
+  touch hardware, a soft keyboard or notch insets.
+* Two-tab independence follows from `sessionStorage` and was checked by hand; there is no automated multi-tab
+  test.
+* Collision promotion at five characters is exercised with forced short lengths; a real five-character
+  collision at 500 nodes has not been observed (probability about 0.37 percent).
+* Undo depth, the 2 s text debounce and version pruning at the boundary remain code review plus manual checks.
+* The stall detector added to the local watchdog extension is documented in its own header, not in this repo.
