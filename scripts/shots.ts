@@ -68,6 +68,12 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-24-inset-1440",
+    note: "the diagram view inset to 16px, with its legend as a section label (#24)",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
     name: "ticket-16-headings-1440",
     note: "the four column headings over their columns, and hidden on a phone (#16)",
     view: "tree",

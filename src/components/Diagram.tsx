@@ -36,7 +36,7 @@ export function Diagram({ ws }: Props) {
   const viewH = Math.max(1, layout.height) + pad * 2;
 
   return (
-    <div>
+    <div className="diagram-view">
       <div className="legend">
         <span>{layout.leaves} leaf rows</span>
       </div>

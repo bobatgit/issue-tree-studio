@@ -212,6 +212,7 @@ const CASES: ProbeCase[] = [
         return Math.round(((field.clientHeight - pad) / line) * 1000) / 1000;
       })()`,
       /** On a phone the whole first line belongs to the label. */
+      sideways: `document.documentElement.scrollWidth > window.innerWidth ? 1 : 0`,
       headHidden: `(() => {
         const head = document.querySelector(".row-head");
         return head && getComputedStyle(head).display === "none" ? 1 : 0;
@@ -229,6 +230,7 @@ const CASES: ProbeCase[] = [
       { label: "a row is at least 44px tall", from: ".row", field: "height", min: 44 },
       { label: "the phone label is 18px too", from: ".app.phone .label-input", field: "fontSize", exact: 18 },
       { label: "no phone label hides part of a line", derived: "partialClips", exact: 0 },
+      { label: "the phone does not scroll sideways", derived: "sideways", exact: 0 },
       { label: "the number sits on the second line", derived: "numberOnSecondLine", exact: 1 },
       { label: "the heading row is hidden on a phone", derived: "headHidden", exact: 1 },
     ],
@@ -251,15 +253,21 @@ const CASES: ProbeCase[] = [
     note: "diagram baseline: box, legend and the left inset (#20, #24)",
     view: "diagram",
     size: [1440, 900],
-    selectors: [".diagram-svg", ".diagram-svg .nrect", ".legend", ".diagram-wrap"],
+    selectors: [".diagram-svg", ".diagram-svg .nrect", ".legend", ".diagram-wrap", ".diagram-view .section-head"],
     derived: {
       boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
       /** Boxes whose first text is a number, so the first line is the number. */
+      /** A horizontal scrollbar means the view is wider than the window. */
+      sideways: `document.documentElement.scrollWidth > window.innerWidth ? 1 : 0`,
       numberedBoxes: `[...document.querySelectorAll(".diagram-svg text")].filter((element) => /^Q[0-9]/.test((element.textContent || "").trim())).length`,
     },
     checks: [
       { label: "every item has a box", derived: "boxes", exact: 18 },
       { label: "every box leads with its number", derived: "numberedBoxes", exact: 18 },
+      { label: "the legend shares the outline's 16px inset", from: ".legend", field: "left", exact: 16 },
+      { label: "the diagram border shares it", from: ".diagram-wrap", field: "left", exact: 16 },
+      { label: "the plan head shares it", from: ".diagram-view .section-head", field: "left", exact: 16 },
+      { label: "the view does not scroll sideways", derived: "sideways", exact: 0 },
       { label: "the canvas is present", from: ".diagram-svg", field: "width", min: 200 },
     ],
   },
