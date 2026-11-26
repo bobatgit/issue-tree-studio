@@ -171,7 +171,10 @@ export function Diagram({ ws }: Props) {
     if (!wrap) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    event.currentTarget.setPointerCapture(event.pointerId);
+    // Capture keeps the drag tracking if the pointer leaves the canvas. It is not
+    // available in every environment, and the drag works without it.
+    const target = event.currentTarget;
+    if (typeof target.setPointerCapture === "function") target.setPointerCapture(event.pointerId);
     if (pointers.current.size === 1) {
       panned.current = false;
       drag.current = {
