@@ -107,6 +107,13 @@ Every node is a question. Each node also has a status, **Open** or **Complete**:
 toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete node with an open child raises a
 warning instead of changing anything automatically.
 
+### Phone
+
+Below 640px wide, or 480px tall, the shell becomes one pane. The tree fills the screen and Details opens as a
+bottom sheet from the header. Rows put the label on the first line and status, key and an actions button on the
+second; the actions button opens Add child, Add sibling, Indent, Outdent, Move up, Move down, Copy key and
+Delete, because drag and hover are not available. The diagram stays a desktop view.
+
 The soft cap is **100 nodes**: past it a dismissible nudge suggests the tree has outgrown a single page, and
 nothing is blocked. The hard cap is **500**: the 501st add is refused, and the counter turns amber at 100.
 

@@ -5,6 +5,7 @@ import { MarkdownView } from "./components/MarkdownView";
 import { Outline } from "./components/Outline";
 import { HistoryPanel, NodePanel, QualityPanel } from "./components/Panels";
 import { TopBar } from "./components/TopBar";
+import { useMediaQuery } from "./lib/useMediaQuery";
 import { NODE_CAP, SOFT_CAP } from "./model/types";
 import { useWorkspace } from "./store/useWorkspace";
 
@@ -34,8 +35,14 @@ export function App() {
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const phone = useMediaQuery("(max-width: 640px), (max-height: 480px)");
+  const [sheet, setSheet] = useState(false);
 
   const { undo, redo } = ws;
+
+  useEffect(() => {
+    if (phone && view === "diagram") setView("tree");
+  }, [phone, view]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const savedScroll = useRef(0);
 
@@ -110,7 +117,7 @@ export function App() {
   }
 
   return (
-    <div className="app">
+    <div className={`app ${phone ? "phone" : ""}`}>
       <TopBar
         ws={ws}
         onImport={() => setImportOpen(true)}
@@ -121,7 +128,7 @@ export function App() {
       <div className={`body ${collapsed ? "panel-collapsed" : ""}`}>
         <div className="workspace">
           <div className="view-switch" role="tablist" aria-label="Workspace views">
-            {VIEWS.map((entry) => (
+            {(phone ? VIEWS.filter((entry) => entry.id !== "diagram") : VIEWS).map((entry) => (
               <button
                 key={entry.id}
                 type="button"
@@ -135,6 +142,14 @@ export function App() {
                 {entry.id === "markdown" && draft !== null ? <span className="dot" /> : null}
               </button>
             ))}
+            {phone ? (
+              <>
+                <span className="spacer" />
+                <button type="button" className="text-btn" onClick={() => setSheet(true)}>
+                  Details
+                </button>
+              </>
+            ) : null}
           </div>
 
           {view === "tree" ? <Outline ws={ws} onImport={() => setImportOpen(true)} /> : null}
@@ -142,8 +157,12 @@ export function App() {
           {view === "diagram" ? <Diagram ws={ws} /> : null}
         </div>
 
-        <aside className={`rightbar ${collapsed ? "collapsed" : ""}`} aria-label="Tree panels">
-          {collapsed ? (
+        {phone && sheet ? <div className="sheet-backdrop" onClick={() => setSheet(false)} /> : null}
+        <aside
+          className={`rightbar ${collapsed && !phone ? "collapsed" : ""} ${phone ? "sheet" : ""} ${phone && !sheet ? "hidden" : ""}`}
+          aria-label="Tree panels"
+        >
+          {collapsed && !phone ? (
             <div className="rail">
               <button
                 type="button"

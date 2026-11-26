@@ -198,8 +198,21 @@ export async function countVersions(docId: string): Promise<number> {
   return wrap(index.count(IDBKeyRange.only(docId)));
 }
 
+/** Close the cached connection so the database can be deleted. */
+async function closeDatabase(): Promise<void> {
+  const pending = dbPromise;
+  dbPromise = null;
+  if (!pending) return;
+  try {
+    (await pending)?.close();
+  } catch {
+    /* already closed */
+  }
+}
+
 /** Remove the legacy database once its trees have been adopted. */
 export async function deleteDatabase(): Promise<void> {
+  await closeDatabase();
   memory.docs.clear();
   memory.versions.clear();
   dbPromise = null;

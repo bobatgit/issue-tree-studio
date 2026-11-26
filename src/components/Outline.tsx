@@ -19,6 +19,7 @@ interface DropTarget {
 export function Outline({ ws, onImport }: Props) {
   const doc = ws.doc;
   const [dragId, setDragId] = useState<string | null>(null);
+  const [actionsFor, setActionsFor] = useState<string | null>(null);
   const [drop, setDrop] = useState<DropTarget | null>(null);
   const focusRequest = useRef(false);
 
@@ -36,6 +37,11 @@ export function Outline({ ws, onImport }: Props) {
   }, [ws.selection, doc]);
 
   if (!doc) return null;
+
+  const actionNode = actionsFor ? doc.nodes[actionsFor] : null;
+  const actionParent = actionsFor ? parentOf(doc, actionsFor) : null;
+  const actionSiblings = actionParent ? doc.nodes[actionParent]?.children ?? [] : [];
+  const actionIndex = actionsFor ? actionSiblings.indexOf(actionsFor) : -1;
 
   const focusNode = (id: string | null): void => {
     if (!id) return;
@@ -265,7 +271,13 @@ export function Outline({ ws, onImport }: Props) {
                     placeholder={isRoot ? "Write the root as a precise question" : "Write a question"}
                     aria-label={`Label for ${keyInfo?.key ?? "node"} at level ${entry.depth}`}
                     onChange={(event) => ws.editLabel(node.id, event.target.value)}
-                    onFocus={() => ws.select(node.id)}
+                    onFocus={(event) => {
+                      ws.select(node.id);
+                      const field = event.currentTarget;
+                      if (window.visualViewport && window.innerWidth <= 640) {
+                        setTimeout(() => field.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
+                      }
+                    }}
                     onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
                     onInput={(event) => {
                       const field = event.currentTarget;
@@ -309,6 +321,19 @@ export function Outline({ ws, onImport }: Props) {
                     }}
                   >
                     {keyInfo?.key ?? "····"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="row-more"
+                    aria-label="Row actions"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      ws.select(node.id);
+                      setActionsFor(node.id);
+                    }}
+                  >
+                    ⋯
                   </button>
 
                   <div className="row-actions">
@@ -382,6 +407,73 @@ export function Outline({ ws, onImport }: Props) {
           <span>Drag the handle to reorder</span>
         </div>
       </div>
+
+      {actionNode ? (
+        <div className="sheet-backdrop" onClick={() => setActionsFor(null)}>
+          <div
+            className="action-sheet"
+            role="dialog"
+            aria-label="Row actions"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="action-title">{actionNode.label || "Untitled"}</div>
+            <button type="button" onClick={() => { ws.addChild(actionNode.id); setActionsFor(null); }}>
+              Add child
+            </button>
+            <button type="button" onClick={() => { ws.addSibling(actionNode.id); setActionsFor(null); }}>
+              Add sibling
+            </button>
+            <button type="button" onClick={() => { ws.indent(actionNode.id); setActionsFor(null); }}>
+              Indent
+            </button>
+            <button type="button" onClick={() => { ws.outdent(actionNode.id); setActionsFor(null); }}>
+              Outdent
+            </button>
+            <button
+              type="button"
+              disabled={!actionParent || actionIndex <= 0}
+              onClick={() => {
+                if (actionParent) ws.move(actionNode.id, actionParent, actionIndex - 1);
+                setActionsFor(null);
+              }}
+            >
+              Move up
+            </button>
+            <button
+              type="button"
+              disabled={!actionParent || actionIndex < 0 || actionIndex >= actionSiblings.length - 1}
+              onClick={() => {
+                if (actionParent) ws.move(actionNode.id, actionParent, actionIndex + 1);
+                setActionsFor(null);
+              }}
+            >
+              Move down
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void copyKey(ws.keyMap.byNode[actionNode.id]?.key ?? "", actionNode.id, actionNode.label);
+                setActionsFor(null);
+              }}
+            >
+              Copy key
+            </button>
+            <button
+              type="button"
+              className="danger"
+              onClick={() => {
+                ws.remove(actionNode.id);
+                setActionsFor(null);
+              }}
+            >
+              Delete
+            </button>
+            <button type="button" className="cancel" onClick={() => setActionsFor(null)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

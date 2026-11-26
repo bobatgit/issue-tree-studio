@@ -3,6 +3,20 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.7.0] - 2026-11-25
+
+### Added
+
+- A phone layout below 640px wide or 480px tall: one pane, the tree full screen, Details in a bottom sheet opened
+  from the header, two-line rows with status, key and an action sheet (add, sibling, indent, outdent, move, copy
+  key, delete), 44px targets, 16px inputs, safe-area insets and `visualViewport` scrolling.
+- Tree and Markdown only on a phone; the diagram stays a desktop view.
+
+### Fixed
+
+- The legacy IndexedDB connection is closed before the database is deleted, and startup waits at most three
+  seconds for the migration, so a blocked database can no longer leave the app on its loading screen.
+
 ## [0.6.0] - 2026-11-25
 
 ### Changed

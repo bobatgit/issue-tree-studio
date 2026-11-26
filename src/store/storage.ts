@@ -146,6 +146,19 @@ export interface LegacyMigration {
  * so the caller can hand them to the user before the old database is deleted.
  */
 export async function migrateLegacy(): Promise<LegacyMigration> {
+  // Startup must never wait on a blocked or slow legacy database.
+  const empty: LegacyMigration = { adopted: null, archived: 0, archive: null };
+  try {
+    return await Promise.race([
+      runMigration(),
+      new Promise<LegacyMigration>((resolve) => setTimeout(() => resolve(empty), 3000)),
+    ]);
+  } catch {
+    return empty;
+  }
+}
+
+async function runMigration(): Promise<LegacyMigration> {
   if (typeof indexedDB === "undefined") return { adopted: null, archived: 0, archive: null };
   const legacy = await import("./db");
   const summaries = await legacy.listDocs();
