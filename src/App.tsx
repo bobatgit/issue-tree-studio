@@ -20,6 +20,32 @@ const VIEWS: { id: View; label: string; key: string }[] = [
 
 const PANEL_KEY = "its.panel";
 
+/**
+ * The History rail button used to draw a rotation arrow, which reads as undo
+ * beside the real undo buttons. This is a clock: an outlined circle, an hour
+ * hand pointing up and a minute hand pointing right. It takes the colour of the
+ * text around it, and nothing in it turns.
+ */
+function ClockIcon() {
+  return (
+    <svg
+      className="rail-icon"
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12h4.5" />
+    </svg>
+  );
+}
+
 export function App() {
   const ws = useWorkspace();
   const [tab, setTab] = useState<Tab>("details");
@@ -187,7 +213,7 @@ export function App() {
                   setCollapsed(false);
                 }}
               >
-                ⟲
+                <ClockIcon />
               </button>
             </div>
           ) : (

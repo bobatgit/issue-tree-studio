@@ -1325,6 +1325,8 @@ kbd {
 
 .rail-btn {
   position: relative;
+  display: grid;
+  place-items: center;
   width: 44px;
   height: 44px;
   border: 0;
@@ -1338,6 +1340,10 @@ kbd {
 .rail-btn:hover {
   background: #eef2f7;
   color: #2f6feb;
+}
+
+.rail-icon {
+  display: block;
 }
 
 .rail-dot {

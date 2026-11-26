@@ -3,6 +3,21 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.8.1] - 2026-11-26
+
+### Changed
+
+- Bigger type across the interface: the item label is 18px and the root 20px, panel body 14px, small and muted
+  text 13px, buttons 14px, the markdown editor 16px. Row geometry, the key chip, the status box, the chevron,
+  the top bar and the phone row grow with the text. The deck does not move, because it sizes text in points.
+- The collapsed rail draws a clock for History instead of `⟲`, which read as undo beside the real undo buttons.
+
+### Fixed
+
+- A label's three-line limit was a hand-written 72px. It no longer landed on a line boundary, so a sliver of the
+  next line showed above the following row. The limit is read from the computed line height now, so the cut
+  always falls between lines, and a probe check fails if any label ever hides part of a line.
+
 ## [0.8.0] - 2026-11-26
 
 ### Changed

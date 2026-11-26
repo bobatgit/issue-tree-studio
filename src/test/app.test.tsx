@@ -146,6 +146,25 @@ describe("workspace shell", () => {
     await waitFor(() => expect(screen.getByRole("tab", { name: /Details/ })).toBeTruthy());
   });
 
+  it("draws a clock on the history button, not a rotation arrow", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByLabelText("Collapse panel"));
+
+    const history = await screen.findByLabelText("Open history");
+    expect(history.getAttribute("title")).toBe("History");
+    expect(history.querySelector("svg")).toBeTruthy();
+    expect(history.querySelector("circle")).toBeTruthy();
+    expect(history.textContent).not.toContain("⟲");
+
+    // The details button keeps its own glyph, and both keep their target size.
+    const details = screen.getByLabelText("Open details");
+    expect(details.textContent).toContain("▤");
+    expect(history.className).toContain("rail-btn");
+    expect(details.className).toContain("rail-btn");
+  });
+
   it("opens Settings from the cogwheel, with settings in it and nothing else", async () => {
     seedTree([{ label: "Root?", depth: 1 }]);
     render(<App />);

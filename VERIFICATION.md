@@ -175,3 +175,44 @@ is the same state a new tab starts in.
 
 * The probe and the shots need a local browser on port 9222, so neither runs in CI. The five commands that do
   run there are `tsc -b`, `build`, `vitest run`, `smoke` and `perf`.
+
+## Phase H - bigger type and a clock (0.8.1)
+
+| Ticket | What shipped |
+| --- | --- |
+| #17 | The item label is 18px and the root 20px; panel body 14px, small and muted text 13px, buttons 14px, the markdown editor 16px. Row geometry grows with the text |
+| #19 | The collapsed rail draws an inline clock for History instead of `⟲`, which read as undo |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.8.1 |
+| `npx vitest run` | 13 files, 118 tests, all passing (117 before, one added) |
+| `npm run smoke` | Four `.pptx` and four `.csv`, every CSV round-trips. The deck byte sizes are **identical** to 0.8.0: 300,793, 181,760, 1,220,519 and 119,904 bytes. A screen-only change did not touch the export, and that is the check |
+| `npm run perf` | 500 items, deck 2.42 MB in 340 ms |
+| `npm run probe` | 18 of 18 checks |
+| `npm run shots` | Tree at 1440 and 360, markdown, diagram, hover, folded, the rail and the settings dialog |
+
+## What the measurements caught
+
+* **A partial line, found in a screenshot and then made impossible.** The three-line label cap was a hard 72px, which
+  stopped landing on a line boundary once the type grew: the phone shot showed a sliver of a fourth line above the
+  next row. The cap now comes from the computed line height, and `partialClips` in the probe fails if any label hides
+  part of a line at either width. The same probe check would have caught the original defect.
+* **The type scale's "now" column was wrong.** The ticket described panel headings as 13px, buttons as 13px and body
+  as 12px. The classes it named mostly belong to the document library that was removed in an earlier release, and the
+  live uppercase panel label is 11px. Where the number and the role disagreed, the role decided: a uniform factor of
+  about 1.15, with the two values the ticket states exactly applied exactly, which lands panel body on 14px and small
+  and muted text on 13px as it asks.
+* **A line-ending trap.** The first commit of the type scale stored `src/styles.css` with CRLF line endings against an
+  LF history, which turned a 72-line change into a 1584-line diff. It was amended, and the whole change is reviewable
+  again. Any script that rewrites a source file should write bytes, or check the diff afterwards.
+
+## Known gaps in this phase
+
+* The rail's clock is verified by a component test that an `svg` with a `circle` is present and by the rail screenshot.
+  Whether it reads as a clock at a glance was judged from the picture, not measured.
+* Touch targets are asserted at 44px in the phone probe, but pinching and two-finger panning still need a real
+  device and belong to #21.

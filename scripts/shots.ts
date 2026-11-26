@@ -81,6 +81,13 @@ const SHOTS: Shot[] = [
     mobile: true,
   },
   {
+    name: "ticket-19-rail-1440",
+    note: "the collapsed rail, with the clock beside the details glyph (#19)",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const collapse = document.querySelector('[aria-label="Collapse panel"]'); if (collapse) collapse.click();`,
+  },
+  {
     name: "ticket-26-settings-1440",
     note: "the settings dialog after the Keys section was deleted (#26)",
     view: "tree",
