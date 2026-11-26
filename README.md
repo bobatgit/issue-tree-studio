@@ -43,7 +43,7 @@ key = Crockford Base32(digest)[0..4] K7M2
   reorder never changes a key.
 * **Editing changes keys.** Change a label and that node plus all of its descendants get new keys, because
   their path changed. The old key is kept as an alias, so `K7M2` still resolves and reports "now `B8YVN`".
-* **A real collision is never silent.** If two nodes truncate to the same four characters, the node with the
+* **A real collision is never silent.** If two nodes truncate to the same five characters, the node with the
   larger full digest is promoted to five characters (then six, if needed). Promotion is ordered by digest, so
   it is stable across reorders and reloads. The quality panel and the node inspector mark promoted keys.
 * **Duplicate wording on the same path** (two siblings both called "Other") gets an ordinal mixed into the
@@ -135,7 +135,7 @@ The panel runs on every change and is fully deterministic:
 | Node with a single child | note |
 | Uneven leaf depth (three or more levels apart) | note |
 | More than seven branches on one node | note |
-| Key promoted past four characters | note |
+| Key promoted past five characters | note |
 | 80 nodes used, or the cap reached | note / warning |
 | Splits not yet confirmed as MECE | note |
 
@@ -394,7 +394,7 @@ about a minute, because Pages deploys on every push to `main`.
 
 ```
 npm test
-# 9 files, 88 tests: keys, markdown, CSV, tree operations, layout, quality, diff, diagnostics, app render
+# 11 files, 107 tests: keys, markdown, CSV, tree, layout, quality, diff, diagnostics, project, apply, app
 
 npm run build
 # tsc -b clean, vite build clean
