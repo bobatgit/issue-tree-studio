@@ -319,3 +319,54 @@ the chip exactly filling its column with the text already at the edge, which is 
 * The deck was not opened in PowerPoint by hand for this phase. The smoke run writes it at 500 items without error,
   and the byte sizes moved by about a hundred bytes, which is the wider key text.
 * Five-character keys, and the files that carry them, are refused rather than migrated. That is the decision.
+
+## Phase K - the list and the frame (0.10.1)
+
+Four tickets in one visual pass, because three of them move the same row and the fourth is the frame around it.
+
+| Ticket | What shipped |
+| --- | --- |
+| #15 | Box-drawing elbows and rails at a 22px step in one colour, a drawn arrow with three states, and a folded branch counting every item inside it |
+| #16 | `Item no. / Item / Key / Status` over their columns to the pixel, sticky, outside the tree role, hidden on a phone |
+| #24 | The Diagram view inset to 16px like the Tree view, and its legend brought to the section label's treatment |
+| #25 | One footer in every view, carrying the view's state and the build, with the duplicated counts removed |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.10.1 |
+| `npx vitest run` | 15 files, 180 tests, all passing (170 before the phase, ten added, none deleted) |
+| `npm run smoke` | Four decks and four CSVs, every CSV round-trips |
+| `npm run perf` | 500 items, exporting without refusal |
+| `npm run probe` | 40 of 40 checks |
+| `npm run shots` | Tree at both widths, folded, Markdown, Diagram, rail, dialog, empty state and the three footers |
+
+## What the measurements caught
+
+* **The elbow column sat in the grip's column.** The row's grid gave the grip 20px and the elbow cell `auto`, but the
+  elbow cell came first in the document, so the two were swapped and the item column started ten pixels early. The
+  heading alignment measurement found it: `labelOffset` was `-10` before the fix and `0` after.
+* **The status heading could not be centred over its column** while the status box sat at the column's start. The box
+  is now centred, and the offset is 0.
+* **Two of my own checks pointed at metrics that were never measured.** `paddingLeft` was not in the probe's metric
+  set, and the footer was not in the selector list of the cases that asserted about it. Both are fixed, which is why
+  the probe has 40 checks rather than the 37 it had.
+* **The vocabulary guard caught my own new code.** `ReactNode` contains the word the guard forbids. The component now
+  takes `PropsWithChildren`, and the guard did exactly what it was written for.
+
+## Decisions worth recording
+
+* **#16 forced a row change.** The ticket's column order is number, item, key, status, but the row rendered the status
+  box before the key chip. The two swapped, with the widths, so the headings sit over the columns they name.
+* **The tree case folds a second-level branch, not the root.** Folding the root leaves one row on screen, which made
+  the first version of the elbow and slot counts assert `0` against `17`. The counts moved to the unfolded case and
+  the folded case now folds a branch that leaves the rest of the tree visible.
+
+## Known gaps in this phase
+
+* The heading row's stickiness is asserted as a computed `position: sticky`, not by scrolling. A visual check at
+  200 items would be better.
+* Nothing was opened in PowerPoint by hand, and the rails add drawn elements to every row, so the merged view at 500
+  items has not been looked at.

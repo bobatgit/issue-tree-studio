@@ -5,6 +5,7 @@ import { describeApply, hasChanges, mergeParsed, previewApply } from "../model/a
 import { parseMarkdown, toMarkdown } from "../model/markdown";
 import { ITEM_CAP } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
+import { Footer } from "./Footer";
 
 interface Props {
   ws: Workspace;
@@ -93,13 +94,12 @@ export function MarkdownView({ ws, draft, onDraft }: Props) {
         }}
       />
 
-      <div className={`markdown-foot ${preview.overCap ? "over" : ""}`}>
+      <Footer tone={preview.overCap ? "over" : ""}>
         {error ? <span className="sev error" /> : null}
         <span>{error ?? describeApply(preview)}</span>
-        <span className="spacer" />
         {dirty ? <span className="small muted">Not applied. Ctrl+Enter applies, Esc reverts.</span> : null}
         {!dirty && hasChanges(preview) ? <span className="small muted">Matches the tree.</span> : null}
-      </div>
+      </Footer>
     </div>
   );
 }

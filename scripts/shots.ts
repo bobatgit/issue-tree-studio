@@ -68,6 +68,25 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-25-footer-tree-1440",
+    note: "the Tree view footer: its counts on the left, the build on the right (#25)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-25-footer-360",
+    note: "the footer at 360, where it wraps rather than clipping (#25)",
+    view: "tree",
+    size: [360, 780],
+    mobile: true,
+  },
+  {
+    name: "ticket-25-footer-diagram-1440",
+    note: "the Diagram footer carrying its counts and the build (#25)",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
     name: "ticket-24-inset-1440",
     note: "the diagram view inset to 16px, with its legend as a section label (#24)",
     view: "diagram",

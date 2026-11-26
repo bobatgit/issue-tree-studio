@@ -307,3 +307,45 @@ describe("the column headings", () => {
   });
 });
 
+describe("the footer", () => {
+  it("appears in all three views and carries the build", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    expect(document.querySelector(".markdown-foot .footer-build")?.textContent).toContain("0.");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    await waitFor(() => expect(document.querySelector(".markdown-area")).toBeTruthy());
+    expect(document.querySelector(".markdown-foot .footer-build")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg")).toBeTruthy());
+    expect(document.querySelector(".markdown-foot .footer-build")).toBeTruthy();
+  });
+
+  it("moves the build out of the top bar and leaves the version pill in it", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    expect(document.querySelector(".topbar .build-stamp")).toBeNull();
+    expect(document.querySelector(".topbar .pill.version")).toBeTruthy();
+  });
+
+  it("says how many items are on screen when a branch is folded", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+      { label: "A1?", depth: 3 },
+      { label: "B?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(4));
+    expect(document.querySelector(".markdown-foot")?.textContent).toContain("4 items");
+
+    fireEvent.click(screen.getAllByRole("button", { name: /^Collapse A\?/ })[0]);
+    await waitFor(() =>
+      expect(document.querySelector(".markdown-foot")?.textContent).toContain("3 of 4 items"),
+    );
+  });
+});
+

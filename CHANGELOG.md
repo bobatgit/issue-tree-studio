@@ -3,6 +3,31 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.1] - 2026-11-26
+
+### Changed
+
+- The list draws its depth: a box-drawing elbow on every row below the root and a rail for every level still open,
+  in one monochrome colour, at a 22px step. Depth is carried by shape, never by colour.
+- The collapse arrow is drawn rather than typed: a filled triangle pointing right when folded, an outline triangle
+  pointing down when open, at 1.4 times its old size with a bigger target. A leaf draws no arrow at all and keeps
+  the slot, so labels still line up column to column.
+- A folded branch says how many items it hides, counting every item inside it at any depth, from one pass over the
+  map rather than a walk per row.
+- Column headings above the list: `Item no.`, `Item`, `Key`, `Status`, each over its own column to the pixel, sticky
+  while the list scrolls, outside the tree role, absent when the tree is empty and hidden at 640px. The row's key and
+  status columns swap so the headings match the order they name.
+- One footer in every view, reusing the markdown footer's class: the state of that view on the left, the build on the
+  right. The build leaves the top bar and is no longer hidden on a phone, where the footer wraps instead. The `v1`
+  document pill stays in the top bar.
+- The Diagram view is inset by the same 16px the Tree view uses, so its legend, its box and its plan head line up
+  with the outline's rows, and its legend takes the section label's treatment.
+
+### Removed
+
+- The Tree head's `18 items · 4 levels`, the Diagram's `18 items · layout 10.0in × 1.9in` line, and the plan head's
+  slide count. Each fact now appears once, in the footer of the view it belongs to.
+
 ## [0.10.0] - 2026-11-26
 
 ### Changed

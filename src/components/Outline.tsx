@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { copyText } from "../lib/ui";
+import { Footer } from "./Footer";
 import { itemNumbers } from "../model/numbering";
 import { SAMPLES } from "../model/sample";
-import { maxDepth, parentOf, subtreeSizes, visibleEntries } from "../model/tree";
+import { countItems, maxDepth, parentOf, subtreeSizes, visibleEntries } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -206,9 +207,6 @@ export function Outline({ ws, onImport }: Props) {
   return (
     <div className="editor">
       <div className="editor-head">
-        <span>{flat.length} items</span>
-        <span className="muted">·</span>
-        <span>{depth} levels</span>
         <span className="spacer" />
         <span className="muted">Keys follow label and path</span>
         <button
@@ -568,6 +566,15 @@ export function Outline({ ws, onImport }: Props) {
           </div>
         </div>
       ) : null}
+
+      <Footer>
+        <span>
+          {ws.collapsed.size > 0
+            ? `${flat.length} of ${countItems(doc)} items`
+            : `${flat.length} items`}{" "}
+          · {depth} levels
+        </span>
+      </Footer>
     </div>
   );
 }

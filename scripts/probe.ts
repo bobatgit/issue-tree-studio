@@ -69,6 +69,7 @@ const CASES: ProbeCase[] = [
     size: [1440, 900],
     selectors: [
       ".row",
+      ".markdown-foot",
       ".row .label-input",
       ".row .label-input:not(.root-label)",
       ".row .label-input.root-label",
@@ -105,6 +106,7 @@ const CASES: ProbeCase[] = [
       { label: "no label hides part of a line", derived: "partialClips", exact: 0 },
       { label: "every row carries a number", derived: "numberedRows", exact: 18 },
       { label: "the numbers line up in one column", derived: "numberSpread", exact: 0 },
+      { label: "the footer text starts at the outline's inset", from: ".markdown-foot", field: "paddingLeft", exact: 16 },
       { label: "an item label is 18px", from: ".row .label-input:not(.root-label)", field: "fontSize", exact: 18 },
       { label: "the root label is 20px", from: ".row .label-input.root-label", field: "fontSize", exact: 20 },
       { label: "a panel heading is 13px", from: ".section-head", field: "fontSize", exact: 13 },
@@ -198,7 +200,7 @@ const CASES: ProbeCase[] = [
     view: "tree",
     size: [360, 780],
     mobile: true,
-    selectors: [".row", ".app.phone .label-input", ".topbar"],
+    selectors: [".row", ".app.phone .label-input", ".topbar", ".markdown-foot"],
     derived: {
       rows: `document.querySelectorAll(".row").length`,
       partialClips: PARTIAL_CLIPS,
@@ -213,6 +215,11 @@ const CASES: ProbeCase[] = [
       })()`,
       /** On a phone the whole first line belongs to the label. */
       sideways: `document.documentElement.scrollWidth > window.innerWidth ? 1 : 0`,
+      /** The phone hides nothing: the footer is the only place the build appears. */
+      stampShown: `(() => {
+        const stamp = document.querySelector(".footer-build");
+        return stamp && getComputedStyle(stamp).display !== "none" ? 1 : 0;
+      })()`,
       headHidden: `(() => {
         const head = document.querySelector(".row-head");
         return head && getComputedStyle(head).display === "none" ? 1 : 0;
@@ -231,6 +238,8 @@ const CASES: ProbeCase[] = [
       { label: "the phone label is 18px too", from: ".app.phone .label-input", field: "fontSize", exact: 18 },
       { label: "no phone label hides part of a line", derived: "partialClips", exact: 0 },
       { label: "the phone does not scroll sideways", derived: "sideways", exact: 0 },
+      { label: "the build is reachable on a phone", derived: "stampShown", exact: 1 },
+      { label: "the footer wraps rather than clipping", from: ".markdown-foot", field: "height", min: 30 },
       { label: "the number sits on the second line", derived: "numberOnSecondLine", exact: 1 },
       { label: "the heading row is hidden on a phone", derived: "headHidden", exact: 1 },
     ],

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { layoutTree, packSlides } from "../model/layout";
-import { flatten } from "../model/tree";
+import { countItems } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
+import { Footer } from "./Footer";
 
 interface Props {
   ws: Workspace;
@@ -136,7 +137,6 @@ export function Diagram({ ws }: Props) {
       <div className="section" style={{ marginTop: 14 }}>
         <div className="section-head">
           <span>PowerPoint plan</span>
-          <span className="small muted">{groups.length} slide{groups.length === 1 ? "" : "s"}</span>
         </div>
         <p className="small muted" style={{ marginTop: 0 }}>
           Slide 1 is a structure overview. Branch slides pack several branches together so two to five levels share a
@@ -161,10 +161,13 @@ export function Diagram({ ws }: Props) {
         {layout.fontSize < 6.5 ? (
           <p className="small muted">The diagram is dense at this size; the branch slides will be larger.</p>
         ) : null}
-        <p className="small muted">
-          {flatten(doc).length} items · layout {layout.width.toFixed(1)}in × {layout.height.toFixed(1)}in
-        </p>
       </div>
+
+      <Footer>
+        <span>
+          {countItems(doc)} items · {groups.length} slide{groups.length === 1 ? "" : "s"}
+        </span>
+      </Footer>
     </div>
   );
 }

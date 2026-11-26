@@ -1421,10 +1421,19 @@ kbd {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 7px 16px;
+  row-gap: 2px;
+  flex-wrap: wrap;
   border-top: 1px solid var(--border);
   font-size: 13px;
   color: var(--muted);
+}
+
+.footer-build {
+  font-family: var(--mono);
+  color: var(--faint);
+  text-decoration: none;
+  white-space: nowrap;
 }
 
 .markdown-foot.over {

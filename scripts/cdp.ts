@@ -44,6 +44,8 @@ export interface Metrics {
   color: string;
   background: string;
   stroke: string;
+  /** Left padding in CSS pixels, for checking an inset. */
+  paddingLeft: number;
   /** Stroke width in SVG user units, as computed. 0 for a non-SVG element. */
   strokeWidth: number;
   /** The same stroke in CSS pixels, which is what the eye sees. */
@@ -281,6 +283,7 @@ export class Page {
           stroke: svg ? style.stroke : "",
           strokeWidth,
           strokePx: round(strokeWidth * scale),
+          paddingLeft: Math.round(Number.parseFloat(style.paddingLeft) || 0),
           left: Math.round(box.left),
           top: Math.round(box.top),
           right: Math.round(box.right),

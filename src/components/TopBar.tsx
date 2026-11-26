@@ -1,4 +1,3 @@
-import { APP_VERSION, BUILD_SHA, REPO_URL } from "../lib/appInfo";
 import { titleOf } from "../model/tree";
 import { ITEM_CAP, SOFT_CAP } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
@@ -80,15 +79,6 @@ export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
         Export
       </button>
 
-      <a
-        className="build-stamp"
-        href={`${REPO_URL}/releases`}
-        target="_blank"
-        rel="noreferrer"
-        title="App build. Open releases for the change list."
-      >
-        {APP_VERSION} · {BUILD_SHA}
-      </a>
     </header>
   );
 }
