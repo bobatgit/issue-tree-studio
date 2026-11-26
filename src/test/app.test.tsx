@@ -349,3 +349,18 @@ describe("the footer", () => {
   });
 });
 
+describe("the diagram outline", () => {
+  it("keeps every box outline in CSS rather than inline attributes", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg .nrect")).toBeTruthy());
+
+    const box = document.querySelector(".diagram-svg .nrect");
+    expect(box?.getAttribute("stroke")).toBeNull();
+    expect(box?.getAttribute("stroke-width")).toBeNull();
+    expect(box?.classList.contains("root")).toBe(true);
+  });
+});
+

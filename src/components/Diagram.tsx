@@ -73,15 +73,19 @@ export function Diagram({ ws }: Props) {
                 }}
               >
                 <rect
-                  className="nrect"
+                  className={[
+                    "nrect",
+                    isRoot ? "root" : "",
+                    ws.selection === item.id ? "selected" : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
                   x={item.x}
                   y={item.y}
                   width={item.w}
                   height={item.h}
                   rx={0.04}
                   fill={style.fill}
-                  stroke={ws.selection === item.id ? "#2F6FEB" : style.border}
-                  strokeWidth={ws.selection === item.id ? 0.022 : 0.009}
                 />
                 <circle
                   cx={item.x + 0.1}

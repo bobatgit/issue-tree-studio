@@ -278,6 +278,7 @@ const CASES: ProbeCase[] = [
       { label: "the plan head shares it", from: ".diagram-view .section-head", field: "left", exact: 16 },
       { label: "the view does not scroll sideways", derived: "sideways", exact: 0 },
       { label: "the canvas is present", from: ".diagram-svg", field: "width", min: 200 },
+      { label: "the resting outline is thin too", from: ".diagram-svg .nrect", field: "strokePx", max: 2 },
     ],
   },
   {
@@ -287,6 +288,15 @@ const CASES: ProbeCase[] = [
     size: [1440, 900],
     selectors: [".diagram-svg .nrect"],
     hover: ".diagram-svg .nrect",
+    checks: [
+      {
+        label: "the hover outline is a thin band, not a filled box",
+        from: ".diagram-svg .nrect",
+        field: "strokePx",
+        min: 0.5,
+        max: 4,
+      },
+    ],
   },
 ];
 

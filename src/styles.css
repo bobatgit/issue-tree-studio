@@ -1079,13 +1079,34 @@ kbd {
   height: auto;
 }
 
+/**
+ * All three outlines live here, because splitting them between CSS and the
+ * component is how the two got out of step. A stroke width in SVG is a user
+ * unit, and this diagram draws in inches: one unit is about a hundred pixels, so
+ * the resting outline is 0.009 and the hover outline is 0.016 rather than 2.
+ */
 .diagram-svg .nrect {
   cursor: pointer;
+  stroke: #94a3b8;
+  stroke-width: 0.009;
+}
+
+.diagram-svg .nrect.root {
+  stroke: #0f172a;
 }
 
 .diagram-svg .nrect:hover {
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 0.016;
+}
+
+/**
+ * Last, and at the same specificity as the hover rule, so a hovered and selected
+ * box keeps the selected treatment rather than losing it to the pointer.
+ */
+.diagram-svg .nrect.selected {
+  stroke: var(--accent);
+  stroke-width: 0.022;
 }
 
 .ai-box {
