@@ -20,6 +20,19 @@ import type { Metrics } from "./cdp";
 
 type Field = keyof Metrics;
 
+/**
+ * Label fields hiding part of a line. A field is either entirely visible or it
+ * scrolls, and what it scrolls past must be whole lines, or the eye sees a cut
+ * glyph above the next row.
+ */
+const PARTIAL_CLIPS = `[...document.querySelectorAll(".row .label-input")].filter((field) => {
+  const overflow = field.scrollHeight - field.clientHeight;
+  if (overflow <= 1) return false;
+  const line = Number.parseFloat(getComputedStyle(field).lineHeight);
+  const hidden = overflow / line;
+  return Math.abs(hidden - Math.round(hidden)) > 0.2;
+}).length`;
+
 interface Check {
   label: string;
   from?: string;
@@ -61,9 +74,13 @@ const CASES: ProbeCase[] = [
       ".row .label-input.root-label",
       ".row .key-chip",
       ".chevron",
+      ".section-head",
+      ".icon-btn",
+      ".doc-title",
     ],
     derived: {
       rows: `document.querySelectorAll(".row").length`,
+      partialClips: PARTIAL_CLIPS,
       indentStep: `(() => {
         const rows = [...document.querySelectorAll(".row")];
         const first = rows.find((row) => row.getAttribute("aria-level") === "1");
@@ -74,8 +91,12 @@ const CASES: ProbeCase[] = [
     },
     checks: [
       { label: "the fixture renders every item", derived: "rows", exact: 18 },
-      { label: "a row label is 16px", from: ".row .label-input:not(.root-label)", field: "fontSize", exact: 16 },
-      { label: "the root label is 17px", from: ".row .label-input.root-label", field: "fontSize", exact: 17 },
+      { label: "no label hides part of a line", derived: "partialClips", exact: 0 },
+      { label: "an item label is 18px", from: ".row .label-input:not(.root-label)", field: "fontSize", exact: 18 },
+      { label: "the root label is 20px", from: ".row .label-input.root-label", field: "fontSize", exact: 20 },
+      { label: "a panel heading is 13px", from: ".section-head", field: "fontSize", exact: 13 },
+      { label: "a button is 14px", from: ".icon-btn", field: "fontSize", exact: 14 },
+      { label: "the key chip is 13px", from: ".row .key-chip", field: "fontSize", exact: 13 },
       { label: "the indent step is 15px", derived: "indentStep", exact: 15 },
     ],
   },
@@ -85,11 +106,26 @@ const CASES: ProbeCase[] = [
     view: "tree",
     size: [360, 780],
     mobile: true,
-    selectors: [".row", ".row .label-input", ".topbar"],
-    derived: { rows: `document.querySelectorAll(".row").length` },
+    selectors: [".row", ".app.phone .label-input", ".topbar"],
+    derived: {
+      rows: `document.querySelectorAll(".row").length`,
+      partialClips: PARTIAL_CLIPS,
+      /** Visible lines in the tallest label, which is the one at its cap. */
+      tallestLabelLines: `(() => {
+        const fields = [...document.querySelectorAll(".row .label-input")];
+        if (fields.length === 0) return null;
+        const field = fields.reduce((tallest, other) => (other.scrollHeight > tallest.scrollHeight ? other : tallest));
+        const style = getComputedStyle(field);
+        const line = Number.parseFloat(style.lineHeight);
+        const pad = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
+        return Math.round(((field.clientHeight - pad) / line) * 1000) / 1000;
+      })()`,
+    },
     checks: [
       { label: "every item renders on a phone", derived: "rows", exact: 18 },
       { label: "a row is at least 44px tall", from: ".row", field: "height", min: 44 },
+      { label: "the phone label is 18px too", from: ".app.phone .label-input", field: "fontSize", exact: 18 },
+      { label: "no phone label hides part of a line", derived: "partialClips", exact: 0 },
     ],
   },
   {
@@ -100,7 +136,9 @@ const CASES: ProbeCase[] = [
     selectors: [".markdown-area", ".markdown-head", ".markdown-foot"],
     checks: [
       { label: "the editor is present", from: ".markdown-area", field: "width", min: 200 },
+      { label: "the editor is 16px", from: ".markdown-area", field: "fontSize", exact: 16 },
       { label: "the footer is present", from: ".markdown-foot", field: "width", min: 200 },
+      { label: "the footer is 13px", from: ".markdown-foot", field: "fontSize", exact: 13 },
     ],
   },
   {

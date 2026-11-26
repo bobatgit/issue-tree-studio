@@ -68,6 +68,19 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-17-type-1440",
+    note: "the type scale at desktop width, where the labels are 18px and the root 20px (#17)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-17-type-360",
+    note: "the type scale at phone width, where the two-line row must still hold (#17)",
+    view: "tree",
+    size: [360, 780],
+    mobile: true,
+  },
+  {
     name: "ticket-26-settings-1440",
     note: "the settings dialog after the Keys section was deleted (#26)",
     view: "tree",

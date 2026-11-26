@@ -11,6 +11,31 @@ interface Props {
 
 type DropPosition = "before" | "after" | "into";
 
+/** A label shows this many lines and scrolls beyond them. */
+const LABEL_LINES = 3;
+
+/**
+ * Grow a label field to its content, never past three lines. The cap is read
+ * from the computed style rather than written down, so it stays exactly three
+ * lines at any type size and the cut lands on a line boundary.
+ */
+function fitLabel(field: HTMLTextAreaElement): void {
+  field.style.height = "auto";
+  const style = getComputedStyle(field);
+  const line = Number.parseFloat(style.lineHeight);
+  if (!Number.isFinite(line)) {
+    field.style.height = `${field.scrollHeight}px`;
+    return;
+  }
+  const vertical =
+    Number.parseFloat(style.paddingTop) +
+    Number.parseFloat(style.paddingBottom) +
+    Number.parseFloat(style.borderTopWidth) +
+    Number.parseFloat(style.borderBottomWidth);
+  const cap = Math.round(line * LABEL_LINES + vertical);
+  field.style.height = `${Math.min(field.scrollHeight, cap)}px`;
+}
+
 interface DropTarget {
   id: string;
   position: DropPosition;
@@ -279,15 +304,9 @@ export function Outline({ ws, onImport }: Props) {
                       }
                     }}
                     onKeyDown={(event) => onKeyDown(event, item.id, item.label, index, entry.parentId, entry.index)}
-                    onInput={(event) => {
-                      const field = event.currentTarget;
-                      field.style.height = "auto";
-                      field.style.height = `${Math.min(field.scrollHeight, 72)}px`;
-                    }}
+                    onInput={(event) => fitLabel(event.currentTarget)}
                     ref={(field) => {
-                      if (!field) return;
-                      field.style.height = "auto";
-                      field.style.height = `${Math.min(field.scrollHeight, 72)}px`;
+                      if (field) fitLabel(field);
                     }}
                   />
                   {ws.collapsed.has(item.id) && descendantIds(doc, item.id).length > 0 ? (

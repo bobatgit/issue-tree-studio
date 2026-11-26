@@ -23,7 +23,7 @@
   --shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 20px rgba(15, 23, 42, 0.05);
   --mono: "Cascadia Mono", "Consolas", "SFMono-Regular", ui-monospace, monospace;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text);
   background: var(--bg);
 }
@@ -76,9 +76,7 @@ textarea:focus-visible,
 .topbar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
-  height: 58px;
+  gap: 12px; padding: 0 16px; height: 62px;
   background: var(--panel);
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
@@ -101,7 +99,7 @@ textarea:focus-visible,
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -127,14 +125,11 @@ textarea:focus-visible,
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
+  gap: 5px; height: 26px; padding: 0 8px; border-radius: 999px;
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 560;
   white-space: nowrap;
 }
@@ -178,14 +173,11 @@ textarea:focus-visible,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: 7px;
+  gap: 6px; height: 34px; padding: 0 10px; border-radius: 7px;
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 540;
   white-space: nowrap;
 }
@@ -225,7 +217,7 @@ textarea:focus-visible,
 
 .build-stamp {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 12px;
   color: var(--faint);
   text-decoration: none;
   padding: 4px 6px;
@@ -410,7 +402,7 @@ a.text-btn {
   padding: 10px 18px;
   border-bottom: 1px solid var(--border);
   background: var(--panel-alt);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   flex: 0 0 auto;
 }
@@ -434,10 +426,8 @@ a.text-btn {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 18px 22px minmax(0, 1fr) 26px 54px 62px;
-  align-items: center;
-  gap: 7px;
-  padding: 3px 6px 3px 2px;
+  grid-template-columns: 20px 24px minmax(0, 1fr) 28px 64px 68px;
+  align-items: center; gap: 8px; padding: 4px 8px 4px 2px;
   border-radius: 7px;
   border: 1px solid transparent;
 }
@@ -458,11 +448,7 @@ a.text-btn {
 
 .row.drop-before::before,
 .row.drop-after::after {
-  content: "";
-  position: absolute;
-  left: 46px;
-  right: 8px;
-  height: 2px;
+  content: ""; position: absolute; left: 52px; right: 8px; height: 2px;
   background: var(--accent);
   border-radius: 2px;
 }
@@ -481,12 +467,9 @@ a.text-btn {
 
 .grip {
   border: 0;
-  background: transparent;
-  color: var(--faint);
-  cursor: grab;
-  height: 26px;
+  background: transparent; color: var(--faint); cursor: grab; height: 28px;
   padding: 0;
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: -2px;
   line-height: 1;
 }
@@ -498,7 +481,7 @@ a.text-btn {
 .tree-line {
   color: var(--border-strong);
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
   user-select: none;
   text-align: center;
 }
@@ -508,12 +491,9 @@ a.text-btn {
   background: #f4f6fa;
   border-radius: 5px;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.06em;
-  font-weight: 600;
-  color: #3f4c5c;
-  height: 22px;
-  padding: 0 5px;
+  font-weight: 600; color: #3f4c5c; height: 26px; padding: 0 7px;
   display: grid;
   place-items: center;
 }
@@ -536,10 +516,7 @@ a.text-btn {
   scrollbar-width: none;
   display: block;
   background: transparent;
-  border-radius: 5px;
-  padding: 5px 7px;
-  font-size: 16px;
-  line-height: 1.4;
+  border-radius: 5px; padding: 6px 8px; font-size: 18px; line-height: 1.4;
   width: 100%;
   min-width: 0;
 }
@@ -557,7 +534,7 @@ a.text-btn {
 
 .label-input.root-label {
   font-weight: 620;
-  font-size: 17px;
+  font-size: 20px;
 }
 
 .row-actions {
@@ -577,11 +554,7 @@ a.text-btn {
   border: 1px solid transparent;
   background: transparent;
   color: var(--muted);
-  border-radius: 5px;
-  height: 24px;
-  min-width: 24px;
-  padding: 0 4px;
-  font-size: 13px;
+  border-radius: 5px; height: 28px; min-width: 28px; padding: 0 4px; font-size: 14px;
   line-height: 1;
 }
 
@@ -611,12 +584,12 @@ a.text-btn {
   gap: 14px;
   margin-top: 14px;
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: 13px;
 }
 
 kbd {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 12px;
   border: 1px solid var(--border-strong);
   border-bottom-width: 2px;
   border-radius: 4px;
@@ -640,7 +613,7 @@ kbd {
   background: transparent;
   border-bottom: 2px solid transparent;
   padding: 8px 8px 9px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 560;
   color: var(--muted);
   white-space: nowrap;
@@ -658,9 +631,8 @@ kbd {
 .tab .count {
   display: inline-block;
   margin-left: 4px;
-  font-size: 10px;
-  padding: 1px 5px;
-  border-radius: 999px;
+  font-size: 12px;
+  padding: 1px 6px; border-radius: 999px;
   background: var(--panel-alt);
   border: 1px solid var(--border);
   color: var(--muted);
@@ -689,7 +661,7 @@ kbd {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: 13px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--faint);
@@ -742,12 +714,12 @@ kbd {
 }
 
 .finding .ftitle {
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 590;
 }
 
 .finding .fdetail {
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.45;
 }
@@ -773,7 +745,7 @@ kbd {
 
 .empty-note {
   color: var(--muted);
-  font-size: 12px;
+  font-size: 14px;
   border: 1px dashed var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -785,7 +757,7 @@ kbd {
 }
 
 .small {
-  font-size: 11.5px;
+  font-size: 13px;
 }
 
 .field {
@@ -796,7 +768,7 @@ kbd {
 }
 
 .field > label {
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--faint);
@@ -810,7 +782,7 @@ kbd {
   border-radius: 7px;
   background: #fff;
   padding: 8px 9px;
-  font-size: 13px;
+  font-size: 14px;
   width: 100%;
 }
 
@@ -824,7 +796,7 @@ kbd {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  font-size: 12.5px;
+  font-size: 14px;
   line-height: 1.4;
   padding: 7px 0;
   cursor: pointer;
@@ -847,20 +819,20 @@ kbd {
 
 .key-big code {
   font-family: var(--mono);
-  font-size: 20px;
+  font-size: 22px;
   letter-spacing: 0.12em;
   font-weight: 600;
 }
 
 .key-explain {
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--muted);
   line-height: 1.5;
 }
 
 .key-explain code {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 12px;
   background: #eef2f7;
   border-radius: 3px;
   padding: 1px 3px;
@@ -869,9 +841,9 @@ kbd {
 
 .kv {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr);
+  grid-template-columns: 96px minmax(0, 1fr);
   gap: 4px 8px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .kv dt {
@@ -883,46 +855,16 @@ kbd {
   overflow-wrap: anywhere;
 }
 
-.key-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
 
-.key-table th {
-  text-align: left;
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--faint);
-  padding: 5px 4px;
-  border-bottom: 1px solid var(--border);
-  font-weight: 650;
-}
 
-.key-table td {
-  padding: 5px 4px;
-  border-bottom: 1px solid #f0f3f7;
-  vertical-align: top;
-}
 
-.key-table tr:hover td {
-  background: var(--panel-alt);
-  cursor: pointer;
-}
 
-.key-table td.key {
-  font-family: var(--mono);
-  letter-spacing: 0.06em;
-  font-weight: 600;
-  white-space: nowrap;
-}
 
 .legend {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   margin: 8px 0;
 }
@@ -953,11 +895,11 @@ kbd {
 .version-row .vnum {
   font-family: var(--mono);
   font-weight: 650;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .version-row .vsum {
-  font-size: 12px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -967,7 +909,7 @@ kbd {
   display: flex;
   gap: 8px;
   color: var(--faint);
-  font-size: 11px;
+  font-size: 13px;
   margin-top: 2px;
 }
 
@@ -983,12 +925,12 @@ kbd {
   padding: 9px;
   margin-bottom: 8px;
   background: var(--panel-alt);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .diff-block h4 {
   margin: 0 0 5px;
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--faint);
@@ -1033,7 +975,7 @@ kbd {
   border-radius: 8px;
   padding: 10px;
   background: var(--panel-alt);
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -1060,7 +1002,7 @@ kbd {
   color: #f1f5f9;
   border-radius: 8px;
   padding: 10px 12px;
-  font-size: 12.5px;
+  font-size: 14px;
   box-shadow: var(--shadow);
 }
 
@@ -1077,7 +1019,7 @@ kbd {
   border: 0;
   background: transparent;
   color: #cbd5e1;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .modal-backdrop {
@@ -1102,14 +1044,14 @@ kbd {
 
 .modal h2 {
   margin: 0 0 4px;
-  font-size: 17px;
+  font-size: 20px;
   letter-spacing: -0.01em;
 }
 
 .modal p.sub {
   margin: 0 0 14px;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: 14px;
 }
 
 .modal-actions {
@@ -1130,7 +1072,7 @@ kbd {
   background: #fff;
   border-radius: 999px;
   padding: 5px 11px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .format-tabs button.active {
@@ -1144,7 +1086,7 @@ kbd {
   border: 1px dashed var(--border-strong);
   border-radius: 8px;
   padding: 10px;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--muted);
   text-align: center;
 }
@@ -1157,7 +1099,7 @@ kbd {
 .import-text {
   min-height: 150px;
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .sr-only {
@@ -1177,7 +1119,7 @@ kbd {
   display: grid;
   place-items: center;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1191,14 +1133,12 @@ kbd {
 }
 
 .status-box {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
+  width: 20px; height: 20px; flex: 0 0 20px;
   border-radius: 4px;
   border: 1.5px solid #c2ccd9;
   background: #fff;
   color: #fff;
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1;
   padding: 0;
   display: grid;
@@ -1218,10 +1158,7 @@ kbd {
 .status-toggle {
   border: 1px solid var(--border);
   background: #fff;
-  border-radius: 5px;
-  height: 28px;
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 5px; height: 32px; font-size: 14px; font-weight: 600;
   color: var(--muted);
   cursor: pointer;
 }
@@ -1236,11 +1173,8 @@ kbd {
   border: 0;
   background: transparent;
   color: #7c8798;
-  font-size: 10px;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
+  font-size: 12px;
+  width: 24px; height: 24px; display: grid; place-items: center;
   border-radius: 5px;
   cursor: pointer;
   transition: transform 0.12s ease;
@@ -1268,7 +1202,7 @@ kbd {
 }
 
 .collapsed-count {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #5b6b80;
   background: #eef2f7;
@@ -1282,7 +1216,7 @@ kbd {
 }
 
 .doc-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 620;
   color: var(--text);
   max-width: 42ch;
@@ -1309,7 +1243,7 @@ kbd {
   border: 0;
   background: transparent;
   padding: 7px 12px 8px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--muted);
   border-bottom: 2px solid transparent;
@@ -1357,7 +1291,7 @@ kbd {
   resize: none;
   padding: 14px 16px;
   font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--text);
   background: #fff;
@@ -1369,7 +1303,7 @@ kbd {
   gap: 8px;
   padding: 7px 12px;
   border-top: 1px solid var(--border);
-  font-size: 11.5px;
+  font-size: 13px;
   color: var(--muted);
 }
 
@@ -1396,7 +1330,7 @@ kbd {
   border: 0;
   background: transparent;
   color: #5b6b80;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   border-radius: 6px;
 }
@@ -1419,10 +1353,7 @@ kbd {
 .panel-collapse {
   border: 0;
   background: transparent;
-  color: #7c8798;
-  font-size: 15px;
-  width: 24px;
-  height: 24px;
+  color: #7c8798; font-size: 17px; width: 26px; height: 26px;
   border-radius: 5px;
   cursor: pointer;
 }
@@ -1513,7 +1444,7 @@ kbd {
 }
 
 .app.phone .row {
-  grid-template-columns: 22px minmax(0, 1fr) 26px 54px 40px;
+  grid-template-columns: 24px minmax(0, 1fr) 28px 64px 44px;
   grid-template-areas:
     "chev label label label more"
     "chev status key key more";
@@ -1538,9 +1469,7 @@ kbd {
 }
 
 .app.phone .row .status-box {
-  grid-area: status;
-  width: 24px;
-  height: 24px;
+  grid-area: status; width: 26px; height: 26px;
 }
 
 .app.phone .row .key-chip {
@@ -1550,19 +1479,17 @@ kbd {
 
 .app.phone .row .row-more {
   display: grid;
-  grid-area: more;
-  width: 40px;
-  height: 44px;
+  grid-area: more; width: 44px; height: 44px;
   border: 0;
   background: transparent;
   color: #5b6b80;
-  font-size: 18px;
+  font-size: 20px;
   place-items: center;
   cursor: pointer;
 }
 
 .app.phone .label-input {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .sheet-backdrop {
@@ -1589,7 +1516,7 @@ kbd {
 }
 
 .action-sheet .action-title {
-  font-size: 12px;
+  font-size: 14px;
   color: #5b6b80;
   padding: 6px 10px 8px;
   border-bottom: 1px solid #eef2f7;
@@ -1604,7 +1531,7 @@ kbd {
   background: transparent;
   text-align: left;
   padding: 12px;
-  font-size: 15px;
+  font-size: 17px;
   border-radius: 9px;
   cursor: pointer;
   min-height: 44px;
