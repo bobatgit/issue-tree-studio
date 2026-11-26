@@ -52,6 +52,12 @@ const SHOTS: Shot[] = [
     setup: `const chevron = document.querySelector(".row .chevron"); if (chevron) chevron.click();`,
   },
   {
+    name: "ticket-18-items-1440",
+    note: "the interface after the rename: every count reads items (#18)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
     name: "gate-markdown-1440",
     note: "the live markdown view",
     view: "markdown",

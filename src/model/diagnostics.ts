@@ -3,9 +3,9 @@
  * the tree itself. One paste into an issue is enough to reproduce a defect.
  */
 
-import { countNodes, maxDepth } from "./tree";
+import { countItems, maxDepth } from "./tree";
 import type { KeyMap, TreeDoc } from "./types";
-import { NODE_CAP } from "./types";
+import { ITEM_CAP } from "./types";
 
 export interface DiagnosticsMeta {
   appVersion: string;
@@ -17,11 +17,11 @@ export interface DiagnosticsMeta {
 }
 
 export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: DiagnosticsMeta): string {
-  const statusCounts = Object.values(doc.nodes).reduce<Record<string, number>>((counts, node) => {
-    counts[node.status] = (counts[node.status] ?? 0) + 1;
+  const statusCounts = Object.values(doc.items).reduce<Record<string, number>>((counts, item) => {
+    counts[item.status] = (counts[item.status] ?? 0) + 1;
     return counts;
   }, {});
-  const keys = Object.values(keyMap.byNode);
+  const keys = Object.values(keyMap.byItem);
   const promoted = keys.filter((info) => info.promoted).length;
   const lengths = keys.map((info) => info.length);
   const minLength = lengths.length ? Math.min(...lengths) : 0;
@@ -38,7 +38,7 @@ export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: Diagnostics
     `- browser: ${meta.userAgent}`,
     `- viewport: ${meta.viewport}`,
     `- tree: ${doc.name} (v${doc.version})`,
-    `- nodes: ${countNodes(doc)} / ${NODE_CAP}, depth ${maxDepth(doc)}`,
+    `- items: ${countItems(doc)} / ${ITEM_CAP}, depth ${maxDepth(doc)}`,
     `- keys: length ${keyLength}, promoted ${promoted}, collisions ${keyMap.collisions.length}`,
     `- status: open ${statusCounts.open ?? 0}, complete ${statusCounts.complete ?? 0}`,
     `- settings: keys in editor ${settings.showKeysInEditor}, keys in export ${settings.showKeysInExport}, overview ${settings.includeOverviewSlide}, key index ${settings.includeKeyIndexSlide}`,
@@ -51,7 +51,7 @@ export function buildDiagnostics(doc: TreeDoc, keyMap: KeyMap, meta: Diagnostics
         name: doc.name,
         version: doc.version,
         rootId: doc.rootId,
-        nodes: doc.nodes,
+        items: doc.items,
         settings: doc.settings,
       },
       null,

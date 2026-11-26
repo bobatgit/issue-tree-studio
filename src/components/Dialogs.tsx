@@ -65,7 +65,7 @@ export function ExportDialog({ ws, open, onClose }: DialogProps) {
             <span>
               <strong>Key chip on every box</strong>
               <br />
-              <span className="small muted">The 4-character key sits in the corner of the node.</span>
+              <span className="small muted">The 4-character key sits in the corner of the item.</span>
             </span>
           </label>
           <label className="check">
@@ -78,7 +78,7 @@ export function ExportDialog({ ws, open, onClose }: DialogProps) {
               <strong>Structure overview as slide 1</strong>
               <br />
               <span className="small muted">
-                The whole tree when it stays legible, otherwise the first levels. Branch slides cover every node.
+                The whole tree when it stays legible, otherwise the first levels. Branch slides cover every item.
               </span>
             </span>
           </label>

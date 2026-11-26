@@ -1,7 +1,7 @@
 /** Generic markdown nested-list import and export. */
 
-import type { NodeStatus, TreeDoc } from "./types";
-import { NODE_CAP } from "./types";
+import type { ItemStatus, TreeDoc } from "./types";
+import { ITEM_CAP } from "./types";
 import { buildDoc, flatten, titleOf } from "./tree";
 
 export interface OutlineParseResult {
@@ -13,7 +13,7 @@ const LIST_LINE = /^([ \t]*)(?:[-*+]|\d{1,3}[.)])[ \t]+(.*)$/;
 const HEADING_LINE = /^[ \t]{0,3}(#{1,6})[ \t]+(.*)$/;
 const FENCE = /^[ \t]{0,3}(```|~~~)/;
 
-/** Remove the markdown decoration that is not part of the node wording. */
+/** Remove the markdown decoration that is not part of the item wording. */
 export function cleanInline(raw: string): string {
   let text = raw;
   text = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, "");
@@ -31,7 +31,7 @@ export function cleanInline(raw: string): string {
 interface ListItem {
   indent: number;
   label: string;
-  status: NodeStatus;
+  status: ItemStatus;
 }
 
 /**
@@ -90,7 +90,7 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
       const indent = indentText.replace(/\t/g, "    ").length;
       const raw = listMatch[2];
       const task = /^\[([ xX])\][ \t]+/.exec(raw);
-      const status: NodeStatus = task && task[1].toLowerCase() === "x" ? "complete" : "open";
+      const status: ItemStatus = task && task[1].toLowerCase() === "x" ? "complete" : "open";
       const body = task ? raw.slice(task[0].length) : raw;
       const label = cleanInline(stripKeyPrefix(body));
       if (!label) {
@@ -120,19 +120,19 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
     const fallback = title || "Root question";
     return {
       doc: buildDoc(name, [{ label: fallback, depth: 1 }]),
-      warnings: ["No list items found. Started a new tree with a single root node."],
+      warnings: ["No list items found. Started a new tree with a single root item."],
     };
   }
 
-  const capped = items.slice(0, NODE_CAP);
-  if (items.length > NODE_CAP) {
+  const capped = items.slice(0, ITEM_CAP);
+  if (items.length > ITEM_CAP) {
     warnings.push(
-      `Outline had ${items.length} items. Kept the first ${NODE_CAP} to stay inside the ${NODE_CAP}-node cap.`,
+      `Outline had ${items.length} items. Kept the first ${ITEM_CAP} to stay inside the ${ITEM_CAP}-item cap.`,
     );
   }
 
   const stack: number[] = [];
-  const flat: { label: string; depth: number; status: NodeStatus }[] = [];
+  const flat: { label: string; depth: number; status: ItemStatus }[] = [];
   for (const item of capped) {
     while (stack.length > 0 && stack[stack.length - 1] >= item.indent) stack.pop();
     stack.push(item.indent);
@@ -164,9 +164,9 @@ export function toMarkdown(
     lines.push(`# ${heading}`, "");
   }
   for (const entry of flat) {
-    const box = entry.node.status === "complete" ? "x" : " ";
-    const prefix = options.keys ? `${options.keys(entry.node.id)} · ` : "";
-    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- [${box}] ${prefix}${entry.node.label || "Untitled node"}`);
+    const box = entry.item.status === "complete" ? "x" : " ";
+    const prefix = options.keys ? `${options.keys(entry.item.id)} · ` : "";
+    lines.push(`${"  ".repeat(Math.max(0, entry.depth - 1))}- [${box}] ${prefix}${entry.item.label || "Untitled item"}`);
   }
   return `${lines.join("\n")}\n`;
 }

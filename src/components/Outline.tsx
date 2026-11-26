@@ -38,12 +38,12 @@ export function Outline({ ws, onImport }: Props) {
 
   if (!doc) return null;
 
-  const actionNode = actionsFor ? doc.nodes[actionsFor] : null;
+  const actionItem = actionsFor ? doc.items[actionsFor] : null;
   const actionParent = actionsFor ? parentOf(doc, actionsFor) : null;
-  const actionSiblings = actionParent ? doc.nodes[actionParent]?.children ?? [] : [];
+  const actionSiblings = actionParent ? doc.items[actionParent]?.children ?? [] : [];
   const actionIndex = actionsFor ? actionSiblings.indexOf(actionsFor) : -1;
 
-  const focusNode = (id: string | null): void => {
+  const focusItem = (id: string | null): void => {
     if (!id) return;
     const input = document.querySelector<HTMLTextAreaElement>(`textarea[data-label-id="${id}"]`);
     input?.focus();
@@ -52,12 +52,12 @@ export function Outline({ ws, onImport }: Props) {
 
   const moveFocus = (currentIndex: number, delta: number): void => {
     const nextEntry = flat[currentIndex + delta];
-    if (nextEntry) focusNode(nextEntry.node.id);
+    if (nextEntry) focusItem(nextEntry.item.id);
   };
 
   const onKeyDown = (
     event: KeyboardEvent<HTMLTextAreaElement>,
-    nodeId: string,
+    itemId: string,
     label: string,
     index: number,
     parentId: string | null,
@@ -66,30 +66,30 @@ export function Outline({ ws, onImport }: Props) {
     if (event.altKey && (event.key === "ArrowUp" || event.key === "ArrowDown") && parentId) {
       event.preventDefault();
       const delta = event.key === "ArrowUp" ? -1 : 1;
-      ws.move(nodeId, parentId, Math.max(0, siblingIndex + delta));
+      ws.move(itemId, parentId, Math.max(0, siblingIndex + delta));
       return;
     }
     if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();
       focusRequest.current = true;
-      ws.addChild(nodeId);
+      ws.addChild(itemId);
       return;
     }
     if (event.key === "Enter") {
       event.preventDefault();
       focusRequest.current = true;
-      ws.addSibling(nodeId);
+      ws.addSibling(itemId);
       return;
     }
     if (event.key === "Tab") {
       event.preventDefault();
-      if (event.shiftKey) ws.outdent(nodeId);
-      else ws.indent(nodeId);
+      if (event.shiftKey) ws.outdent(itemId);
+      else ws.indent(itemId);
       return;
     }
     if (event.key === "Backspace" && label === "") {
       event.preventDefault();
-      ws.remove(nodeId);
+      ws.remove(itemId);
       return;
     }
     if (event.key === "ArrowDown") {
@@ -108,16 +108,16 @@ export function Outline({ ws, onImport }: Props) {
   const handleDrop = (targetId: string, position: DropPosition): void => {
     if (!dragId || dragId === targetId) return;
     if (position === "into") {
-      const target = doc.nodes[targetId];
+      const target = doc.items[targetId];
       const index = target.children.filter((id) => id !== dragId).length;
       ws.move(dragId, targetId, index);
     } else {
       const parentId = parentOf(doc, targetId);
       if (!parentId) {
-        const target = doc.nodes[targetId];
+        const target = doc.items[targetId];
         ws.move(dragId, targetId, target.children.filter((id) => id !== dragId).length);
       } else {
-        const siblings = doc.nodes[parentId].children.filter((id) => id !== dragId);
+        const siblings = doc.items[parentId].children.filter((id) => id !== dragId);
         const index = siblings.indexOf(targetId);
         ws.move(dragId, parentId, position === "before" ? index : index + 1);
       }
@@ -126,16 +126,16 @@ export function Outline({ ws, onImport }: Props) {
     setDrop(null);
   };
 
-  const copyKey = async (key: string, nodeId: string, label: string): Promise<void> => {
+  const copyKey = async (key: string, itemId: string, label: string): Promise<void> => {
     const ok = await copyText(key);
-    ws.select(nodeId);
+    ws.select(itemId);
     ws.toast(ok ? "success" : "error", ok ? `Copied ${key} (${label || "untitled"})` : "Could not copy the key.");
   };
 
   return (
     <div className="editor">
       <div className="editor-head">
-        <span>{flat.length} nodes</span>
+        <span>{flat.length} items</span>
         <span className="muted">·</span>
         <span>{depth} levels</span>
         <span className="spacer" />
@@ -176,21 +176,21 @@ export function Outline({ ws, onImport }: Props) {
         ) : (
           <div className="outline" role="tree" aria-label="Issue tree outline">
             {flat.map((entry, index) => {
-              const node = entry.node;
-              const keyInfo = ws.keyMap.byNode[node.id];
+              const item = entry.item;
+              const keyInfo = ws.keyMap.byItem[item.id];
               const isRoot = entry.depth === 1;
-              const dropClass = drop?.id === node.id ? ` drop-${drop.position}` : "";
+              const dropClass = drop?.id === item.id ? ` drop-${drop.position}` : "";
               return (
                 <div
-                  key={node.id}
+                  key={item.id}
                   role="treeitem"
                   aria-level={entry.depth}
-                  aria-selected={ws.selection === node.id}
-                  data-row-id={node.id}
+                  aria-selected={ws.selection === item.id}
+                  data-row-id={item.id}
                   className={[
                     "row",
-                    ws.selection === node.id ? "selected" : "",
-                    dragId === node.id ? "dragging" : "",
+                    ws.selection === item.id ? "selected" : "",
+                    dragId === item.id ? "dragging" : "",
                     dropClass,
                   ]
                     .filter(Boolean)
@@ -198,22 +198,22 @@ export function Outline({ ws, onImport }: Props) {
                   style={{ marginLeft: (entry.depth - 1) * 15 }}
                   onClick={(event) => {
                     event.stopPropagation();
-                    ws.select(node.id);
+                    ws.select(item.id);
                   }}
                   onDragOver={(event) => {
-                    if (!dragId || dragId === node.id) return;
+                    if (!dragId || dragId === item.id) return;
                     event.preventDefault();
                     event.dataTransfer.dropEffect = "move";
                     const rect = event.currentTarget.getBoundingClientRect();
                     const ratio = (event.clientY - rect.top) / rect.height;
                     const position: DropPosition = ratio < 0.3 ? "before" : ratio > 0.7 ? "after" : "into";
-                    setDrop({ id: node.id, position });
+                    setDrop({ id: item.id, position });
                   }}
-                  onDragLeave={() => setDrop((current) => (current?.id === node.id ? null : current))}
+                  onDragLeave={() => setDrop((current) => (current?.id === item.id ? null : current))}
                   onDrop={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    handleDrop(node.id, drop?.position ?? "into");
+                    handleDrop(item.id, drop?.position ?? "into");
                   }}
                 >
                   <button
@@ -224,9 +224,9 @@ export function Outline({ ws, onImport }: Props) {
                     title="Drag to move"
                     onDragStart={(event) => {
                       event.stopPropagation();
-                      setDragId(node.id);
+                      setDragId(item.id);
                       event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("text/plain", node.id);
+                      event.dataTransfer.setData("text/plain", item.id);
                     }}
                     onDragEnd={() => {
                       setDragId(null);
@@ -236,21 +236,21 @@ export function Outline({ ws, onImport }: Props) {
                     ⠿
                   </button>
 
-                  {node.children.length > 0 ? (
+                  {item.children.length > 0 ? (
                     <button
                       type="button"
-                      className={`chevron ${ws.collapsed.has(node.id) ? "closed" : "open"}`}
+                      className={`chevron ${ws.collapsed.has(item.id) ? "closed" : "open"}`}
                       aria-label={
-                        ws.collapsed.has(node.id)
-                          ? `Expand ${node.label || "node"}`
-                          : `Collapse ${node.label || "node"}`
+                        ws.collapsed.has(item.id)
+                          ? `Expand ${item.label || "item"}`
+                          : `Collapse ${item.label || "item"}`
                       }
-                      aria-expanded={!ws.collapsed.has(node.id)}
+                      aria-expanded={!ws.collapsed.has(item.id)}
                       title="Collapse or expand this branch. Alt+click folds the whole branch."
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (event.altKey) ws.setBranchCollapsed(node.id, !ws.collapsed.has(node.id));
-                        else ws.toggleCollapse(node.id);
+                        if (event.altKey) ws.setBranchCollapsed(item.id, !ws.collapsed.has(item.id));
+                        else ws.toggleCollapse(item.id);
                       }}
                       onKeyDown={(event) => event.stopPropagation()}
                     >
@@ -266,19 +266,19 @@ export function Outline({ ws, onImport }: Props) {
                   <textarea
                     rows={1}
                     className={`label-input ${isRoot ? "root-label" : ""}`}
-                    data-label-id={node.id}
-                    value={node.label}
+                    data-label-id={item.id}
+                    value={item.label}
                     placeholder={isRoot ? "Write the root as a precise question" : "Write a question"}
-                    aria-label={`Label for ${keyInfo?.key ?? "node"} at level ${entry.depth}`}
-                    onChange={(event) => ws.editLabel(node.id, event.target.value)}
+                    aria-label={`Label for ${keyInfo?.key ?? "item"} at level ${entry.depth}`}
+                    onChange={(event) => ws.editLabel(item.id, event.target.value)}
                     onFocus={(event) => {
-                      ws.select(node.id);
+                      ws.select(item.id);
                       const field = event.currentTarget;
                       if (window.visualViewport && window.innerWidth <= 640) {
                         setTimeout(() => field.scrollIntoView({ block: "center", behavior: "smooth" }), 250);
                       }
                     }}
-                    onKeyDown={(event) => onKeyDown(event, node.id, node.label, index, entry.parentId, entry.index)}
+                    onKeyDown={(event) => onKeyDown(event, item.id, item.label, index, entry.parentId, entry.index)}
                     onInput={(event) => {
                       const field = event.currentTarget;
                       field.style.height = "auto";
@@ -290,34 +290,34 @@ export function Outline({ ws, onImport }: Props) {
                       field.style.height = `${Math.min(field.scrollHeight, 72)}px`;
                     }}
                   />
-                  {ws.collapsed.has(node.id) && descendantIds(doc, node.id).length > 0 ? (
-                    <span className="collapsed-count" title="Hidden nodes beneath this one">
-                      +{descendantIds(doc, node.id).length}
+                  {ws.collapsed.has(item.id) && descendantIds(doc, item.id).length > 0 ? (
+                    <span className="collapsed-count" title="Hidden items beneath this one">
+                      +{descendantIds(doc, item.id).length}
                     </span>
                   ) : null}
                   </div>
 
                   <button
                     type="button"
-                    className={`status-box ${node.status}`}
-                    aria-label={node.status === "complete" ? "Mark this node open" : "Mark this node complete"}
-                    aria-pressed={node.status === "complete"}
-                    title={node.status === "complete" ? "Complete. Click to reopen." : "Open. Click to mark complete."}
+                    className={`status-box ${item.status}`}
+                    aria-label={item.status === "complete" ? "Mark this item open" : "Mark this item complete"}
+                    aria-pressed={item.status === "complete"}
+                    title={item.status === "complete" ? "Complete. Click to reopen." : "Open. Click to mark complete."}
                     onClick={(event) => {
                       event.stopPropagation();
-                      ws.setStatus(node.id, node.status === "complete" ? "open" : "complete");
+                      ws.setStatus(item.id, item.status === "complete" ? "open" : "complete");
                     }}
                   >
-                    {node.status === "complete" ? "✓" : ""}
+                    {item.status === "complete" ? "✓" : ""}
                   </button>
 
                   <button
                     type="button"
                     className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
-                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}, ${node.status}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
+                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}, ${item.status}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
                     onClick={(event) => {
                       event.stopPropagation();
-                      void copyKey(keyInfo?.key ?? "", node.id, node.label);
+                      void copyKey(keyInfo?.key ?? "", item.id, item.label);
                     }}
                   >
                     {keyInfo?.key ?? "····"}
@@ -329,8 +329,8 @@ export function Outline({ ws, onImport }: Props) {
                     aria-label="Row actions"
                     onClick={(event) => {
                       event.stopPropagation();
-                      ws.select(node.id);
-                      setActionsFor(node.id);
+                      ws.select(item.id);
+                      setActionsFor(item.id);
                     }}
                   >
                     ⋯
@@ -345,7 +345,7 @@ export function Outline({ ws, onImport }: Props) {
                       onClick={(event) => {
                         event.stopPropagation();
                         focusRequest.current = true;
-                        ws.addChild(node.id);
+                        ws.addChild(item.id);
                       }}
                     >
                       +
@@ -358,7 +358,7 @@ export function Outline({ ws, onImport }: Props) {
                       onClick={(event) => {
                         event.stopPropagation();
                         focusRequest.current = true;
-                        ws.addSibling(node.id);
+                        ws.addSibling(item.id);
                       }}
                     >
                       ⏎
@@ -366,14 +366,14 @@ export function Outline({ ws, onImport }: Props) {
                     <button
                       type="button"
                       className="mini-btn danger"
-                      title="Delete node and its children (Backspace on an empty label)"
-                      aria-label="Delete node"
+                      title="Delete item and its children (Backspace on an empty label)"
+                      aria-label="Delete item"
                       onClick={(event) => {
                         event.stopPropagation();
-                        if (node.children.length > 2 && !window.confirm(`Delete "${node.label}" and its ${node.children.length} branches?`)) {
+                        if (item.children.length > 2 && !window.confirm(`Delete "${item.label}" and its ${item.children.length} branches?`)) {
                           return;
                         }
-                        ws.remove(node.id);
+                        ws.remove(item.id);
                       }}
                     >
                       ×
@@ -408,7 +408,7 @@ export function Outline({ ws, onImport }: Props) {
         </div>
       </div>
 
-      {actionNode ? (
+      {actionItem ? (
         <div className="sheet-backdrop" onClick={() => setActionsFor(null)}>
           <div
             className="action-sheet"
@@ -416,24 +416,24 @@ export function Outline({ ws, onImport }: Props) {
             aria-label="Row actions"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="action-title">{actionNode.label || "Untitled"}</div>
-            <button type="button" onClick={() => { ws.addChild(actionNode.id); setActionsFor(null); }}>
+            <div className="action-title">{actionItem.label || "Untitled"}</div>
+            <button type="button" onClick={() => { ws.addChild(actionItem.id); setActionsFor(null); }}>
               Add child
             </button>
-            <button type="button" onClick={() => { ws.addSibling(actionNode.id); setActionsFor(null); }}>
+            <button type="button" onClick={() => { ws.addSibling(actionItem.id); setActionsFor(null); }}>
               Add sibling
             </button>
-            <button type="button" onClick={() => { ws.indent(actionNode.id); setActionsFor(null); }}>
+            <button type="button" onClick={() => { ws.indent(actionItem.id); setActionsFor(null); }}>
               Indent
             </button>
-            <button type="button" onClick={() => { ws.outdent(actionNode.id); setActionsFor(null); }}>
+            <button type="button" onClick={() => { ws.outdent(actionItem.id); setActionsFor(null); }}>
               Outdent
             </button>
             <button
               type="button"
               disabled={!actionParent || actionIndex <= 0}
               onClick={() => {
-                if (actionParent) ws.move(actionNode.id, actionParent, actionIndex - 1);
+                if (actionParent) ws.move(actionItem.id, actionParent, actionIndex - 1);
                 setActionsFor(null);
               }}
             >
@@ -443,7 +443,7 @@ export function Outline({ ws, onImport }: Props) {
               type="button"
               disabled={!actionParent || actionIndex < 0 || actionIndex >= actionSiblings.length - 1}
               onClick={() => {
-                if (actionParent) ws.move(actionNode.id, actionParent, actionIndex + 1);
+                if (actionParent) ws.move(actionItem.id, actionParent, actionIndex + 1);
                 setActionsFor(null);
               }}
             >
@@ -452,7 +452,7 @@ export function Outline({ ws, onImport }: Props) {
             <button
               type="button"
               onClick={() => {
-                void copyKey(ws.keyMap.byNode[actionNode.id]?.key ?? "", actionNode.id, actionNode.label);
+                void copyKey(ws.keyMap.byItem[actionItem.id]?.key ?? "", actionItem.id, actionItem.label);
                 setActionsFor(null);
               }}
             >
@@ -462,7 +462,7 @@ export function Outline({ ws, onImport }: Props) {
               type="button"
               className="danger"
               onClick={() => {
-                ws.remove(actionNode.id);
+                ws.remove(actionItem.id);
                 setActionsFor(null);
               }}
             >

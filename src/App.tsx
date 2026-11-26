@@ -3,10 +3,10 @@ import { ExportDialog, ImportDialog, SettingsDialog, Toasts } from "./components
 import { Diagram } from "./components/Diagram";
 import { MarkdownView } from "./components/MarkdownView";
 import { Outline } from "./components/Outline";
-import { HistoryPanel, NodePanel, QualityPanel } from "./components/Panels";
+import { HistoryPanel, ItemPanel, QualityPanel } from "./components/Panels";
 import { TopBar } from "./components/TopBar";
 import { useMediaQuery } from "./lib/useMediaQuery";
-import { NODE_CAP, SOFT_CAP } from "./model/types";
+import { ITEM_CAP, SOFT_CAP } from "./model/types";
 import { useWorkspace } from "./store/useWorkspace";
 
 type Tab = "details" | "history";
@@ -55,7 +55,7 @@ export function App() {
   }, [collapsed]);
 
   useEffect(() => {
-    if (ws.nodeCount < SOFT_CAP) return;
+    if (ws.itemCount < SOFT_CAP) return;
     try {
       if (sessionStorage.getItem("its.nudged") === "1") return;
       sessionStorage.setItem("its.nudged", "1");
@@ -64,9 +64,9 @@ export function App() {
     }
     ws.toast(
       "info",
-      `${ws.nodeCount} nodes. Trees this deep get hard to read; the hard cap is ${NODE_CAP}. Nothing is blocked.`,
+      `${ws.itemCount} items. Trees this deep get hard to read; the hard cap is ${ITEM_CAP}. Nothing is blocked.`,
     );
-  }, [ws.nodeCount, ws.toast]);
+  }, [ws.itemCount, ws.toast]);
 
   useEffect(() => {
     try {
@@ -233,7 +233,7 @@ export function App() {
               <div className="panel-scroll" ref={scrollRef}>
                 {tab === "details" ? (
                   <>
-                    <NodePanel ws={ws} />
+                    <ItemPanel ws={ws} />
                     <QualityPanel ws={ws} />
                   </>
                 ) : null}

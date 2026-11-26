@@ -13,17 +13,17 @@ import {
   addChild as addChildOp,
   addSibling as addSiblingOp,
   atCap,
-  countNodes,
+  countItems,
   createDoc,
   docFromSnapshot,
   descendantIds,
   flatten,
-  indentNode,
-  moveNode,
+  indentItem,
+  moveItem,
   newId,
-  outdentNode,
+  outdentItem,
   parentOf,
-  removeNode,
+  removeItem,
   setMece as setMeceOp,
   setNote as setNoteOp,
   setSettings as setSettingsOp,
@@ -37,12 +37,12 @@ import type {
   KeyAlias,
   KeyMap,
   MeceFlags,
-  NodeStatus,
+  ItemStatus,
   TreeDoc,
   VersionEntry,
   VersionTrigger,
 } from "../model/types";
-import { ALIAS_CAP, DEFAULT_SETTINGS, NODE_CAP } from "../model/types";
+import { ALIAS_CAP, DEFAULT_SETTINGS, ITEM_CAP } from "../model/types";
 import { hasLegacyKeys, parseProject } from "../model/project";
 import * as db from "./storage";
 import { migrateLegacy } from "./storage";
@@ -66,7 +66,7 @@ export interface Workspace {
   pendingVersion: boolean;
   selection: string | null;
   toasts: Toast[];
-  nodeCount: number;
+  itemCount: number;
   atCap: boolean;
   canUndo: boolean;
   canRedo: boolean;
@@ -78,7 +78,7 @@ export interface Workspace {
   outdent: (id: string) => void;
   move: (id: string, parentId: string, index: number) => void;
   editLabel: (id: string, label: string) => void;
-  setStatus: (id: string, status: NodeStatus) => void;
+  setStatus: (id: string, status: ItemStatus) => void;
   applyMarkdown: (text: string) => boolean;
   setNote: (id: string, note: string) => void;
   collapsed: Set<string>;
@@ -145,7 +145,7 @@ export function useWorkspace(): Workspace {
   const toastTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const keyMap = useMemo<KeyMap>(
-    () => (doc ? computeKeyMap(doc) : { byNode: {}, collisions: [] }),
+    () => (doc ? computeKeyMap(doc) : { byItem: {}, collisions: [] }),
     [doc],
   );
   const findings = useMemo(
@@ -183,7 +183,7 @@ export function useWorkspace(): Workspace {
   }, []);
 
   const keysToRecord = (map: KeyMap): Record<string, string> =>
-    Object.fromEntries(Object.entries(map.byNode).map(([id, info]) => [id, info.key]));
+    Object.fromEntries(Object.entries(map.byItem).map(([id, info]) => [id, info.key]));
 
   /** Write the pending version entry now. Version numbers are assigned synchronously. */
   const flushVersion = useCallback(
@@ -209,9 +209,9 @@ export function useWorkspace(): Workspace {
       );
 
       const aliases: KeyAlias[] = [];
-      for (const [nodeId, newKey] of Object.entries(nextKeyRecord)) {
-        const oldKey = keysRef.current[nodeId];
-        if (oldKey && oldKey !== newKey) aliases.push({ nodeId, from: oldKey, to: newKey, v, at });
+      for (const [itemId, newKey] of Object.entries(nextKeyRecord)) {
+        const oldKey = keysRef.current[itemId];
+        if (oldKey && oldKey !== newKey) aliases.push({ itemId, from: oldKey, to: newKey, v, at });
       }
 
       keysRef.current = nextKeyRecord;
@@ -325,7 +325,7 @@ export function useWorkspace(): Workspace {
     const current = docRef.current;
     if (!current) return null;
     if (atCap(current)) {
-      toast("error", `The ${NODE_CAP}-node cap is reached. Merge or delete a node first.`);
+      toast("error", `The ${ITEM_CAP}-item cap is reached. Merge or delete an item first.`);
       return null;
     }
     return current;
@@ -360,12 +360,12 @@ export function useWorkspace(): Workspace {
       const current = docRef.current;
       if (!current) return;
       const flat = flatten(current);
-      const index = flat.findIndex((entry) => entry.node.id === id);
-      const next = removeNode(current, id);
+      const index = flat.findIndex((entry) => entry.item.id === id);
+      const next = removeItem(current, id);
       if (next === current) return;
-      commit(next, "structure", "deleted a node");
-      const fallback = flat[Math.max(0, index - 1)]?.node.id ?? null;
-      setSelection(flat.some((entry) => entry.node.id === fallback) ? fallback : null);
+      commit(next, "structure", "deleted an item");
+      const fallback = flat[Math.max(0, index - 1)]?.item.id ?? null;
+      setSelection(flat.some((entry) => entry.item.id === fallback) ? fallback : null);
     },
     [commit],
   );
@@ -374,9 +374,9 @@ export function useWorkspace(): Workspace {
     (id: string) => {
       const current = docRef.current;
       if (!current) return;
-      const next = indentNode(current, id);
+      const next = indentItem(current, id);
       if (next === current) return;
-      commit(next, "structure", "indented a node");
+      commit(next, "structure", "indented an item");
     },
     [commit],
   );
@@ -385,9 +385,9 @@ export function useWorkspace(): Workspace {
     (id: string) => {
       const current = docRef.current;
       if (!current) return;
-      const next = outdentNode(current, id);
+      const next = outdentItem(current, id);
       if (next === current) return;
-      commit(next, "structure", "outdented a node");
+      commit(next, "structure", "outdented an item");
     },
     [commit],
   );
@@ -396,9 +396,9 @@ export function useWorkspace(): Workspace {
     (id: string, parentId: string, index: number) => {
       const current = docRef.current;
       if (!current) return;
-      const next = moveNode(current, id, parentId, index);
+      const next = moveItem(current, id, parentId, index);
       if (next === current) return;
-      commit(next, "structure", "moved a node");
+      commit(next, "structure", "moved an item");
     },
     [commit],
   );
@@ -415,15 +415,15 @@ export function useWorkspace(): Workspace {
   );
 
   const setStatus = useCallback(
-    (id: string, status: NodeStatus) => {
+    (id: string, status: ItemStatus) => {
       const current = docRef.current;
       if (!current) return;
-      const node = current.nodes[id];
-      if (!node || node.status === status) return;
+      const item = current.items[id];
+      if (!item || item.status === status) return;
       commit(
         setStatusOp(current, id, status),
         "status",
-        status === "complete" ? "marked a node complete" : "reopened a node",
+        status === "complete" ? "marked an item complete" : "reopened an item",
       );
     },
     [commit],
@@ -439,18 +439,18 @@ export function useWorkspace(): Workspace {
       }
       const parsed = parseMarkdown(text, current.name).doc;
       const merged = mergeParsed(current, parsed);
-      const total = countNodes(merged);
+      const total = countItems(merged);
       if (total === 0) {
-        toast("error", "The outline has no nodes.");
+        toast("error", "The outline has no items.");
         return false;
       }
-      if (total > NODE_CAP) {
-        toast("error", `That outline has ${total} nodes. The cap is ${NODE_CAP}.`);
+      if (total > ITEM_CAP) {
+        toast("error", `That outline has ${total} items. The cap is ${ITEM_CAP}.`);
         return false;
       }
       commit(merged, "import", "applied markdown");
       setSelection(merged.rootId);
-      toast("success", `Applied the outline: ${total} node${total === 1 ? "" : "s"}.`);
+      toast("success", `Applied the outline: ${total} item${total === 1 ? "" : "s"}.`);
       return true;
     },
     [commit, toast],
@@ -484,7 +484,7 @@ export function useWorkspace(): Workspace {
   const collapseAll = useCallback(() => {
     const current = docRef.current;
     if (!current?.rootId) return;
-    setCollapsed(new Set(current.nodes[current.rootId]?.children ?? []));
+    setCollapsed(new Set(current.items[current.rootId]?.children ?? []));
   }, []);
 
   const expandAll = useCallback(() => setCollapsed(new Set()), []);
@@ -625,8 +625,8 @@ export function useWorkspace(): Workspace {
       }
       next = { ...next, id: newId(), name: name ?? next.name, version: 1 };
       await createAndOpen(next);
-      const total = countNodes(next);
-      toast("success", `Imported ${total} node${total === 1 ? "" : "s"}.`);
+      const total = countItems(next);
+      toast("success", `Imported ${total} item${total === 1 ? "" : "s"}.`);
       if (warnings.length) {
         toast("info", warnings.slice(0, 2).join(" "));
       }
@@ -749,7 +749,7 @@ export function useWorkspace(): Workspace {
     pendingVersion,
     selection,
     toasts,
-    nodeCount: doc ? countNodes(doc) : 0,
+    itemCount: doc ? countItems(doc) : 0,
     atCap: doc ? atCap(doc) : false,
     canUndo: undoDepth > 0,
     canRedo: redoDepth > 0,

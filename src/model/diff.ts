@@ -27,20 +27,20 @@ export interface VersionDiff {
 function labelPaths(snapshot: DocSnapshot): Map<string, string> {
   const paths = new Map<string, string>();
   const walk = (id: string, ancestors: string[]): void => {
-    const node = snapshot.nodes[id];
-    if (!node || paths.has(id)) return;
+    const item = snapshot.items[id];
+    if (!item || paths.has(id)) return;
     paths.set(id, ancestors.join(" / "));
-    for (const childId of node.children) walk(childId, [...ancestors, node.label]);
+    for (const childId of item.children) walk(childId, [...ancestors, item.label]);
   };
   if (snapshot.rootId) walk(snapshot.rootId, []);
-  for (const id of Object.keys(snapshot.nodes)) if (!paths.has(id)) walk(id, []);
+  for (const id of Object.keys(snapshot.items)) if (!paths.has(id)) walk(id, []);
   return paths;
 }
 
 function parentIndex(snapshot: DocSnapshot): Map<string, number> {
   const index = new Map<string, number>();
-  for (const node of Object.values(snapshot.nodes)) {
-    node.children.forEach((childId, childIndex) => index.set(childId, childIndex));
+  for (const item of Object.values(snapshot.items)) {
+    item.children.forEach((childId, childIndex) => index.set(childId, childIndex));
   }
   return index;
 }
@@ -58,31 +58,31 @@ export function diffSnapshots(before: SnapshotWithKeys, after: SnapshotWithKeys)
   const beforeIndex = parentIndex(before.snapshot);
   const afterIndex = parentIndex(after.snapshot);
 
-  for (const [id, node] of Object.entries(after.snapshot.nodes)) {
-    const previous = before.snapshot.nodes[id];
+  for (const [id, item] of Object.entries(after.snapshot.items)) {
+    const previous = before.snapshot.items[id];
     if (!previous) {
-      added.push({ id, label: node.label });
+      added.push({ id, label: item.label });
       continue;
     }
-    if (previous.label !== node.label) {
-      relabelled.push({ id, from: previous.label, to: node.label });
+    if (previous.label !== item.label) {
+      relabelled.push({ id, from: previous.label, to: item.label });
     }
     const fromPath = beforePaths.get(id) ?? "";
     const toPath = afterPaths.get(id) ?? "";
     if (fromPath !== toPath) {
-      moved.push({ id, label: node.label, from: fromPath, to: toPath });
+      moved.push({ id, label: item.label, from: fromPath, to: toPath });
     } else if (beforeIndex.get(id) !== undefined && beforeIndex.get(id) !== afterIndex.get(id)) {
       reordered += 1;
     }
     const fromKey = before.keys[id];
     const toKey = after.keys[id];
     if (fromKey && toKey && fromKey !== toKey) {
-      rekeyed.push({ id, label: node.label, from: fromKey, to: toKey });
+      rekeyed.push({ id, label: item.label, from: fromKey, to: toKey });
     }
   }
 
-  for (const [id, node] of Object.entries(before.snapshot.nodes)) {
-    if (!after.snapshot.nodes[id]) removed.push({ id, label: node.label });
+  for (const [id, item] of Object.entries(before.snapshot.items)) {
+    if (!after.snapshot.items[id]) removed.push({ id, label: item.label });
   }
 
   const parts: string[] = [];

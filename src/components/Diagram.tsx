@@ -7,7 +7,7 @@ interface Props {
   ws: Workspace;
 }
 
-const NODE_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
+const ITEM_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
 
 const ROOT = { fill: "#1E293B", border: "#0F172A", text: "#FFFFFF" };
 
@@ -59,43 +59,43 @@ export function Diagram({ ws }: Props) {
             />
           ))}
 
-          {layout.nodes.map((node) => {
-            const isRoot = node.depth === 1;
-            const style = isRoot ? ROOT : NODE_STYLE;
-            const lineHeight = (node.fontSize * 1.24) / 72;
+          {layout.items.map((item) => {
+            const isRoot = item.depth === 1;
+            const style = isRoot ? ROOT : ITEM_STYLE;
+            const lineHeight = (item.fontSize * 1.24) / 72;
             return (
               <g
-                key={node.id}
+                key={item.id}
                 onClick={() => {
-                  ws.select(node.id);
-                  document.querySelector(`[data-row-id="${node.id}"]`)?.scrollIntoView({ block: "center" });
+                  ws.select(item.id);
+                  document.querySelector(`[data-row-id="${item.id}"]`)?.scrollIntoView({ block: "center" });
                 }}
               >
                 <rect
                   className="nrect"
-                  x={node.x}
-                  y={node.y}
-                  width={node.w}
-                  height={node.h}
+                  x={item.x}
+                  y={item.y}
+                  width={item.w}
+                  height={item.h}
                   rx={0.04}
                   fill={style.fill}
-                  stroke={ws.selection === node.id ? "#2F6FEB" : style.border}
-                  strokeWidth={ws.selection === node.id ? 0.022 : 0.009}
+                  stroke={ws.selection === item.id ? "#2F6FEB" : style.border}
+                  strokeWidth={ws.selection === item.id ? 0.022 : 0.009}
                 />
                 <circle
-                  cx={node.x + 0.1}
-                  cy={node.y + 0.05 + lineHeight * 0.8}
+                  cx={item.x + 0.1}
+                  cy={item.y + 0.05 + lineHeight * 0.8}
                   r={0.038}
-                  fill={node.status === "complete" ? "#2f6feb" : "none"}
-                  stroke={node.status === "complete" ? "#2f6feb" : "#94A3B8"}
+                  fill={item.status === "complete" ? "#2f6feb" : "none"}
+                  stroke={item.status === "complete" ? "#2f6feb" : "#94A3B8"}
                   strokeWidth={0.012}
                 />
-                {node.lines.map((line, index) => (
+                {item.lines.map((line, index) => (
                   <text
                     key={index}
-                    x={node.x + 0.17}
-                    y={node.y + 0.05 + lineHeight * (index + 0.8)}
-                    fontSize={node.fontSize / 72}
+                    x={item.x + 0.17}
+                    y={item.y + 0.05 + lineHeight * (index + 0.8)}
+                    fontSize={item.fontSize / 72}
                     fontFamily="Segoe UI, system-ui, sans-serif"
                     fontWeight={isRoot ? 600 : 400}
                     fill={style.text}
@@ -105,15 +105,15 @@ export function Diagram({ ws }: Props) {
                 ))}
                 {showKeys ? (
                   <text
-                    x={node.x + node.w - 0.05}
-                    y={node.y + 0.14}
+                    x={item.x + item.w - 0.05}
+                    y={item.y + 0.14}
                     textAnchor="end"
-                    fontSize={Math.max(0.06, Math.min(0.1, node.fontSize / 72 * 0.9))}
+                    fontSize={Math.max(0.06, Math.min(0.1, item.fontSize / 72 * 0.9))}
                     fontFamily="Consolas, monospace"
                     fontWeight={600}
                     fill={isRoot ? "#CBD5E1" : "#64748B"}
                   >
-                    {node.key}
+                    {item.key}
                   </text>
                 ) : null}
               </g>
@@ -151,7 +151,7 @@ export function Diagram({ ws }: Props) {
           <p className="small muted">The diagram is dense at this size; the branch slides will be larger.</p>
         ) : null}
         <p className="small muted">
-          {flatten(doc).length} nodes · layout {layout.width.toFixed(1)}in × {layout.height.toFixed(1)}in
+          {flatten(doc).length} items · layout {layout.width.toFixed(1)}in × {layout.height.toFixed(1)}in
         </p>
       </div>
     </div>

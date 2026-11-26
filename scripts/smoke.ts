@@ -11,7 +11,7 @@ import { buildPresentation } from "../src/export/pptx";
 import { exportCsv, importCsv } from "../src/model/csv";
 import { computeKeyMap } from "../src/model/keys";
 import { parseMarkdown } from "../src/model/markdown";
-import { buildDoc, countNodes } from "../src/model/tree";
+import { buildDoc, countItems } from "../src/model/tree";
 import { SAMPLES } from "../src/model/sample";
 import type { TreeDoc } from "../src/model/types";
 
@@ -23,7 +23,7 @@ async function sizeOf(file: string): Promise<number> {
 
 async function runCase(label: string, doc: TreeDoc, keyIndex: boolean): Promise<void> {
   const keyMap = computeKeyMap(doc);
-  const keys = Object.values(keyMap.byNode);
+  const keys = Object.values(keyMap.byItem);
   const pptxFile = path.join(OUT, `${label}.pptx`);
   const csvFile = path.join(OUT, `${label}.csv`);
 
@@ -34,7 +34,7 @@ async function runCase(label: string, doc: TreeDoc, keyIndex: boolean): Promise<
   await writeFile(csvFile, csv, "utf-8");
 
   const reimported = importCsv(csv, label);
-  const roundTripped = countNodes(reimported.doc) === countNodes(doc);
+  const roundTripped = countItems(reimported.doc) === countItems(doc);
 
   const promoted = keys.filter((info) => info.promoted).length;
   const minKey = Math.min(...keys.map((info) => info.length));
@@ -43,7 +43,7 @@ async function runCase(label: string, doc: TreeDoc, keyIndex: boolean): Promise<
   process.stdout.write(
     [
       `\n${label}`,
-      `  nodes           ${countNodes(doc)}`,
+      `  items           ${countItems(doc)}`,
       `  keys            ${keys.length} unique=${new Set(keys.map((info) => info.key)).size} length ${minKey}-${maxKey} promoted=${promoted}`,
       `  pptx            ${(await sizeOf(pptxFile)).toLocaleString()} bytes`,
       `  csv             ${(await sizeOf(csvFile)).toLocaleString()} bytes, round-trip ${roundTripped ? "OK" : "FAILED"}`,
@@ -59,10 +59,10 @@ for (const sample of SAMPLES) {
   await runCase(sample.id, parsed.doc, sample.id === "profit-decline");
 }
 
-// Stress case: exactly 100 nodes, wide and shallow.
+// Stress case: exactly 100 items, wide and shallow.
 const stress = buildDoc(
-  "100-node stress case",
-  [{ label: "Why did the 100-node cap hold?", depth: 1 }].concat(
+  "100-item stress case",
+  [{ label: "Why did the 100-item cap hold?", depth: 1 }].concat(
     Array.from({ length: 99 }, (_, index) => ({ label: `Branch question ${index}?`, depth: 2 })),
   ),
 );

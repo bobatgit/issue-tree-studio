@@ -10,7 +10,7 @@ function docFrom(markdown: string) {
 function keyByLabel(doc: ReturnType<typeof docFrom>): Record<string, string> {
   const map = computeKeyMap(doc);
   const out: Record<string, string> = {};
-  for (const node of Object.values(doc.nodes)) out[node.label] = map.byNode[node.id].key;
+  for (const item of Object.values(doc.items)) out[item.label] = map.byItem[item.id].key;
   return out;
 }
 
@@ -34,7 +34,7 @@ describe("key encoding", () => {
 
   it("never emits the ambiguous letters I, L, O or U", () => {
     for (let index = 0; index < 300; index += 1) {
-      const key = keyForPath(`node ${index}`);
+      const key = keyForPath(`item ${index}`);
       expect(key).not.toMatch(/[ILOU]/);
     }
   });
@@ -49,7 +49,7 @@ describe("key encoding", () => {
     expect(toBase32(new Uint8Array([255, 255, 255]), 4)).toBe("ZZZZ");
   });
 
-  it("reports a collision risk below one percent at the 100-node cap", () => {
+  it("reports a collision risk below one percent at the 100-item cap", () => {
     expect(collisionRisk(100, 4)).toBeGreaterThan(0.004);
     expect(collisionRisk(100, 4)).toBeLessThan(0.006);
     expect(collisionRisk(100, 5)).toBeLessThan(0.0002);
@@ -64,11 +64,11 @@ describe("document keys", () => {
   - Did cost rise?
 `;
 
-  it("gives every node a key", () => {
+  it("gives every item a key", () => {
     const doc = docFrom(markdown);
     const map = computeKeyMap(doc);
-    expect(Object.keys(map.byNode)).toHaveLength(Object.keys(doc.nodes).length);
-    for (const info of Object.values(map.byNode)) {
+    expect(Object.keys(map.byItem)).toHaveLength(Object.keys(doc.items).length);
+    for (const info of Object.values(map.byItem)) {
       expect(info.key).toHaveLength(5);
       expect(info.path).toContain("why did profit fall?");
     }
@@ -82,9 +82,9 @@ describe("document keys", () => {
     - Price fell?
 `);
     const map = computeKeyMap(doc);
-    const prices = Object.values(doc.nodes).filter((node) => node.label === "Price fell?");
+    const prices = Object.values(doc.items).filter((item) => item.label === "Price fell?");
     expect(prices).toHaveLength(2);
-    expect(map.byNode[prices[0].id].key).not.toBe(map.byNode[prices[1].id].key);
+    expect(map.byItem[prices[0].id].key).not.toBe(map.byItem[prices[1].id].key);
   });
 
   it("keeps keys unchanged when siblings are reordered", () => {
@@ -100,25 +100,25 @@ describe("document keys", () => {
     expect(after).toEqual(before);
   });
 
-  it("changes the node and its descendants when a label changes, but not its siblings", () => {
+  it("changes the item and its descendants when a label changes, but not its siblings", () => {
     const doc = docFrom(markdown);
     const map = computeKeyMap(doc);
-    const root = doc.nodes[doc.rootId as string];
-    const revenue = doc.nodes[root.children[0]];
-    const cost = doc.nodes[root.children[1]];
-    const price = doc.nodes[revenue.children[0]];
-    const revenueKey = map.byNode[revenue.id].key;
-    const priceKey = map.byNode[price.id].key;
-    const costKey = map.byNode[cost.id].key;
-    const rootKey = map.byNode[root.id].key;
+    const root = doc.items[doc.rootId as string];
+    const revenue = doc.items[root.children[0]];
+    const cost = doc.items[root.children[1]];
+    const price = doc.items[revenue.children[0]];
+    const revenueKey = map.byItem[revenue.id].key;
+    const priceKey = map.byItem[price.id].key;
+    const costKey = map.byItem[cost.id].key;
+    const rootKey = map.byItem[root.id].key;
 
     const edited = updateLabel(doc, revenue.id, "Did total revenue fall?");
     const next = computeKeyMap(edited);
 
-    expect(next.byNode[revenue.id].key).not.toBe(revenueKey);
-    expect(next.byNode[price.id].key).not.toBe(priceKey);
-    expect(next.byNode[cost.id].key).toBe(costKey);
-    expect(next.byNode[root.id].key).toBe(rootKey);
+    expect(next.byItem[revenue.id].key).not.toBe(revenueKey);
+    expect(next.byItem[price.id].key).not.toBe(priceKey);
+    expect(next.byItem[cost.id].key).toBe(costKey);
+    expect(next.byItem[root.id].key).toBe(rootKey);
   });
 
   it("gives duplicate wording on the same path different keys", () => {
@@ -127,7 +127,7 @@ describe("document keys", () => {
   - Other?
 `);
     const map = computeKeyMap(doc);
-    const keys = Object.values(map.byNode).map((info) => info.key);
+    const keys = Object.values(map.byItem).map((info) => info.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
@@ -139,19 +139,19 @@ describe("document keys", () => {
       const id = `probe-${index}`;
       current = {
         ...current,
-        nodes: {
-          ...current.nodes,
+        items: {
+          ...current.items,
           [id]: { id, label: `Branch ${index}?`, status: "open", children: [] },
-          [rootId]: { ...current.nodes[rootId], children: [...current.nodes[rootId].children, id] },
+          [rootId]: { ...current.items[rootId], children: [...current.items[rootId].children, id] },
         },
       };
     }
     const map = computeKeyMap(current, 1);
-    const keys = Object.values(map.byNode).map((info) => info.key);
+    const keys = Object.values(map.byItem).map((info) => info.key);
     expect(new Set(keys).size).toBe(keys.length);
     expect(map.collisions).toHaveLength(0);
     expect(keys.some((key) => key.length > 1)).toBe(true);
-    expect(Object.values(map.byNode).some((info) => info.promoted)).toBe(true);
+    expect(Object.values(map.byItem).some((info) => info.promoted)).toBe(true);
   });
 
 });

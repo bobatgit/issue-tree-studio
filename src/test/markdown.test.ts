@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { cleanInline, parseMarkdown, toMarkdown } from "../model/markdown";
-import { countNodes, flatten } from "../model/tree";
+import { countItems, flatten } from "../model/tree";
 
 const shape = (doc: ReturnType<typeof parseMarkdown>["doc"]): string[] =>
-  flatten(doc).map((entry) => `${"·".repeat(entry.depth - 1)}${entry.node.label}`);
+  flatten(doc).map((entry) => `${"·".repeat(entry.depth - 1)}${entry.item.label}`);
 
 describe("markdown import", () => {
   it("reads dash, star, plus and numbered lists", () => {
@@ -45,16 +45,16 @@ describe("markdown import", () => {
     expect(shape(doc)).toEqual(["Root?", "·A?"]);
   });
 
-  it("enforces the 500-node cap", () => {
+  it("enforces the 500-item cap", () => {
     const lines = ["- Root?", ...Array.from({ length: 600 }, (_, index) => `  - Item ${index}?`)];
     const result = parseMarkdown(lines.join("\n"));
-    expect(countNodes(result.doc)).toBe(500);
+    expect(countItems(result.doc)).toBe(500);
     expect(result.warnings.join(" ")).toContain("500");
   });
 
   it("starts a single-root tree when no list exists", () => {
     const result = parseMarkdown("# Only a heading");
-    expect(countNodes(result.doc)).toBe(1);
+    expect(countItems(result.doc)).toBe(1);
     expect(result.warnings).toHaveLength(1);
   });
 
@@ -79,7 +79,7 @@ describe("markdown export", () => {
 describe("markdown status", () => {
   it("reads task-list checkboxes and writes them back", () => {
     const doc = parseMarkdown("- Root?\n  - [x] Done?\n  - [ ] Still open?\n").doc;
-    const byLabel = (label: string) => Object.values(doc.nodes).find((node) => node.label === label);
+    const byLabel = (label: string) => Object.values(doc.items).find((item) => item.label === label);
     expect(byLabel("Root?")?.status).toBe("open");
     expect(byLabel("Done?")?.status).toBe("complete");
     expect(byLabel("Still open?")?.status).toBe("open");

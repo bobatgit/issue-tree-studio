@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { describeApply, hasChanges, mergeParsed, previewApply } from "../model/apply";
 import { parseMarkdown, toMarkdown } from "../model/markdown";
-import { NODE_CAP } from "../model/types";
+import { ITEM_CAP } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -19,17 +19,17 @@ export function MarkdownView({ ws, draft, onDraft }: Props) {
 
   const serialise = (withKeys: boolean): string => {
     if (!doc) return "";
-    return toMarkdown(doc, doc.version, withKeys ? { keys: (id) => ws.keyMap.byNode[id]?.key ?? "" } : {});
+    return toMarkdown(doc, doc.version, withKeys ? { keys: (id) => ws.keyMap.byItem[id]?.key ?? "" } : {});
   };
 
-  const generated = useMemo(() => serialise(showKeys), [doc, showKeys, ws.keyMap.byNode]);
+  const generated = useMemo(() => serialise(showKeys), [doc, showKeys, ws.keyMap.byItem]);
   const text = draft ?? generated;
   const dirty = draft !== null && draft !== generated;
 
   const preview = useMemo(() => {
     if (!doc) return null;
     const parsed = parseMarkdown(text, doc.name).doc;
-    return previewApply(doc, mergeParsed(doc, parsed), NODE_CAP);
+    return previewApply(doc, mergeParsed(doc, parsed), ITEM_CAP);
   }, [doc, text]);
 
   if (!doc || !preview) return null;
@@ -37,7 +37,7 @@ export function MarkdownView({ ws, draft, onDraft }: Props) {
   const blocked = preview.overCap || !text.trim();
   const apply = (): void => {
     if (blocked) {
-      setError(preview.overCap ? `That outline has ${preview.total} nodes. The cap is ${NODE_CAP}.` : "The outline is empty.");
+      setError(preview.overCap ? `That outline has ${preview.total} items. The cap is ${ITEM_CAP}.` : "The outline is empty.");
       return;
     }
     if (ws.applyMarkdown(text)) {

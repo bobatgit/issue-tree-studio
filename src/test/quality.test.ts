@@ -30,7 +30,7 @@ describe("quality checks", () => {
     expect(result.codes).toContain("ROOT_NOT_QUESTION");
   });
 
-  it("flags a node with one child", () => {
+  it("flags an item with one child", () => {
     const result = review("- Root?\n  - Only branch?\n");
     expect(result.codes).toContain("SINGLE_CHILD");
   });
@@ -40,10 +40,10 @@ describe("quality checks", () => {
     const rootId = doc.rootId as string;
     const withBlank = {
       ...doc,
-      nodes: {
-        ...doc.nodes,
+      items: {
+        ...doc.items,
         blank: { id: "blank", label: "   ", status: "open" as const, children: [] },
-        [rootId]: { ...doc.nodes[rootId], children: ["blank"] },
+        [rootId]: { ...doc.items[rootId], children: ["blank"] },
       },
     };
     const codes = reviewTree(withBlank, computeKeyMap(withBlank)).map((finding) => finding.code);
@@ -70,13 +70,13 @@ describe("quality checks", () => {
     const nudge = review(
       ["- Root?", ...Array.from({ length: 120 }, (_, index) => `  - Item ${index}?`)].join("\n"),
     );
-    expect(nudge.codes).toContain("NODE_COUNT_HIGH");
-    expect(nudge.codes).not.toContain("NODE_COUNT_CAP");
+    expect(nudge.codes).toContain("ITEM_COUNT_HIGH");
+    expect(nudge.codes).not.toContain("ITEM_COUNT_CAP");
 
     const capped = review(
       ["- Root?", ...Array.from({ length: 520 }, (_, index) => `  - Item ${index}?`)].join("\n"),
     );
-    expect(capped.codes).toContain("NODE_COUNT_CAP");
+    expect(capped.codes).toContain("ITEM_COUNT_CAP");
   });
 
   it("counts findings by severity", () => {
@@ -93,22 +93,22 @@ describe("quality checks", () => {
 
   it("generates distinct keys for a large tree", () => {
     const doc = generateTree(60);
-    const keys = Object.values(computeKeyMap(doc).byNode).map((info) => info.key);
+    const keys = Object.values(computeKeyMap(doc).byItem).map((info) => info.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 });
 
 describe("status checks", () => {
-  it("warns when a complete node still has an open child", () => {
+  it("warns when a complete item still has an open child", () => {
     const doc = parseMarkdown("- Root?\n  - Child?\n").doc;
-    doc.nodes[doc.rootId as string].status = "complete";
+    doc.items[doc.rootId as string].status = "complete";
     const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
     expect(codes).toContain("COMPLETE_WITH_OPEN_CHILD");
   });
 
   it("stays quiet when the whole branch is complete", () => {
     const doc = parseMarkdown("- Root?\n  - Child?\n").doc;
-    for (const node of Object.values(doc.nodes)) node.status = "complete";
+    for (const item of Object.values(doc.items)) item.status = "complete";
     const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
     expect(codes).not.toContain("COMPLETE_WITH_OPEN_CHILD");
   });

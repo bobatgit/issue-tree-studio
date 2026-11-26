@@ -1,6 +1,6 @@
 import { APP_VERSION, BUILD_SHA, REPO_URL } from "../lib/appInfo";
 import { titleOf } from "../model/tree";
-import { NODE_CAP, SOFT_CAP } from "../model/types";
+import { ITEM_CAP, SOFT_CAP } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -15,7 +15,7 @@ export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
 
   if (!doc) return null;
 
-  const capClass = ws.nodeCount >= NODE_CAP ? "full" : ws.nodeCount >= SOFT_CAP ? "warn" : "";
+  const capClass = ws.itemCount >= ITEM_CAP ? "full" : ws.itemCount >= SOFT_CAP ? "warn" : "";
 
   return (
     <header className="topbar">
@@ -42,9 +42,9 @@ export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
 
       <span
         className={`pill cap ${capClass}`}
-        title={`A nudge appears at ${SOFT_CAP} nodes; the hard cap is ${NODE_CAP}.`}
+        title={`A nudge appears at ${SOFT_CAP} items; the hard cap is ${ITEM_CAP}.`}
       >
-        {ws.nodeCount} / {NODE_CAP} nodes
+        {ws.itemCount} / {ITEM_CAP} items
       </span>
 
       <span className="topbar-spacer" />

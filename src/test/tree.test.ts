@@ -5,18 +5,18 @@ import {
   addSibling,
   atCap,
   buildDoc,
-  countNodes,
+  countItems,
   createDoc,
   flatten,
-  indentNode,
-  moveNode,
-  outdentNode,
-  removeNode,
+  indentItem,
+  moveItem,
+  outdentItem,
+  removeItem,
   visibleEntries,
 } from "../model/tree";
-import { NODE_CAP } from "../model/types";
+import { ITEM_CAP } from "../model/types";
 
-const labels = (doc: Parameters<typeof flatten>[0]): string[] => flatten(doc).map((entry) => entry.node.label);
+const labels = (doc: Parameters<typeof flatten>[0]): string[] => flatten(doc).map((entry) => entry.item.label);
 
 describe("tree operations", () => {
   it("adds a child under the given parent", () => {
@@ -25,10 +25,10 @@ describe("tree operations", () => {
     const result = addChild(doc, rootId, "Child?");
     expect(result).not.toBeNull();
     expect(labels(result!.doc)).toEqual(["Root?", "Child?"]);
-    expect(result!.doc.nodes[rootId].children).toHaveLength(1);
+    expect(result!.doc.items[rootId].children).toHaveLength(1);
   });
 
-  it("adds a sibling after the given node", () => {
+  it("adds a sibling after the given item", () => {
     const doc = createDoc("Tree", "Root?");
     const rootId = doc.rootId as string;
     const first = addChild(doc, rootId, "A?")!;
@@ -42,64 +42,64 @@ describe("tree operations", () => {
     expect(labels(result.doc)).toEqual(["Root?", "Only branch?"]);
   });
 
-  it("indents a node under its previous sibling and outdents it back", () => {
+  it("indents an item under its previous sibling and outdents it back", () => {
     const built = parseMarkdown("- Root?\n  - A?\n  - B?\n").doc;
-    const [, , b] = flatten(built).map((entry) => entry.node.id);
-    const indented = indentNode(built, b);
+    const [, , b] = flatten(built).map((entry) => entry.item.id);
+    const indented = indentItem(built, b);
     expect(labels(indented)).toEqual(["Root?", "A?", "B?"]);
     expect(flatten(indented)[2].depth).toBe(3);
 
-    const outdented = outdentNode(indented, b);
+    const outdented = outdentItem(indented, b);
     expect(flatten(outdented)[2].depth).toBe(2);
   });
 
-  it("does not outdent a node whose parent is the root-level parent", () => {
+  it("does not outdent an item whose parent is the root-level parent", () => {
     const built = parseMarkdown("- Root?\n  - A?\n").doc;
-    const childId = flatten(built)[1].node.id;
-    const next = outdentNode(built, childId);
+    const childId = flatten(built)[1].item.id;
+    const next = outdentItem(built, childId);
     expect(next).toBe(built);
   });
 
-  it("refuses to move a node inside its own subtree", () => {
+  it("refuses to move an item inside its own subtree", () => {
     const built = parseMarkdown("- Root?\n  - A?\n    - A1?\n").doc;
-    const [, a, a1] = flatten(built).map((entry) => entry.node.id);
-    const attempt = moveNode(built, a, a1, 0);
+    const [, a, a1] = flatten(built).map((entry) => entry.item.id);
+    const attempt = moveItem(built, a, a1, 0);
     expect(attempt).toBe(built);
   });
 
-  it("moves a node with its children between parents", () => {
+  it("moves an item with its children between parents", () => {
     const built = parseMarkdown("- Root?\n  - A?\n    - A1?\n  - B?\n").doc;
-    const ids = flatten(built).map((entry) => entry.node.id);
-    const moved = moveNode(built, ids[1], ids[3], 0);
+    const ids = flatten(built).map((entry) => entry.item.id);
+    const moved = moveItem(built, ids[1], ids[3], 0);
     const flat = flatten(moved);
-    expect(flat.map((entry) => entry.node.label)).toEqual(["Root?", "B?", "A?", "A1?"]);
+    expect(flat.map((entry) => entry.item.label)).toEqual(["Root?", "B?", "A?", "A1?"]);
     expect(flat[2].depth).toBe(3);
   });
 
-  it("removes a subtree, not just the node", () => {
+  it("removes a subtree, not just the item", () => {
     const built = parseMarkdown("- Root?\n  - A?\n    - A1?\n    - A2?\n  - B?\n").doc;
-    const aId = flatten(built)[1].node.id;
-    const pruned = removeNode(built, aId);
+    const aId = flatten(built)[1].item.id;
+    const pruned = removeItem(built, aId);
     expect(labels(pruned)).toEqual(["Root?", "B?"]);
-    expect(countNodes(pruned)).toBe(2);
+    expect(countItems(pruned)).toBe(2);
   });
 
   it("treats deleting the root as an empty tree", () => {
     const doc = createDoc("Tree", "Root?");
-    const empty = removeNode(doc, doc.rootId as string);
+    const empty = removeItem(doc, doc.rootId as string);
     expect(empty.rootId).toBeNull();
-    expect(countNodes(empty)).toBe(0);
+    expect(countItems(empty)).toBe(0);
   });
 
-  it("enforces the 100-node cap", () => {
+  it("enforces the 100-item cap", () => {
     const doc = createDoc("Tree", "Root?");
     let current = doc;
-    for (let index = 0; index < NODE_CAP - 1; index += 1) {
+    for (let index = 0; index < ITEM_CAP - 1; index += 1) {
       const result = addChild(current, doc.rootId as string, `Item ${index}?`);
       expect(result).not.toBeNull();
       current = result!.doc;
     }
-    expect(countNodes(current)).toBe(NODE_CAP);
+    expect(countItems(current)).toBe(ITEM_CAP);
     expect(atCap(current)).toBe(true);
     expect(addChild(current, doc.rootId as string, "Over the cap?")).toBeNull();
   });
@@ -127,15 +127,15 @@ describe("buildDoc", () => {
 });
 
 describe("collapsed branches", () => {
-  it("hides the descendants of a collapsed node", () => {
+  it("hides the descendants of a collapsed item", () => {
     const doc = parseMarkdown("- Root?\n  - A?\n    - A1?\n  - B?\n").doc;
-    const a = Object.values(doc.nodes).find((node) => node.label === "A?")?.id as string;
+    const a = Object.values(doc.items).find((item) => item.label === "A?")?.id as string;
     const visible = visibleEntries(doc, new Set([a]));
-    expect(visible.map((entry) => entry.node.label)).toEqual(["Root?", "A?", "B?"]);
+    expect(visible.map((entry) => entry.item.label)).toEqual(["Root?", "A?", "B?"]);
   });
 
   it("keeps everything visible when nothing is collapsed", () => {
     const doc = parseMarkdown("- Root?\n  - A?\n").doc;
-    expect(visibleEntries(doc, new Set()).length).toBe(countNodes(doc));
+    expect(visibleEntries(doc, new Set()).length).toBe(countItems(doc));
   });
 });

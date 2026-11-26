@@ -7,14 +7,14 @@ export interface MeceFlags {
   exclusive?: boolean;
 }
 
-export type NodeStatus = "open" | "complete";
+export type ItemStatus = "open" | "complete";
 
-export const NODE_STATUSES: NodeStatus[] = ["open", "complete"];
+export const ITEM_STATUSES: ItemStatus[] = ["open", "complete"];
 
-export interface TreeNode {
+export interface TreeItem {
   id: string;
   label: string;
-  status: NodeStatus;
+  status: ItemStatus;
   /** Child ids in display order. */
   children: string[];
   note?: string;
@@ -29,7 +29,7 @@ export interface DocSettings {
 }
 
 export interface KeyAlias {
-  nodeId: string;
+  itemId: string;
   from: string;
   to: string;
   /** Version at which the key changed. */
@@ -41,7 +41,7 @@ export interface TreeDoc {
   id: string;
   name: string;
   rootId: string | null;
-  nodes: Record<string, TreeNode>;
+  items: Record<string, TreeItem>;
   /** Increments on every committed change. */
   version: number;
   createdAt: number;
@@ -78,17 +78,17 @@ export interface VersionEntry {
 export interface DocSnapshot {
   name: string;
   rootId: string | null;
-  nodes: Record<string, TreeNode>;
+  items: Record<string, TreeItem>;
   settings: DocSettings;
 }
 
-export interface NodeKey {
-  nodeId: string;
+export interface ItemKey {
+  itemId: string;
   key: string;
   length: number;
-  /** Normalised ancestor chain including this node, joined by a unit separator. */
+  /** Normalised ancestor chain including this item, joined by a unit separator. */
   path: string;
-  /** Keys of the ancestor chain, ending with this node's key. */
+  /** Keys of the ancestor chain, ending with this item's key. */
   pathKeys: string[];
   digestHex: string;
   /** True when the key needed more than the default 4 characters. */
@@ -97,12 +97,12 @@ export interface NodeKey {
 }
 
 export interface KeyMap {
-  byNode: Record<string, NodeKey>;
-  collisions: { key: string; nodeIds: string[] }[];
+  byItem: Record<string, ItemKey>;
+  collisions: { key: string; itemIds: string[] }[];
 }
 
-export interface FlatNode {
-  node: TreeNode;
+export interface FlatItem {
+  item: TreeItem;
   depth: number;
   parentId: string | null;
   index: number;
@@ -115,13 +115,13 @@ export interface DocSummary {
   name: string;
   version: number;
   updatedAt: number;
-  nodeCount: number;
+  itemCount: number;
 }
 
 /** Past this size the tree is hard to read. A nudge, never a block. */
 export const SOFT_CAP = 100;
 /** Hard stop: above this the UI and the deck stop being usable. */
-export const NODE_CAP = 500;
+export const ITEM_CAP = 500;
 export const HISTORY_CAP = 5000;
 export const ALIAS_CAP = 2000;
 

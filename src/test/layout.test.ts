@@ -47,36 +47,36 @@ describe("text wrapping", () => {
 });
 
 describe("tree layout", () => {
-  it("fits inside the requested box and connects every node", () => {
+  it("fits inside the requested box and connects every item", () => {
     const doc = docFrom(SAMPLE);
     const layout = layoutTree(doc, computeKeyMap(doc), null, { maxWidth: 12, maxHeight: 5.5 });
     expect(layout.width).toBeLessThanOrEqual(12.001);
     expect(layout.height).toBeLessThanOrEqual(5.501);
-    expect(layout.nodes).toHaveLength(Object.keys(doc.nodes).length);
-    expect(layout.edges).toHaveLength(layout.nodes.length - 1);
-    for (const node of layout.nodes) {
-      expect(node.x + node.w).toBeLessThanOrEqual(layout.width + 0.001);
-      expect(node.y + node.h).toBeLessThanOrEqual(layout.height + 0.001);
+    expect(layout.items).toHaveLength(Object.keys(doc.items).length);
+    expect(layout.edges).toHaveLength(layout.items.length - 1);
+    for (const item of layout.items) {
+      expect(item.x + item.w).toBeLessThanOrEqual(layout.width + 0.001);
+      expect(item.y + item.h).toBeLessThanOrEqual(layout.height + 0.001);
     }
   });
 
   it("keeps leaves on distinct rows", () => {
     const doc = docFrom(SAMPLE);
     const layout = layoutTree(doc, computeKeyMap(doc), null, { maxWidth: 12, maxHeight: 8 });
-    const leafYs = layout.nodes
-      .filter((node) => (doc.nodes[node.id]?.children ?? []).length === 0)
-      .map((node) => Math.round(node.y * 1000));
+    const leafYs = layout.items
+      .filter((item) => (doc.items[item.id]?.children ?? []).length === 0)
+      .map((item) => Math.round(item.y * 1000));
     expect(new Set(leafYs).size).toBe(leafYs.length);
   });
 
   it("centres a parent between its children", () => {
     const doc = docFrom(SAMPLE);
     const layout = layoutTree(doc, computeKeyMap(doc), null, { maxWidth: 12, maxHeight: 8 });
-    const byId = new Map(layout.nodes.map((node) => [node.id, node]));
-    for (const node of Object.values(doc.nodes)) {
-      if (node.children.length < 2) continue;
-      const parent = byId.get(node.id)!;
-      const children = node.children.map((childId) => byId.get(childId)!);
+    const byId = new Map(layout.items.map((item) => [item.id, item]));
+    for (const item of Object.values(doc.items)) {
+      if (item.children.length < 2) continue;
+      const parent = byId.get(item.id)!;
+      const children = item.children.map((childId) => byId.get(childId)!);
       const centers = children.map((child) => child.y + child.h / 2);
       const parentCenter = parent.y + parent.h / 2;
       expect(parentCenter).toBeGreaterThanOrEqual(Math.min(...centers) - 0.001);
@@ -87,12 +87,12 @@ describe("tree layout", () => {
   it("lays out a subset when branch slides need one", () => {
     const doc = docFrom(SAMPLE);
     const rootId = doc.rootId as string;
-    const branchId = doc.nodes[rootId].children[0];
-    const subset = [rootId, branchId, ...Object.values(doc.nodes)
-      .filter((node) => node.id !== rootId && node.id !== branchId)
-      .map((node) => node.id)];
+    const branchId = doc.items[rootId].children[0];
+    const subset = [rootId, branchId, ...Object.values(doc.items)
+      .filter((item) => item.id !== rootId && item.id !== branchId)
+      .map((item) => item.id)];
     const layout = layoutTree(doc, computeKeyMap(doc), [rootId, branchId], { maxWidth: 12, maxHeight: 5 });
-    expect(layout.nodes).toHaveLength(2);
+    expect(layout.items).toHaveLength(2);
     expect(subset.length).toBeGreaterThan(2);
   });
 
@@ -109,7 +109,7 @@ describe("slide packing", () => {
   it("puts the whole tree on the overview slide and the branches together", () => {
     const doc = docFrom(SAMPLE);
     const groups = packSlides(doc);
-    expect(groups[0].nodeIds).toHaveLength(Object.keys(doc.nodes).length);
+    expect(groups[0].itemIds).toHaveLength(Object.keys(doc.items).length);
     expect(groups.length).toBeGreaterThanOrEqual(2);
     const branchGroups = groups.slice(1);
     expect(branchGroups.length).toBeLessThan(4);
@@ -119,11 +119,11 @@ describe("slide packing", () => {
     }
   });
 
-  it("covers every node across the branch slides", () => {
+  it("covers every item across the branch slides", () => {
     const doc = docFrom(SAMPLE);
     const groups = packSlides(doc, { overview: false });
-    const covered = new Set(groups.flatMap((group) => group.nodeIds));
-    for (const id of Object.keys(doc.nodes)) expect(covered.has(id)).toBe(true);
+    const covered = new Set(groups.flatMap((group) => group.itemIds));
+    for (const id of Object.keys(doc.items)) expect(covered.has(id)).toBe(true);
   });
 
   it("splits large trees into readable groups", () => {
@@ -132,10 +132,10 @@ describe("slide packing", () => {
       return `  - Branch ${branchIndex}?\n${leaves}`;
     });
     const doc = docFrom(`- Root?\n${branches.join("\n")}`);
-    expect(Object.keys(doc.nodes).length).toBe(73);
-    const groups = packSlides(doc, { maxNodesPerSlide: 20, maxLeavesPerSlide: 8, maxDepth: 5 });
+    expect(Object.keys(doc.items).length).toBe(73);
+    const groups = packSlides(doc, { maxItemsPerSlide: 20, maxLeavesPerSlide: 8, maxDepth: 5 });
     for (const group of groups.slice(1)) {
-      expect(group.nodeIds.length).toBeLessThanOrEqual(20);
+      expect(group.itemIds.length).toBeLessThanOrEqual(20);
     }
     expect(groups.length).toBeGreaterThan(2);
   });
@@ -147,10 +147,10 @@ describe("slide packing", () => {
     });
     const doc = docFrom(`- Root?\n${branches.join("\n")}`);
     const groups = packSlides(doc, { overview: false });
-    expect(groups[0].nodeIds.length).toBeLessThan(Object.keys(doc.nodes).length);
+    expect(groups[0].itemIds.length).toBeLessThan(Object.keys(doc.items).length);
   });
 
-  it("returns no branch slides for a single-node tree", () => {
+  it("returns no branch slides for a single-item tree", () => {
     const doc = docFrom("- Only root?");
     const groups = packSlides(doc);
     expect(groups).toHaveLength(1);

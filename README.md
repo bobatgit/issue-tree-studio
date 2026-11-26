@@ -1,6 +1,6 @@
 # Issue Tree Studio
 
-A single-page application that turns any markdown nested list into an issue tree, gives every node a short
+A single-page application that turns any markdown nested list into an issue tree, gives every item a short
 content-hash key, and exports the result as an editable PowerPoint, a CSV table, a markdown outline or a
 project file.
 
@@ -36,7 +36,7 @@ Requirements: Node 20 or newer. Tested on Node 22 and Windows 11.
 
 ## 1. The key scheme
 
-Every node carries a key such as `K7M2`.
+Every item carries a key such as `K7M2`.
 
 ```
 normalise(label)                     "  Why did PRICE fall? "  ->  "why did price fall?"
@@ -47,19 +47,19 @@ key = Crockford Base32(digest)[0..4] K7M2
 
 * **Crockford Base32** uses the alphabet `0-9 A-Z` without `I`, `L`, `O` and `U`, so a key survives being
   read aloud, copied by hand or typed from a screenshot.
-* **Five characters** give 33,554,432 values. At the hard cap of 500 nodes the chance that any two nodes share
+* **Five characters** give 33,554,432 values. At the hard cap of 500 items the chance that any two items share
   a key is 0.37 percent (birthday bound: `n(n-1) / 2 / 32^5`).
 * **Path scope** means the same wording under two different parents gets two different keys, and a sibling
   reorder never changes a key.
-* **Editing changes keys.** Change a label and that node plus all of its descendants get new keys, because
+* **Editing changes keys.** Change a label and that item plus all of its descendants get new keys, because
   their path changed. The old key is kept as an alias, so `K7M2` still resolves and reports "now `B8YVN`".
-* **A real collision is never silent.** If two nodes truncate to the same five characters, the node with the
+* **A real collision is never silent.** If two items truncate to the same five characters, the item with the
   larger full digest is promoted to five characters (then six, if needed). Promotion is ordered by digest, so
-  it is stable across reorders and reloads. The quality panel and the node inspector mark promoted keys.
+  it is stable across reorders and reloads. The quality panel and the item inspector mark promoted keys.
 * **Duplicate wording on the same path** (two siblings both called "Other") gets an ordinal mixed into the
   digest, so both keep a four-character key and the quality panel flags the duplication.
 
-Nothing is abbreviated by hand: the whole node wording takes part in the hash, after normalisation that
+Nothing is abbreviated by hand: the whole item wording takes part in the hash, after normalisation that
 ignores case, spacing, typographic dashes and curly quotes.
 
 ---
@@ -82,7 +82,7 @@ Paste it or drop a `.md` / `.txt` file. The importer accepts:
 * Inline decoration is removed: `**bold**`, `_italic_`, `` `code` ``, `[text](url)` and HTML tags.
 * One top-level item becomes the root. Several top-level items get a shared root named after the first
   heading, and the import warns about it.
-* The first 500 nodes are kept and the rest are dropped with a warning.
+* The first 500 items are kept and the rest are dropped with a warning.
 
 ### CSV
 
@@ -106,15 +106,15 @@ Any import opens as a **new** tree, so the current one is never overwritten.
 | Add child | `+` button | `Ctrl+Enter` |
 | Indent (become a child of the previous sibling) | drag | `Tab` |
 | Outdent | drag | `Shift+Tab` |
-| Delete node and its subtree | `×` button | `Backspace` on an empty label |
+| Delete item and its subtree | `×` button | `Backspace` on an empty label |
 | Reorder / reparent | drag the handle | `Alt+Arrow` (use the handle for cross-level moves) |
 | Undo / redo | toolbar | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Open export | toolbar | `Ctrl+E` |
 | Switch view | Tree, Markdown, Diagram tabs | `Alt+1`, `Alt+2`, `Alt+3` |
 | Collapse the panel | chevron in the tab strip | `Ctrl+\` |
 
-Every node is a question. Each node also has a status, **Open** or **Complete**: the checkbox on the row
-toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete node with an open child raises a
+Every item is a question. Each item also has a status, **Open** or **Complete**: the checkbox on the row
+toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete item with an open child raises a
 warning instead of changing anything automatically.
 
 ### Phone
@@ -124,7 +124,7 @@ bottom sheet from the header. Rows put the label on the first line and status, k
 second; the actions button opens Add child, Add sibling, Indent, Outdent, Move up, Move down, Copy key and
 Delete, because drag and hover are not available. The diagram stays a desktop view.
 
-The soft cap is **100 nodes**: past it a dismissible nudge suggests the tree has outgrown a single page, and
+The soft cap is **100 items**: past it a dismissible nudge suggests the tree has outgrown a single page, and
 nothing is blocked. The hard cap is **500**: the 501st add is refused, and the counter turns amber at 100.
 
 ---
@@ -137,19 +137,19 @@ The panel runs on every change and is fully deterministic:
 | --- | --- |
 | Empty label | error |
 | Two siblings with identical wording | error |
-| A complete node with an open child | warning |
-| Two nodes with identical wording on the same path | error |
+| A complete item with an open child | warning |
+| Two items with identical wording on the same path | error |
 | Siblings that share most of their wording (token overlap of 0.6 or more) | warning |
 | Root that is not phrased as a question | warning |
 | Root with no branches or a single branch | warning |
-| Node with a single child | note |
+| Item with a single child | note |
 | Uneven leaf depth (three or more levels apart) | note |
-| More than seven branches on one node | note |
+| More than seven branches on one item | note |
 | Key promoted past five characters | note |
-| 80 nodes used, or the cap reached | note / warning |
+| 80 items used, or the cap reached | note / warning |
 | Splits not yet confirmed as MECE | note |
 
-Each finding jumps to its node. The **MECE checklist** stores two booleans per node (exhaustive, mutually
+Each finding jumps to its item. The **MECE checklist** stores two booleans per item (exhaustive, mutually
 exclusive), and the split review adds wording-level overlap and the missing-"other" nudge.
 
 ### The AI seam
@@ -179,13 +179,13 @@ on a server or a local proxy; never ship it in the browser bundle.
 * Text edits coalesce for **two seconds** of quiet, so typing a sentence produces one version.
 * Structural changes (add, delete, move, indent, retype, MECE tick), imports and restores are versioned
   **immediately**.
-* Each version stores the full snapshot, the per-node keys, and a diff summary such as
+* Each version stores the full snapshot, the per-item keys, and a diff summary such as
   "2 relabelled, 1 moved, 3 keys changed".
 * History keeps as many versions as fit in the tab's `sessionStorage` budget. The oldest automatic version is pruned first; named checkpoints never are.
 * A **checkpoint** is a named version that is never pruned.
 * **Restore** takes an old snapshot and writes it as a new version. Nothing is ever overwritten.
 * The history panel compares any version with the current tree: added, removed, relabelled, moved, re-typed
-  and re-keyed nodes.
+  and re-keyed items.
 
 ---
 
@@ -200,7 +200,7 @@ Native, editable shapes written by PptxGenJS. No images, no screenshots.
   rows), otherwise the deepest levels that fit, with a subtitle saying so. The fallback still shows the root
   and its top-level branches.
 * **Branch slides** pack several top-level branches together, aiming for two to five levels per slide, and
-  repeat the root as context. Packing limits: 30 nodes, 12 leaf rows and depth 5 per slide.
+  repeat the root as context. Packing limits: 30 items, 12 leaf rows and depth 5 per slide.
 * Every box carries its **key chip** and a type label. The footer carries the tree name, version, date and
   page number.
 * An optional **key index** table lists key, type, level and wording so a reader can resolve a key from a
@@ -260,7 +260,7 @@ framework-free and could be reused by another UI.
 
 ## 8. Limits and privacy
 
-* 500 nodes per tree (nudge at 100); 5-character keys; version history bounded by the tab's storage budget.
+* 500 items per tree (nudge at 100); 5-character keys; version history bounded by the tab's storage budget.
 * One browser profile holds the library. Export a project file to move or back up a tree.
 * No network calls at all. Nothing is sent anywhere; there is no analytics and no telemetry.
 * `sessionStorage` is the store. Closing the tab ends the tree; private browsing clears it sooner.
@@ -367,7 +367,7 @@ Version, then the short commit. Clicking it opens the releases page.
 In the app: Export, then **Copy diagnostics**. The clipboard gets one block:
 
 - build, page URL, browser and viewport
-- tree name, version, node count and depth
+- tree name, version, item count and depth
 - key length, promoted keys and collisions
 - open and complete counts, and document settings
 - the tree JSON, collapsed
@@ -414,7 +414,7 @@ npm run smoke
 # deep-7-levels.pptx and matching .csv files, and reports key and round-trip stats
 ```
 
-The smoke output for the 100-node case confirmed: 100 nodes, 100 unique keys of length 4, zero collisions,
+The smoke output for the 100-item case confirmed: 100 items, 100 unique keys of length 4, zero collisions,
 a CSV that re-imports to the same tree, and a `.pptx` that unzips to 15 slides containing 0 images and
 native `p:sp` shapes only.
 
@@ -424,10 +424,10 @@ native `p:sp` shapes only.
 | --- | --- |
 | What is hashed | Normalised label plus its ancestor path |
 | Key length | 4 characters, Crockford Base32, promoted on a real collision |
-| Node cap | 100 unique nodes |
+| Item cap | 100 unique items |
 | PowerPoint | Native editable shapes, 16:9 |
 | Slide plan | Structure overview, then packed branch slides (2-5 levels each) |
-| Key display | Chip on every node, on screen and on the slide |
+| Key display | Chip on every item, on screen and on the slide |
 | CSV | key, parent_key, level, type, label, path, branch_index, version |
 | Storage | One tree per tab in `sessionStorage`; project JSON is the archive |
 | Versioning | Auto-version per change, 5,000 kept, named checkpoints never pruned |
@@ -442,5 +442,5 @@ native `p:sp` shapes only.
   against 38 percent for four characters at the same size.
 * Because keys follow the path, restructuring a tree renames keys. That is the price of "hash of the content
   at its place in the argument". Old keys stay resolvable as aliases.
-* The overview slide compresses large trees. The branch slides always carry every node.
+* The overview slide compresses large trees. The branch slides always carry every item.
 * The AI MECE review is intentionally absent; the seam and the UI state are in place.

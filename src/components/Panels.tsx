@@ -6,10 +6,10 @@ import { flatten, snapshotOf } from "../model/tree";
 import type { VersionDiff } from "../model/diff";
 import type { Workspace } from "../store/useWorkspace";
 
-function scrollToNode(ws: Workspace, nodeId: string): void {
-  ws.expandAncestors(nodeId);
+function scrollToItem(ws: Workspace, itemId: string): void {
+  ws.expandAncestors(itemId);
   requestAnimationFrame(() => {
-    document.querySelector(`[data-row-id="${nodeId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    document.querySelector(`[data-row-id="${itemId}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
   });
 }
 
@@ -24,8 +24,8 @@ function copyKey(key: string, ws: Workspace, label: string): void {
 export function QualityPanel({ ws }: { ws: Workspace }) {
   const doc = ws.doc;
   const counts = ws.findingCounts;
-  const capClass = ws.nodeCount >= 100 ? "full" : ws.nodeCount >= 80 ? "warn" : "";
-  const meceNode = doc && ws.selection ? doc.nodes[ws.selection] : null;
+  const capClass = ws.itemCount >= 100 ? "full" : ws.itemCount >= 80 ? "warn" : "";
+  const meceItem = doc && ws.selection ? doc.items[ws.selection] : null;
   const meceSplit = useMemo(() => (doc && ws.selection ? heuristicMeceReview(doc, ws.keyMap, ws.selection) : []), [doc, ws.keyMap, ws.selection]);
 
   if (!doc) return null;
@@ -34,18 +34,18 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
     <div>
       <div className="section">
         <div className="section-head">
-          <span>Node budget</span>
+          <span>Item budget</span>
           <span>
-            {ws.nodeCount} / 100
+            {ws.itemCount} / 100
           </span>
         </div>
         <div className={`meter ${capClass}`}>
-          <span style={{ width: `${Math.min(100, ws.nodeCount)}%` }} />
+          <span style={{ width: `${Math.min(100, ws.itemCount)}%` }} />
         </div>
         <p className="small muted" style={{ margin: "4px 0 0" }}>
           {ws.atCap
-            ? "The cap is reached. Merge or delete a node to add more."
-            : `${100 - ws.nodeCount} nodes left. The cap keeps every label readable on a slide.`}
+            ? "The cap is reached. Merge or delete an item to add more."
+            : `${100 - ws.itemCount} items left. The cap keeps every label readable on a slide.`}
         </p>
       </div>
 
@@ -65,9 +65,9 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
               type="button"
               className="finding"
               onClick={() => {
-                if (finding.nodeId) {
-                  ws.select(finding.nodeId);
-                  scrollToNode(ws, finding.nodeId);
+                if (finding.itemId) {
+                  ws.select(finding.itemId);
+                  scrollToItem(ws, finding.itemId);
                 }
               }}
             >
@@ -84,14 +84,14 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
       <div className="section">
         <div className="section-head">
           <span>Selected split</span>
-          <span>{meceNode ? ws.keyMap.byNode[meceNode.id]?.key ?? "none" : "none"}</span>
+          <span>{meceItem ? ws.keyMap.byItem[meceItem.id]?.key ?? "none" : "none"}</span>
         </div>
-        {!meceNode ? (
-          <p className="empty-note">Select a node to review its split.</p>
+        {!meceItem ? (
+          <p className="empty-note">Select an item to review its split.</p>
         ) : (
           <>
             <p className="small" style={{ marginTop: 0 }}>
-              <strong>{meceNode.label || "Untitled"}</strong> · {meceNode.children.length} branches
+              <strong>{meceItem.label || "Untitled"}</strong> · {meceItem.children.length} branches
             </p>
             {meceSplit.length === 0 ? (
               <p className="small muted">No overlap or coverage warning for this split.</p>
@@ -100,7 +100,7 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
                 <div key={index} className="diff-block">
                   <span className={`sev ${suggestion.level}`} /> <strong>{suggestion.message}</strong>
                   <div className="small muted" style={{ marginTop: 4 }}>
-                    {suggestion.nodeKeys.join(" · ")}
+                    {suggestion.itemKeys.join(" · ")}
                   </div>
                 </div>
               ))
@@ -141,13 +141,13 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
 
   const needle = query.trim().toUpperCase();
   const currentMatch = needle
-    ? flat.find((entry) => ws.keyMap.byNode[entry.node.id]?.key === needle)
+    ? flat.find((entry) => ws.keyMap.byItem[entry.item.id]?.key === needle)
     : undefined;
   const aliasMatch =
     !currentMatch && needle
       ? [...doc.aliases].reverse().find((alias) => alias.from === needle || alias.to === needle)
       : undefined;
-  const aliasNode = aliasMatch ? doc.nodes[aliasMatch.nodeId] : undefined;
+  const aliasItem = aliasMatch ? doc.items[aliasMatch.itemId] : undefined;
 
   return (
     <div>
@@ -171,8 +171,8 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                 type="button"
                 className="finding"
                 onClick={() => {
-                  ws.select(currentMatch.node.id);
-                  scrollToNode(ws, currentMatch.node.id);
+                  ws.select(currentMatch.item.id);
+                  scrollToItem(ws, currentMatch.item.id);
                 }}
               >
                 <span className="ftop">
@@ -181,22 +181,22 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                     {needle}
                   </span>
                 </span>
-                <span className="fdetail">{currentMatch.node.label || "Untitled"}</span>
+                <span className="fdetail">{currentMatch.item.label || "Untitled"}</span>
               </button>
             ) : aliasMatch ? (
               <div className="diff-block">
                 <strong>{needle}</strong> is an old key.{" "}
-                {aliasNode ? (
+                {aliasItem ? (
                   <>
-                    It now points to <strong>{aliasMatch.to}</strong> ({aliasNode.label || "untitled"}).
+                    It now points to <strong>{aliasMatch.to}</strong> ({aliasItem.label || "untitled"}).
                   </>
                 ) : (
-                  <>That node was deleted.</>
+                  <>That item was deleted.</>
                 )}
                 <div className="small muted">Changed in version {aliasMatch.v}.</div>
               </div>
             ) : (
-              <p className="empty-note">No node or alias has the key {needle}.</p>
+              <p className="empty-note">No item or alias has the key {needle}.</p>
             )}
           </div>
         ) : null}
@@ -216,13 +216,13 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
           </thead>
           <tbody>
             {flat.map((entry) => {
-              const info = ws.keyMap.byNode[entry.node.id];
+              const info = ws.keyMap.byItem[entry.item.id];
               return (
                 <tr
-                  key={entry.node.id}
+                  key={entry.item.id}
                   onClick={() => {
-                    ws.select(entry.node.id);
-                    scrollToNode(ws, entry.node.id);
+                    ws.select(entry.item.id);
+                    scrollToItem(ws, entry.item.id);
                   }}
                 >
                   <td className="key">
@@ -232,20 +232,20 @@ export function KeyPanel({ ws }: { ws: Workspace }) {
                       title="Copy this key"
                       onClick={(event) => {
                         event.stopPropagation();
-                        copyKey(info?.key ?? "", ws, entry.node.label);
+                        copyKey(info?.key ?? "", ws, entry.item.label);
                       }}
                     >
                       {info?.key ?? "····"}
                     </button>
                   </td>
-                  <td>{entry.node.label || <span className="muted">Untitled</span>}</td>
+                  <td>{entry.item.label || <span className="muted">Untitled</span>}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
         <p className="small muted" style={{ marginTop: 8 }}>
-          A key changes when the node&apos;s own wording or an ancestor&apos;s wording changes. Old keys stay
+          A key changes when the item&apos;s own wording or an ancestor&apos;s wording changes. Old keys stay
           resolvable above. Four characters hold 1,048,576 values; a real collision is extended to five and flagged.
         </p>
       </div>
@@ -282,7 +282,7 @@ function DiffView({ diff }: { diff: VersionDiff }) {
           </ul>
         </div>
       ))}
-      {diff.reordered > 0 ? <p className="small muted">{diff.reordered} nodes changed position.</p> : null}
+      {diff.reordered > 0 ? <p className="small muted">{diff.reordered} items changed position.</p> : null}
     </div>
   );
 }
@@ -297,7 +297,7 @@ export function HistoryPanel({ ws }: { ws: Workspace }) {
   const diff = useMemo(() => {
     if (!doc || !selected) return null;
     const currentKeys = Object.fromEntries(
-      Object.entries(ws.keyMap.byNode).map(([id, info]) => [id, info.key]),
+      Object.entries(ws.keyMap.byItem).map(([id, info]) => [id, info.key]),
     );
     return diffSnapshots(
       { snapshot: selected.snapshot, keys: selected.keys },
@@ -425,24 +425,24 @@ export function HistoryPanel({ ws }: { ws: Workspace }) {
   );
 }
 
-/* ------------------------------ node ------------------------------ */
+/* ------------------------------ item ------------------------------ */
 
-export function NodePanel({ ws }: { ws: Workspace }) {
+export function ItemPanel({ ws }: { ws: Workspace }) {
   const doc = ws.doc;
-  const node = doc && ws.selection ? doc.nodes[ws.selection] : null;
-  const info = node ? ws.keyMap.byNode[node.id] : null;
+  const item = doc && ws.selection ? doc.items[ws.selection] : null;
+  const info = item ? ws.keyMap.byItem[item.id] : null;
   const aliases = useMemo(
-    () => (doc && node ? doc.aliases.filter((alias) => alias.nodeId === node.id).slice(-6).reverse() : []),
-    [doc, node],
+    () => (doc && item ? doc.aliases.filter((alias) => alias.itemId === item.id).slice(-6).reverse() : []),
+    [doc, item],
   );
   const suggestions = useMemo(
-    () => (doc && node ? heuristicMeceReview(doc, ws.keyMap, node.id) : []),
-    [doc, ws.keyMap, node],
+    () => (doc && item ? heuristicMeceReview(doc, ws.keyMap, item.id) : []),
+    [doc, ws.keyMap, item],
   );
 
   if (!doc) return null;
-  if (!node || !info) {
-    return <p className="empty-note">Select a node in the outline or the diagram.</p>;
+  if (!item || !info) {
+    return <p className="empty-note">Select an item in the outline or the diagram.</p>;
   }
 
   return (
@@ -454,7 +454,7 @@ export function NodePanel({ ws }: { ws: Workspace }) {
         </div>
         <div className="key-big">
           <code>{info.key}</code>
-          <button type="button" className="text-btn" onClick={() => copyKey(info.key, ws, node.label)}>
+          <button type="button" className="text-btn" onClick={() => copyKey(info.key, ws, item.label)}>
             Copy
           </button>
         </div>
@@ -469,7 +469,7 @@ export function NodePanel({ ws }: { ws: Workspace }) {
           <dt>Level</dt>
           <dd>{info.depth}</dd>
           <dt>Children</dt>
-          <dd>{node.children.length}</dd>
+          <dd>{item.children.length}</dd>
         </dl>
         {aliases.length > 0 ? (
           <div style={{ marginTop: 10 }}>
@@ -490,32 +490,32 @@ export function NodePanel({ ws }: { ws: Workspace }) {
           <span>Wording</span>
         </div>
         <div className="field">
-          <label htmlFor="node-label">Label</label>
+          <label htmlFor="item-label">Label</label>
           <textarea
-            id="node-label"
+            id="item-label"
             className="textarea"
-            value={node.label}
-            onChange={(event) => ws.editLabel(node.id, event.target.value)}
+            value={item.label}
+            onChange={(event) => ws.editLabel(item.id, event.target.value)}
           />
         </div>
         <div className="field">
           <label>Status</label>
           <button
             type="button"
-            className={`status-toggle ${node.status}`}
-            onClick={() => ws.setStatus(node.id, node.status === "complete" ? "open" : "complete")}
+            className={`status-toggle ${item.status}`}
+            onClick={() => ws.setStatus(item.id, item.status === "complete" ? "open" : "complete")}
           >
-            {node.status === "complete" ? "Complete" : "Open"}
+            {item.status === "complete" ? "Complete" : "Open"}
           </button>
         </div>
         <div className="field">
-          <label htmlFor="node-note">Note</label>
+          <label htmlFor="item-note">Note</label>
           <textarea
-            id="node-note"
+            id="item-note"
             className="textarea"
             placeholder="Data source, test, owner or evidence (kept in the project file)"
-            value={node.note ?? ""}
-            onChange={(event) => ws.setNote(node.id, event.target.value)}
+            value={item.note ?? ""}
+            onChange={(event) => ws.setNote(item.id, event.target.value)}
           />
         </div>
       </div>
@@ -527,20 +527,20 @@ export function NodePanel({ ws }: { ws: Workspace }) {
         <label className="check">
           <input
             type="checkbox"
-            checked={Boolean(node.mece?.exhaustive)}
-            onChange={(event) => ws.setMece(node.id, { ...node.mece, exhaustive: event.target.checked })}
+            checked={Boolean(item.mece?.exhaustive)}
+            onChange={(event) => ws.setMece(item.id, { ...item.mece, exhaustive: event.target.checked })}
           />
           <span>
             <strong>Exhaustive</strong>
             <br />
-            <span className="muted small">The branches together cover everything that could answer this node.</span>
+            <span className="muted small">The branches together cover everything that could answer this item.</span>
           </span>
         </label>
         <label className="check">
           <input
             type="checkbox"
-            checked={Boolean(node.mece?.exclusive)}
-            onChange={(event) => ws.setMece(node.id, { ...node.mece, exclusive: event.target.checked })}
+            checked={Boolean(item.mece?.exclusive)}
+            onChange={(event) => ws.setMece(item.id, { ...item.mece, exclusive: event.target.checked })}
           />
           <span>
             <strong>Mutually exclusive</strong>
@@ -556,17 +556,17 @@ export function NodePanel({ ws }: { ws: Workspace }) {
       </div>
 
       <div className="section" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-        <button type="button" className="text-btn" onClick={() => ws.addChild(node.id)}>
+        <button type="button" className="text-btn" onClick={() => ws.addChild(item.id)}>
           Add child
         </button>
-        <button type="button" className="text-btn" onClick={() => ws.addSibling(node.id)}>
+        <button type="button" className="text-btn" onClick={() => ws.addSibling(item.id)}>
           Add sibling
         </button>
         <button
           type="button"
           className="text-btn"
           onClick={() => {
-            if (window.confirm(`Delete "${node.label}" and everything below it?`)) ws.remove(node.id);
+            if (window.confirm(`Delete "${item.label}" and everything below it?`)) ws.remove(item.id);
           }}
         >
           Delete

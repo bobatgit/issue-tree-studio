@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CSV_HEADER, exportCsv, importCsv, parseCsv, toCsv, UTF8_BOM } from "../model/csv";
 import { computeKeyMap } from "../model/keys";
 import { parseMarkdown } from "../model/markdown";
-import { countNodes, flatten } from "../model/tree";
+import { countItems, flatten } from "../model/tree";
 
 function sampleDoc() {
   return parseMarkdown(
@@ -16,15 +16,15 @@ function sampleDoc() {
 }
 
 const paths = (doc: ReturnType<typeof sampleDoc>): string[] =>
-  flatten(doc).map((entry) => `${"·".repeat(entry.depth - 1)}${entry.node.label}`);
+  flatten(doc).map((entry) => `${"·".repeat(entry.depth - 1)}${entry.item.label}`);
 
 describe("csv export", () => {
-  it("writes the agreed header and one row per node", () => {
+  it("writes the agreed header and one row per item", () => {
     const doc = sampleDoc();
     const csv = exportCsv(doc, computeKeyMap(doc), 7);
     const lines = csv.replace(/^\uFEFF/, "").split("\r\n").filter(Boolean);
     expect(lines[0]).toBe(CSV_HEADER.join(","));
-    expect(lines).toHaveLength(1 + countNodes(doc));
+    expect(lines).toHaveLength(1 + countItems(doc));
     expect(csv.startsWith(UTF8_BOM)).toBe(true);
     expect(csv.endsWith("\r\n")).toBe(true);
   });
@@ -38,7 +38,7 @@ describe("csv export", () => {
     const pathIndex = header.indexOf("path");
     const levelIndex = header.indexOf("level");
     const versionIndex = header.indexOf("version");
-    const rootKey = map.byNode[doc.rootId as string].key;
+    const rootKey = map.byItem[doc.rootId as string].key;
     expect(rows[1][keyIndex]).toBe(rootKey);
     expect(rows[1][pathIndex]).toBe(rootKey);
     expect(rows[1][levelIndex]).toBe("1");
@@ -56,7 +56,7 @@ describe("csv export", () => {
 
   it("keeps non-ASCII labels intact", () => {
     const doc = sampleDoc();
-    doc.nodes[doc.rootId as string].label = "¿Por qué cayó el beneficio? – año 2025";
+    doc.items[doc.rootId as string].label = "¿Por qué cayó el beneficio? – año 2025";
     const csv = exportCsv(doc, computeKeyMap(doc));
     const rows = parseCsv(csv);
     expect(rows[1][4]).toBe("¿Por qué cayó el beneficio? – año 2025");
@@ -83,7 +83,7 @@ describe("csv import", () => {
     const csv = ["key,parent_key,label", "a,,Root?", "b,zzz,Orphan?"].join("\r\n");
     const result = importCsv(csv);
     expect(result.warnings.join(" ")).toContain("Orphan?");
-    expect(countNodes(result.doc)).toBe(3);
+    expect(countItems(result.doc)).toBe(3);
   });
 
   it("creates a shared root when several rows have no parent", () => {
@@ -93,11 +93,11 @@ describe("csv import", () => {
     expect(paths(result.doc)).toEqual(["Two roots", "·Alpha?", "·Beta?"]);
   });
 
-  it("enforces the 500-node cap", () => {
+  it("enforces the 500-item cap", () => {
     const rows = ["key,parent_key,label", "root,,Root?"];
     for (let index = 0; index < 600; index += 1) rows.push(`n${index},root,Item ${index}?`);
     const result = importCsv(rows.join("\r\n"));
-    expect(countNodes(result.doc)).toBe(500);
+    expect(countItems(result.doc)).toBe(500);
     expect(result.warnings.join(" ")).toContain("500");
   });
 
@@ -110,7 +110,7 @@ describe("csv import", () => {
 describe("csv status", () => {
   it("writes status in the fourth column", () => {
     const doc = sampleDoc();
-    doc.nodes[doc.rootId as string].status = "complete";
+    doc.items[doc.rootId as string].status = "complete";
     const rows = parseCsv(exportCsv(doc, computeKeyMap(doc)));
     expect(rows[0]).toEqual([...CSV_HEADER]);
     expect(rows[0][3]).toBe("status");
@@ -125,7 +125,7 @@ describe("csv status", () => {
       "b,a,2,weird,Child?",
     ].join("\r\n");
     const doc = importCsv(csv).doc;
-    const byLabel = (label: string) => Object.values(doc.nodes).find((node) => node.label === label);
+    const byLabel = (label: string) => Object.values(doc.items).find((item) => item.label === label);
     expect(byLabel("Root?")?.status).toBe("complete");
     expect(byLabel("Child?")?.status).toBe("open");
   });

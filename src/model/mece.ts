@@ -26,7 +26,7 @@ export interface MeceSuggestion {
   code: string;
   level: "error" | "warn" | "info";
   message: string;
-  nodeKeys: string[];
+  itemKeys: string[];
   /** True when only a language model could judge it. */
   needsModel?: boolean;
 }
@@ -46,20 +46,20 @@ export const MECE_SELF_CHECK = [
   "Could a rival name a missing branch that the current set cannot hold?",
 ];
 
-export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string): MeceSuggestion[] {
-  const node = doc.nodes[nodeId];
-  if (!node) return [];
-  const children = node.children.map((id) => doc.nodes[id]).filter(Boolean);
+export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, itemId: string): MeceSuggestion[] {
+  const item = doc.items[itemId];
+  if (!item) return [];
+  const children = item.children.map((id) => doc.items[id]).filter(Boolean);
   const suggestions: MeceSuggestion[] = [];
-  const keyOf = (id: string): string => keyMap.byNode[id]?.key ?? "----";
+  const keyOf = (id: string): string => keyMap.byItem[id]?.key ?? "----";
 
   if (children.length === 0) {
     return [
       {
         code: "NOT_SPLIT",
         level: "info",
-        message: "This node has no branches yet. Split it into the reasons or options beneath it.",
-        nodeKeys: [keyOf(nodeId)],
+        message: "This item has no branches yet. Split it into the reasons or options beneath it.",
+        itemKeys: [keyOf(itemId)],
       },
     ];
   }
@@ -68,7 +68,7 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string
       code: "ONE_BRANCH",
       level: "warn",
       message: "A single branch does not divide the problem. Add the complementary branch or remove the level.",
-      nodeKeys: [keyOf(children[0].id)],
+      itemKeys: [keyOf(children[0].id)],
     });
   }
 
@@ -81,14 +81,14 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string
           code: "OVERLAP_EXACT",
           level: "error",
           message: `"${a.label}" and "${b.label}" are the same branch.`,
-          nodeKeys: [keyOf(a.id), keyOf(b.id)],
+          itemKeys: [keyOf(a.id), keyOf(b.id)],
         });
       } else if (overlapScore(a.label, b.label) >= 0.6) {
         suggestions.push({
           code: "OVERLAP_WORDS",
           level: "warn",
           message: `"${a.label}" and "${b.label}" share most of their wording. Confirm they are mutually exclusive.`,
-          nodeKeys: [keyOf(a.id), keyOf(b.id)],
+          itemKeys: [keyOf(a.id), keyOf(b.id)],
         });
       }
     }
@@ -99,7 +99,7 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string
       code: "TOO_MANY",
       level: "info",
       message: `${children.length} branches is more than a reader can hold. Group them into two or three families first.`,
-      nodeKeys: children.map((child) => keyOf(child.id)),
+      itemKeys: children.map((child) => keyOf(child.id)),
     });
   }
 
@@ -110,17 +110,17 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, nodeId: string
       level: "info",
       message:
         "No branch covers 'other'. That is correct only if your split is provably complete; otherwise add a catch-all and test whether it matters.",
-      nodeKeys: children.map((child) => keyOf(child.id)),
+      itemKeys: children.map((child) => keyOf(child.id)),
       needsModel: false,
     });
   }
 
-  if (!node.mece?.exhaustive || !node.mece?.exclusive) {
+  if (!item.mece?.exhaustive || !item.mece?.exclusive) {
     suggestions.push({
       code: "UNCONFIRMED",
       level: "info",
       message: "Mark this split as exhaustive and mutually exclusive once you have checked it.",
-      nodeKeys: [keyOf(nodeId)],
+      itemKeys: [keyOf(itemId)],
     });
   }
 

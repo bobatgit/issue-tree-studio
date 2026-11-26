@@ -4,7 +4,7 @@
  */
 
 import type { KeyMap, TreeDoc } from "./types";
-import { NODE_CAP, SOFT_CAP } from "./types";
+import { ITEM_CAP, SOFT_CAP } from "./types";
 import { flatten, subtreeIds } from "./tree";
 
 export type FindingLevel = "error" | "warn" | "info";
@@ -13,7 +13,7 @@ export interface Finding {
   id: string;
   code: string;
   level: FindingLevel;
-  nodeId?: string;
+  itemId?: string;
   title: string;
   detail: string;
 }
@@ -56,15 +56,15 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
     level: FindingLevel,
     title: string,
     detail: string,
-    nodeId?: string,
+    itemId?: string,
   ): void => {
-    findings.push({ id: `${code}:${nodeId ?? "tree"}:${findings.length}`, code, level, title, detail, nodeId });
+    findings.push({ id: `${code}:${itemId ?? "tree"}:${findings.length}`, code, level, title, detail, itemId });
   };
 
-  if (!doc.rootId || !doc.nodes[doc.rootId]) {
+  if (!doc.rootId || !doc.items[doc.rootId]) {
     push("NO_ROOT", "error", "The tree has no root", "Add a root question to start the tree.");
   } else {
-    const root = doc.nodes[doc.rootId];
+    const root = doc.items[doc.rootId];
     if (!root.label.trim()) {
       push("EMPTY_LABEL", "error", "The root has no label", "Write the root as a precise question.", root.id);
     } else if (!looksLikeQuestion(root.label)) {
@@ -86,39 +86,39 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
 
   const singleChild: string[] = [];
   for (const entry of flat) {
-    const { node } = entry;
-    if (!node.label.trim()) {
-      push("EMPTY_LABEL", "error", "A node has no label", "Fill in the wording or delete the node.", node.id);
+    const { item } = entry;
+    if (!item.label.trim()) {
+      push("EMPTY_LABEL", "error", "An item has no label", "Fill in the wording or delete the item.", item.id);
     }
-    if (node.label.length > 140) {
+    if (item.label.length > 140) {
       push(
         "LONG_LABEL",
         "warn",
         "A label is long for a slide",
-        `${node.label.length} characters. Aim for under 90 so the box stays readable.`,
-        node.id,
+        `${item.label.length} characters. Aim for under 90 so the box stays readable.`,
+        item.id,
       );
     }
-    if (node.status === "complete") {
-      const openChild = node.children.map((childId) => doc.nodes[childId]).find((child) => child && child.status !== "complete");
+    if (item.status === "complete") {
+      const openChild = item.children.map((childId) => doc.items[childId]).find((child) => child && child.status !== "complete");
       if (openChild) {
         push(
           "COMPLETE_WITH_OPEN_CHILD",
           "warn",
-          "A complete node has an open child",
-          `"${node.label}" is complete, but "${openChild.label}" is still open. Finish it, reopen the parent, or accept the gap.`,
-          node.id,
+          "A complete item has an open child",
+          `"${item.label}" is complete, but "${openChild.label}" is still open. Finish it, reopen the parent, or accept the gap.`,
+          item.id,
         );
       }
     }
 
-    if (node.children.length === 1) singleChild.push(node.id);
+    if (item.children.length === 1) singleChild.push(item.id);
 
-    for (let i = 0; i < node.children.length; i += 1) {
-      const childA = doc.nodes[node.children[i]];
+    for (let i = 0; i < item.children.length; i += 1) {
+      const childA = doc.items[item.children[i]];
       if (!childA) continue;
-      for (let j = i + 1; j < node.children.length; j += 1) {
-        const childB = doc.nodes[node.children[j]];
+      for (let j = i + 1; j < item.children.length; j += 1) {
+        const childB = doc.items[item.children[j]];
         if (!childB) continue;
         const normalA = childA.label.trim().toLowerCase();
         const normalB = childB.label.trim().toLowerCase();
@@ -142,31 +142,31 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
       }
     }
 
-    if (node.children.length > 7) {
+    if (item.children.length > 7) {
       push(
         "TOO_MANY_BRANCHES",
         "info",
-        "A node has many branches",
-        `${node.children.length} branches. Group them so each level reads as one split.`,
-        node.id,
+        "An item has many branches",
+        `${item.children.length} branches. Group them so each level reads as one split.`,
+        item.id,
       );
     }
   }
 
   const grouped = singleChild.slice(0, 6);
-  for (const nodeId of grouped) {
-    push("SINGLE_CHILD", "info", "A node has only one child", "A single child adds a level without adding a division.", nodeId);
+  for (const itemId of grouped) {
+    push("SINGLE_CHILD", "info", "An item has only one child", "A single child adds a level without adding a division.", itemId);
   }
   if (singleChild.length > grouped.length) {
     push(
       "SINGLE_CHILD_MANY",
       "info",
-      `${singleChild.length - grouped.length} more nodes have a single child`,
-      "Single-child nodes usually mean a missing sibling.",
+      `${singleChild.length - grouped.length} more items have a single child`,
+      "Single-child items usually mean a missing sibling.",
     );
   }
 
-  const leaves = flat.filter((entry) => entry.node.children.length === 0);
+  const leaves = flat.filter((entry) => entry.item.children.length === 0);
   const depths = leaves.map((entry) => entry.depth);
   if (depths.length > 1 && Math.max(...depths) - Math.min(...depths) > 2) {
     push(
@@ -185,52 +185,52 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
       push(
         "DUPLICATE_PATH",
         "error",
-        "Two nodes have identical wording on the same path",
+        "Two items have identical wording on the same path",
         "Their content hash would be the same, so one gets an ordinal. Reword one of them.",
-        entry.node.id,
+        entry.item.id,
       );
     } else {
-      seenPaths.set(normalized, entry.node.id);
+      seenPaths.set(normalized, entry.item.id);
     }
   }
 
-  for (const info of Object.values(keyMap.byNode)) {
+  for (const info of Object.values(keyMap.byItem)) {
     if (info.promoted) {
       push(
         "KEY_PROMOTED",
         "info",
         `Key ${info.key} is longer than 4 characters`,
         "A real hash collision was detected and resolved deterministically by extending this key. It stays unique.",
-        info.nodeId,
+        info.itemId,
       );
     }
   }
   for (const collision of keyMap.collisions) {
-    push("KEY_COLLISION", "error", `Key ${collision.key} is not unique`, "The resolver could not separate these nodes.");
+    push("KEY_COLLISION", "error", `Key ${collision.key} is not unique`, "The resolver could not separate these items.");
   }
 
-  const nodeCount = Object.keys(doc.nodes).length;
-  if (nodeCount >= NODE_CAP) {
-    push("NODE_COUNT_CAP", "warn", `The tree is at the ${NODE_CAP}-node hard cap`, "Remove or merge nodes before adding more.");
-  } else if (nodeCount >= SOFT_CAP) {
+  const itemCount = Object.keys(doc.items).length;
+  if (itemCount >= ITEM_CAP) {
+    push("ITEM_COUNT_CAP", "warn", `The tree is at the ${ITEM_CAP}-item hard cap`, "Remove or merge items before adding more.");
+  } else if (itemCount >= SOFT_CAP) {
     push(
-      "NODE_COUNT_HIGH",
+      "ITEM_COUNT_HIGH",
       "info",
-      `${nodeCount} of ${NODE_CAP} nodes used`,
+      `${itemCount} of ${ITEM_CAP} items used`,
       "Past this size the tree gets hard to read. Nothing is blocked.",
     );
   }
 
   const unconfirmed = flat.filter(
-    (entry) => entry.node.children.length >= 2 && (!entry.node.mece || (!entry.node.mece.exhaustive && !entry.node.mece.exclusive)),
+    (entry) => entry.item.children.length >= 2 && (!entry.item.mece || (!entry.item.mece.exhaustive && !entry.item.mece.exclusive)),
   );
   if (unconfirmed.length > 0) {
     push(
       "MECE_UNCONFIRMED",
       "info",
       `${unconfirmed.length} split${unconfirmed.length === 1 ? "" : "s"} not confirmed as MECE`,
-      "Open a node and confirm that its branches are exhaustive and mutually exclusive.",
-      unconfirmed[0].node.id,
+      "Open an item and confirm that its branches are exhaustive and mutually exclusive.",
+      unconfirmed[0].item.id,
     );
   }
 
@@ -248,7 +248,7 @@ export function findingCounts(findings: Finding[]): Record<FindingLevel, number>
   );
 }
 
-/** Nodes that are the most expensive to fix first: errors on shallow levels. */
-export function subtreeSize(doc: TreeDoc, nodeId: string): number {
-  return subtreeIds(doc, nodeId).length;
+/** Items that are the most expensive to fix first: errors on shallow levels. */
+export function subtreeSize(doc: TreeDoc, itemId: string): number {
+  return subtreeIds(doc, itemId).length;
 }

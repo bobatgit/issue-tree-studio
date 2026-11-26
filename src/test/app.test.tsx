@@ -61,12 +61,12 @@ describe("app shell", () => {
   });
 });
 
-describe("node status", () => {
-  it("marks a node complete from its row checkbox", async () => {
+describe("item status", () => {
+  it("marks an item complete from its row checkbox", async () => {
     render(<App />);
     await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
-    fireEvent.click(screen.getAllByLabelText("Mark this node complete")[0]);
-    await waitFor(() => expect(screen.getAllByLabelText("Mark this node open").length).toBeGreaterThan(0));
+    fireEvent.click(screen.getAllByLabelText("Mark this item complete")[0]);
+    await waitFor(() => expect(screen.getAllByLabelText("Mark this item open").length).toBeGreaterThan(0));
   });
 });
 
@@ -153,5 +153,19 @@ describe("workspace shell", () => {
     fireEvent.click(screen.getByLabelText("Settings"));
     await waitFor(() => expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy());
     expect(screen.getByText("Keys", { selector: ".section-head span" })).toBeTruthy();
+  });
+});
+
+describe("a tab saved before the items rename", () => {
+  it("starts a fresh tree instead of failing", async () => {
+    const doc = buildDoc("Older tree", [{ label: "Was this written before?", depth: 1 }]);
+    const older: Record<string, unknown> = { ...doc, nodes: doc.items };
+    delete older.items;
+    sessionStorage.setItem("its.doc", JSON.stringify(older));
+
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(0));
+    expect(screen.queryByDisplayValue("Was this written before?")).toBeNull();
+    expect(document.querySelector(".topbar")?.textContent).toMatch(/items/);
   });
 });

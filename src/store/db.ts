@@ -62,7 +62,7 @@ function summarise(doc: TreeDoc): DocSummary {
     name: doc.name,
     version: doc.version,
     updatedAt: doc.updatedAt,
-    nodeCount: Object.keys(doc.nodes).length,
+    itemCount: Object.keys(doc.items).length,
   };
 }
 

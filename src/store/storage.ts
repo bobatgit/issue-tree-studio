@@ -39,17 +39,34 @@ function summarise(doc: TreeDoc): DocSummary {
     name: doc.name,
     version: doc.version,
     updatedAt: doc.updatedAt,
-    nodeCount: Object.keys(doc.nodes).length,
+    itemCount: Object.keys(doc.items).length,
   };
+}
+
+/**
+ * A stored document must carry an `items` map. Anything else counts as no
+ * document at all, so a tab that was open across the 0.8.0 deploy returns to the
+ * ordinary empty state rather than to a half-built one. That release moved the
+ * map from `nodes` to `items` with no fallback, deliberately, which is why a
+ * document saved before it no longer loads.
+ */
+function isTreeDoc(value: TreeDoc | null): value is TreeDoc {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof value.items === "object" &&
+    value.items !== null
+  );
 }
 
 export async function listDocs(): Promise<DocSummary[]> {
   const doc = read<TreeDoc>(DOC_KEY);
-  return doc ? [summarise(doc)] : [];
+  return isTreeDoc(doc) ? [summarise(doc)] : [];
 }
 
 export async function getDoc(_id?: string): Promise<TreeDoc | null> {
-  return read<TreeDoc>(DOC_KEY);
+  const doc = read<TreeDoc>(DOC_KEY);
+  return isTreeDoc(doc) ? doc : null;
 }
 
 export async function putDoc(doc: TreeDoc): Promise<void> {
@@ -169,7 +186,7 @@ async function runMigration(): Promise<LegacyMigration> {
   const trees: { doc: TreeDoc; versions: VersionEntry[] }[] = [];
   for (const summary of summaries) {
     const doc = await legacy.getDoc(summary.id);
-    if (doc) trees.push({ doc, versions: await legacy.getAllVersions(summary.id) });
+    if (doc && isTreeDoc(doc)) trees.push({ doc, versions: await legacy.getAllVersions(summary.id) });
   }
   const newest = trees[0];
   if (newest) {

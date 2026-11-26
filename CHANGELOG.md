@@ -3,6 +3,31 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.8.0] - 2026-11-26
+
+### Changed
+
+- **Breaking: the saved map is `items`, not `nodes`.** A project file exported before this release no longer
+  imports, and a tab that is open when this version loads comes up as a fresh tree instead of recovering. The
+  tab is the document boundary and closing it ends the tree, so nothing is recovered by design. If that ever
+  becomes unacceptable the mitigation is one line: read `nodes` when `items` is absent. It changes nothing
+  about how new files are written.
+- One word for one thing: the interface, the code and the saved file now say **item**. Was `node` in counts,
+  panel headings, warnings, toasts, tooltips, placeholders, aria-labels, empty states, diagnostics and quality
+  wording, and in the identifiers `TreeNode`, `FlatNode`, `NodeStatus`, `NodeKey`, `nodeCount`, `NODE_CAP`,
+  `byNode` and `nodeId`. Only `tree`, `branch`, `leaf`, `level`, `depth`, `path`, `key` and `hash` are
+  unchanged vocabulary.
+- A stored document whose shape cannot be read is an empty tab, never an error.
+
+### Added
+
+- A vocabulary test fails when the word `node` appears anywhere in the source, ignoring comments, so it cannot
+  creep back into the interface.
+
+### Fixed
+
+- "a item" reads as "an item" in every message the rename touched.
+
 ## [0.7.0] - 2026-11-25
 
 ### Added

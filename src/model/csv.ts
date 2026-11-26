@@ -1,7 +1,7 @@
 /** CSV export and import for issue trees. */
 
-import type { KeyMap, NodeStatus, TreeDoc, TreeNode } from "./types";
-import { NODE_CAP } from "./types";
+import type { KeyMap, ItemStatus, TreeDoc, TreeItem } from "./types";
+import { ITEM_CAP } from "./types";
 import { buildDoc, flatten, newId, now } from "./tree";
 
 export const CSV_HEADER = [
@@ -36,16 +36,16 @@ export function toCsv(rows: readonly (readonly (string | number)[])[]): string {
 export function exportCsv(doc: TreeDoc, keyMap: KeyMap, version = doc.version): string {
   const rows: (string | number)[][] = [[...CSV_HEADER]];
   for (const entry of flatten(doc)) {
-    const info = keyMap.byNode[entry.node.id];
+    const info = keyMap.byItem[entry.item.id];
     const key = info?.key ?? "";
     const pathKeys = info?.pathKeys ?? [key];
-    const parentKey = entry.parentId ? keyMap.byNode[entry.parentId]?.key ?? "" : "";
+    const parentKey = entry.parentId ? keyMap.byItem[entry.parentId]?.key ?? "" : "";
     rows.push([
       key,
       parentKey,
       entry.depth,
-      entry.node.status,
-      entry.node.label,
+      entry.item.status,
+      entry.item.label,
       pathKeys.join("/"),
       entry.parentId ? entry.index + 1 : 0,
       version,
@@ -99,7 +99,7 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim() !== ""));
 }
 
-function asStatus(value: string | undefined): NodeStatus {
+function asStatus(value: string | undefined): ItemStatus {
   const clean = (value ?? "").trim().toLowerCase();
   return ["complete", "completed", "done", "x", "closed"].includes(clean) ? "complete" : "open";
 }
@@ -122,7 +122,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
 
   const header = rows[0];
   const col = {
-    key: headerIndex(header, ["key", "id", "node_id"]),
+    key: headerIndex(header, ["key", "id", "item_id"]),
     parent: headerIndex(header, ["parent_key", "parent", "parent_id"]),
     label: headerIndex(header, ["label", "text", "question", "issue", "name"]),
     level: headerIndex(header, ["level", "depth"]),
@@ -141,12 +141,12 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     return { doc: buildDoc(name, [{ label: "Root question", depth: 1 }]), warnings: ["No labelled rows found."] };
   }
 
-  const capped = dataRows.slice(0, NODE_CAP);
-  if (dataRows.length > NODE_CAP) {
-    warnings.push(`CSV had ${dataRows.length} rows. Kept the first ${NODE_CAP} to stay inside the ${NODE_CAP}-node cap.`);
+  const capped = dataRows.slice(0, ITEM_CAP);
+  if (dataRows.length > ITEM_CAP) {
+    warnings.push(`CSV had ${dataRows.length} rows. Kept the first ${ITEM_CAP} to stay inside the ${ITEM_CAP}-item cap.`);
   }
 
-  const nodes: Record<string, TreeNode> = {};
+  const items: Record<string, TreeItem> = {};
   const ids: string[] = [];
   const externalToId = new Map<string, string>();
   const parents: (string | null)[] = [];
@@ -155,7 +155,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     const id = newId();
     const label = (row[col.label] ?? "").trim();
     const externalKey = col.key >= 0 ? (row[col.key] ?? "").trim() : "";
-    nodes[id] = { id, label, status: asStatus(col.status >= 0 ? row[col.status] : undefined), children: [] };
+    items[id] = { id, label, status: asStatus(col.status >= 0 ? row[col.status] : undefined), children: [] };
     ids.push(id);
     if (externalKey) {
       if (externalToId.has(externalKey)) {
@@ -175,25 +175,25 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
     if (!parentRef) {
       const level = col.level >= 0 ? Number.parseInt(row[col.level] ?? "", 10) : Number.NaN;
       if (Number.isFinite(level) && level > 1) {
-        warnings.push(`Row "${nodes[id].label}" has no parent reference; treated it as a root.`);
+        warnings.push(`Row "${items[id].label}" has no parent reference; treated it as a root.`);
       }
       roots.push(id);
       return;
     }
     const parentId = externalToId.get(parentRef);
     if (!parentId || parentId === id) {
-      warnings.push(`Could not find parent "${parentRef}" for "${nodes[id].label}". Attached it to the top level.`);
+      warnings.push(`Could not find parent "${parentRef}" for "${items[id].label}". Attached it to the top level.`);
       roots.push(id);
       return;
     }
-    nodes[parentId].children.push(id);
+    items[parentId].children.push(id);
   });
 
   const timestamp = now();
   let rootId: string | null = roots.length === 1 ? roots[0] : null;
   if (roots.length > 1) {
     const synthetic = newId();
-    nodes[synthetic] = { id: synthetic, label: name, status: "open", children: [...roots] };
+    items[synthetic] = { id: synthetic, label: name, status: "open", children: [...roots] };
     rootId = synthetic;
     warnings.push(`Found ${roots.length} top-level rows. Added a shared root so the rows form one tree.`);
   }
@@ -202,7 +202,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
       id: newId(),
       name,
       rootId,
-      nodes,
+      items,
       version: 1,
       createdAt: timestamp,
       updatedAt: timestamp,

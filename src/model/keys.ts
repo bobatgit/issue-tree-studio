@@ -1,10 +1,10 @@
 /**
  * Content-addressed keys.
  *
- * A node key is the first N characters of the Crockford Base32 encoding of a
- * SHA-256 digest over the node's normalised label plus the normalised labels of
- * its ancestors. Five characters give 33,554,432 values; at the 500-node hard cap
- * the chance of any two nodes colliding is about 0.37 percent. Real collisions are
+ * An item key is the first N characters of the Crockford Base32 encoding of a
+ * SHA-256 digest over the item's normalised label plus the normalised labels of
+ * its ancestors. Five characters give 33,554,432 values; at the 500-item hard cap
+ * the chance of any two items colliding is about 0.37 percent. Real collisions are
  * detected and deterministically promoted to a longer key.
  */
 
@@ -76,7 +76,7 @@ export function keyForPath(path: string, length = DEFAULT_KEY_LENGTH): string {
 }
 
 /**
- * Compute every node key in a document.
+ * Compute every item key in a document.
  *
  * Two passes:
  *  1. Identical content paths (same labels all the way down) get a stable
@@ -87,7 +87,7 @@ export function keyForPath(path: string, length = DEFAULT_KEY_LENGTH): string {
  */
 export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): KeyMap {
   interface Candidate {
-    nodeId: string;
+    itemId: string;
     rawPath: string;
     digest: string;
     key: string;
@@ -100,10 +100,10 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
   const candidates: Candidate[] = [];
   const seenPaths = new Map<string, number>();
 
-  const walk = (nodeId: string, ancestors: string[], depth: number): void => {
-    const node = doc.nodes[nodeId];
-    if (!node) return;
-    const labels = [...ancestors, node.label];
+  const walk = (itemId: string, ancestors: string[], depth: number): void => {
+    const item = doc.items[itemId];
+    if (!item) return;
+    const labels = [...ancestors, item.label];
     const rawPath = joinPath(labels);
     const seen = seenPaths.get(rawPath) ?? 0;
     seenPaths.set(rawPath, seen + 1);
@@ -111,7 +111,7 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
     const digest = digestHex(ordinal > 0 ? `${rawPath}${PATH_SEPARATOR}#${ordinal}` : rawPath);
     const length = baseLength;
     candidates.push({
-      nodeId,
+      itemId,
       rawPath,
       digest,
       key: toBase32(hexToBytes(digest), length),
@@ -120,14 +120,14 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
       depth,
       pathKeys: [],
     });
-    for (const childId of node.children) walk(childId, labels, depth + 1);
+    for (const childId of item.children) walk(childId, labels, depth + 1);
   };
 
-  if (doc.rootId && doc.nodes[doc.rootId]) walk(doc.rootId, [], 1);
+  if (doc.rootId && doc.items[doc.rootId]) walk(doc.rootId, [], 1);
 
-  // Any node not reachable from the root (defensive) still gets a key.
-  for (const id of Object.keys(doc.nodes)) {
-    if (!candidates.some((c) => c.nodeId === id)) walk(id, [], 1);
+  // Any item not reachable from the root (defensive) still gets a key.
+  for (const id of Object.keys(doc.items)) {
+    if (!candidates.some((c) => c.itemId === id)) walk(id, [], 1);
   }
 
   const byKey = new Map<string, Candidate[]>();
@@ -149,7 +149,7 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
     for (const bucket of buckets.values()) {
       if (bucket.length < 2) continue;
       const ordered = [...bucket].sort((a, b) =>
-        a.digest === b.digest ? a.nodeId.localeCompare(b.nodeId) : a.digest.localeCompare(b.digest),
+        a.digest === b.digest ? a.itemId.localeCompare(b.itemId) : a.digest.localeCompare(b.digest),
       );
       for (const loser of ordered.slice(1)) {
         if (loser.length >= MAX_KEY_LENGTH) continue;
@@ -162,11 +162,11 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
     if (!changed) break;
   }
 
-  const byNode: KeyMap["byNode"] = {};
+  const byItem: KeyMap["byItem"] = {};
   const keyIndex = new Map<string, string[]>();
   for (const candidate of candidates) {
-    byNode[candidate.nodeId] = {
-      nodeId: candidate.nodeId,
+    byItem[candidate.itemId] = {
+      itemId: candidate.itemId,
       key: candidate.key,
       length: candidate.length,
       path: candidate.rawPath,
@@ -176,25 +176,25 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
       depth: candidate.depth,
     };
     const list = keyIndex.get(candidate.key);
-    if (list) list.push(candidate.nodeId);
-    else keyIndex.set(candidate.key, [candidate.nodeId]);
+    if (list) list.push(candidate.itemId);
+    else keyIndex.set(candidate.key, [candidate.itemId]);
   }
 
   // Fill key paths (ancestor keys) now that every key is known.
-  const fillPathKeys = (nodeId: string, parentPathKeys: string[]): void => {
-    const info = byNode[nodeId];
-    const node = doc.nodes[nodeId];
-    if (!info || !node) return;
+  const fillPathKeys = (itemId: string, parentPathKeys: string[]): void => {
+    const info = byItem[itemId];
+    const item = doc.items[itemId];
+    if (!info || !item) return;
     info.pathKeys = [...parentPathKeys, info.key];
-    for (const childId of node.children) fillPathKeys(childId, info.pathKeys);
+    for (const childId of item.children) fillPathKeys(childId, info.pathKeys);
   };
-  if (doc.rootId && byNode[doc.rootId]) fillPathKeys(doc.rootId, []);
+  if (doc.rootId && byItem[doc.rootId]) fillPathKeys(doc.rootId, []);
 
   const collisions = [...keyIndex.entries()]
     .filter(([, ids]) => ids.length > 1)
-    .map(([key, nodeIds]) => ({ key, nodeIds }));
+    .map(([key, itemIds]) => ({ key, itemIds }));
 
-  return { byNode, collisions };
+  return { byItem, collisions };
 }
 
 function hexToBytes(hex: string): Uint8Array {

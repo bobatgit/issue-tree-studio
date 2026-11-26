@@ -26,7 +26,7 @@ describe("diagnostics block", () => {
     expect(text).toContain("### Issue Tree Studio diagnostics");
     expect(text).toContain("build: 0.2.0 (c861e80)");
     expect(text).toContain("2026-11-24T12:00:00.000Z");
-    expect(text).toContain("nodes: 3 / 500, depth 2");
+    expect(text).toContain("items: 3 / 500, depth 2");
     expect(text).toContain("keys: length 5, promoted 0, collisions 0");
     expect(text).toContain("status: open 3, complete 0");
     expect(text).toContain("page: https://bobatgit.github.io/issue-tree-studio/");
@@ -37,10 +37,10 @@ describe("diagnostics block", () => {
     const text = buildDiagnostics(doc, computeKeyMap(doc), meta);
     const json = treeJsonFromDiagnostics(text);
     expect(json).not.toBeNull();
-    const parsed = JSON.parse(json as string) as { name: string; nodes: Record<string, unknown>; version: number };
+    const parsed = JSON.parse(json as string) as { name: string; items: Record<string, unknown>; version: number };
     expect(parsed.name).toBe("Test tree");
     expect(parsed.version).toBe(1);
-    expect(Object.keys(parsed.nodes)).toHaveLength(3);
+    expect(Object.keys(parsed.items)).toHaveLength(3);
   });
 
   it("survives labels that contain markdown fences", () => {

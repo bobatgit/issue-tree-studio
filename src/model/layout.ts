@@ -6,7 +6,7 @@
  * them with a viewBox.
  */
 
-import type { KeyMap, NodeStatus, TreeDoc } from "./types";
+import type { KeyMap, ItemStatus, TreeDoc } from "./types";
 
 export interface LayoutOptions {
   maxWidth: number;
@@ -19,10 +19,10 @@ export interface LayoutOptions {
   showKeys?: boolean;
 }
 
-export interface LayoutNode {
+export interface LayoutItem {
   id: string;
   label: string;
-  status: NodeStatus;
+  status: ItemStatus;
   key: string;
   x: number;
   y: number;
@@ -39,7 +39,7 @@ export interface LayoutEdge {
 }
 
 export interface LayoutResult {
-  nodes: LayoutNode[];
+  items: LayoutItem[];
   edges: LayoutEdge[];
   width: number;
   height: number;
@@ -107,10 +107,10 @@ export function estimateCharsPerLine(boxWidth: number, fontSize: number): number
 export function layoutTree(
   doc: TreeDoc,
   keyMap: KeyMap,
-  nodeIds: string[] | null,
+  itemIds: string[] | null,
   options: LayoutOptions,
 ): LayoutResult {
-  const included = nodeIds ? new Set(nodeIds) : null;
+  const included = itemIds ? new Set(itemIds) : null;
   const gapX = options.gapX ?? 0.38;
   const gapY = options.gapY ?? 0.16;
   const showKeys = options.showKeys ?? true;
@@ -121,7 +121,7 @@ export function layoutTree(
     parentId: string | null;
     children: string[];
     label: string;
-    status: NodeStatus;
+    status: ItemStatus;
     key: string;
   }
 
@@ -130,25 +130,25 @@ export function layoutTree(
   const collect = (id: string, depth: number, parentId: string | null): void => {
     if (entries.has(id)) return;
     if (included && !included.has(id)) return;
-    const node = doc.nodes[id];
-    if (!node) return;
+    const item = doc.items[id];
+    if (!item) return;
     entries.set(id, {
       id,
       depth,
       parentId,
-      children: node.children.filter((childId) => !included || included.has(childId)),
-      label: node.label,
-      status: node.status,
-      key: keyMap.byNode[id]?.key ?? "----",
+      children: item.children.filter((childId) => !included || included.has(childId)),
+      label: item.label,
+      status: item.status,
+      key: keyMap.byItem[id]?.key ?? "----",
     });
     maxDepth = Math.max(maxDepth, depth);
-    for (const childId of node.children) collect(childId, depth + 1, id);
+    for (const childId of item.children) collect(childId, depth + 1, id);
   };
   if (doc.rootId) collect(doc.rootId, 1, null);
-  for (const id of Object.keys(doc.nodes)) if (!entries.has(id)) collect(id, 1, null);
+  for (const id of Object.keys(doc.items)) if (!entries.has(id)) collect(id, 1, null);
   if (entries.size === 0) {
     return {
-      nodes: [],
+      items: [],
       edges: [],
       width: 0,
       height: 0,
@@ -170,13 +170,13 @@ export function layoutTree(
   const lineHeight = (fontSize * 1.24) / 72;
   const metaH = showKeys ? Math.max(0.15, fontSize / 72 + 0.06) : 0;
 
-  let linesByNode = new Map<string, string[]>();
+  let linesByItem = new Map<string, string[]>();
   for (const entry of entries.values()) {
-    linesByNode.set(entry.id, wrapText(entry.label, charsPerLine, maxLines));
+    linesByItem.set(entry.id, wrapText(entry.label, charsPerLine, maxLines));
   }
 
   const contentH = (lines: string[]): number => PAD_Y * 2 + metaH + lines.length * lineHeight;
-  let boxH = Math.max(...[...linesByNode.values()].map(contentH), 0.3);
+  let boxH = Math.max(...[...linesByItem.values()].map(contentH), 0.3);
 
   // Leaf rows drive the height.
   const leafEntries = [...entries.values()].filter((entry) => entry.children.length === 0);
@@ -191,8 +191,8 @@ export function layoutTree(
       // 2) Shrink the boxes evenly so the whole tree still fits the slide.
       boxH = Math.max(0.12, (options.maxHeight - (leaves - 1) * 0.02) / leaves);
       const allowedLines = Math.max(1, Math.floor((boxH - PAD_Y * 2 - metaH) / lineHeight));
-      linesByNode = new Map(
-        [...linesByNode.entries()].map(([id, lines]) => [id, clipLines(lines, allowedLines)]),
+      linesByItem = new Map(
+        [...linesByItem.entries()].map(([id, lines]) => [id, clipLines(lines, allowedLines)]),
       );
       rowPitch = Math.max(0.02, (options.maxHeight - boxH) / Math.max(1, leaves - 1));
     }
@@ -221,10 +221,10 @@ export function layoutTree(
   const roots = [...entries.values()].filter((entry) => !entry.parentId);
   roots.forEach((entry) => place(entry.id));
 
-  const nodes: LayoutNode[] = [];
+  const items: LayoutItem[] = [];
   for (const entry of entries.values()) {
     const cy = centerY.get(entry.id) ?? 0;
-    nodes.push({
+    items.push({
       id: entry.id,
       label: entry.label,
       status: entry.status,
@@ -234,12 +234,12 @@ export function layoutTree(
       w: boxWidth,
       h: boxH,
       depth: entry.depth,
-      lines: linesByNode.get(entry.id) ?? [entry.label],
+      lines: linesByItem.get(entry.id) ?? [entry.label],
       fontSize,
     });
   }
 
-  const byId = new Map(nodes.map((node) => [node.id, node]));
+  const byId = new Map(items.map((item) => [item.id, item]));
   const edges: LayoutEdge[] = [];
   for (const entry of entries.values()) {
     const parent = byId.get(entry.id);
@@ -267,7 +267,7 @@ export function layoutTree(
   const width = depths * boxWidth + (depths - 1) * gapX;
   const height = Math.min((leaves - 1) * rowPitch + boxH, options.maxHeight);
 
-  return { nodes, edges, width, height, boxW: boxWidth, boxH, fontSize, metaH, rowPitch, leaves };
+  return { items, edges, width, height, boxW: boxWidth, boxH, fontSize, metaH, rowPitch, leaves };
 }
 
 function clipLines(lines: string[], allowed: number): string[] {
@@ -292,13 +292,13 @@ function clamp(value: number, min: number, max: number): number {
 
 export interface SlideGroup {
   title: string;
-  nodeIds: string[];
+  itemIds: string[];
   /** Root is repeated as context on branch slides. */
   includeRoot: boolean;
 }
 
 export interface PackOptions {
-  maxNodesPerSlide?: number;
+  maxItemsPerSlide?: number;
   maxLeavesPerSlide?: number;
   maxDepth?: number;
   overview?: boolean;
@@ -310,30 +310,30 @@ export interface PackOptions {
  * share a slide instead of splitting one branch per slide.
  */
 export function packSlides(doc: TreeDoc, options: PackOptions = {}): SlideGroup[] {
-  const maxNodes = options.maxNodesPerSlide ?? 34;
+  const maxItems = options.maxItemsPerSlide ?? 34;
   const maxLeaves = options.maxLeavesPerSlide ?? 16;
   const maxDepth = options.maxDepth ?? 4;
   const groups: SlideGroup[] = [];
-  const allIds = Object.keys(doc.nodes);
+  const allIds = Object.keys(doc.items);
 
   if (options.overview !== false) {
     groups.push({
-      title: doc.nodes[doc.rootId ?? ""]?.label ?? doc.name,
-      nodeIds: allIds,
+      title: doc.items[doc.rootId ?? ""]?.label ?? doc.name,
+      itemIds: allIds,
       includeRoot: true,
     });
   }
 
-  const root = doc.rootId ? doc.nodes[doc.rootId] : null;
+  const root = doc.rootId ? doc.items[doc.rootId] : null;
   if (!root) return groups;
 
-  const branches = root.children.filter((id) => doc.nodes[id]);
+  const branches = root.children.filter((id) => doc.items[id]);
   if (branches.length === 0) return groups;
 
   const depthOf = (id: string): number => {
     let depth = 0;
     let cursor: string | null = id;
-    while (cursor && doc.nodes[cursor]) {
+    while (cursor && doc.items[cursor]) {
       depth += 1;
       cursor = parentIdOf(doc, cursor);
       if (depth > 20) break;
@@ -341,55 +341,55 @@ export function packSlides(doc: TreeDoc, options: PackOptions = {}): SlideGroup[
     return depth;
   };
 
-  const stats = (ids: string[]): { nodes: number; leaves: number; depth: number } => {
-    let nodes = 0;
+  const stats = (ids: string[]): { items: number; leaves: number; depth: number } => {
+    let items = 0;
     let leaves = 0;
     let depth = 0;
     for (const id of ids) {
-      const node = doc.nodes[id];
-      if (!node) continue;
-      nodes += 1;
-      if (node.children.length === 0) leaves += 1;
+      const item = doc.items[id];
+      if (!item) continue;
+      items += 1;
+      if (item.children.length === 0) leaves += 1;
       depth = Math.max(depth, depthOf(id) - depthOf(root.id) + 1);
     }
-    return { nodes, leaves, depth };
+    return { items, leaves, depth };
   };
 
   let current: string[] = [];
-  let currentStats = { nodes: 0, leaves: 0, depth: 0 };
+  let currentStats = { items: 0, leaves: 0, depth: 0 };
   const flush = (): void => {
     if (current.length === 0) return;
     const labels = current
-      .map((id) => doc.nodes[id]?.label ?? "")
+      .map((id) => doc.items[id]?.label ?? "")
       .filter(Boolean)
       .slice(0, 2)
       .join(" · ");
     groups.push({
       title: current.length > 2 ? `${labels} + ${current.length - 2} more` : labels,
-      nodeIds: [root.id, ...current],
+      itemIds: [root.id, ...current],
       includeRoot: true,
     });
     current = [];
-    currentStats = { nodes: 0, leaves: 0, depth: 0 };
+    currentStats = { items: 0, leaves: 0, depth: 0 };
   };
 
   for (const branchId of branches) {
     const ids = [branchId, ...descendants(doc, branchId)];
     const branchStats = stats(ids);
     const next = {
-      nodes: currentStats.nodes + branchStats.nodes,
+      items: currentStats.items + branchStats.items,
       leaves: currentStats.leaves + branchStats.leaves,
       depth: Math.max(currentStats.depth, branchStats.depth),
     };
-    const fits = next.nodes <= maxNodes && next.leaves <= maxLeaves && next.depth <= maxDepth;
+    const fits = next.items <= maxItems && next.leaves <= maxLeaves && next.depth <= maxDepth;
     if (current.length > 0 && !fits) flush();
     current = [...current, ...ids];
     currentStats = {
-      nodes: currentStats.nodes + branchStats.nodes,
+      items: currentStats.items + branchStats.items,
       leaves: currentStats.leaves + branchStats.leaves,
       depth: Math.max(currentStats.depth, branchStats.depth),
     };
-    if (currentStats.nodes >= maxNodes || currentStats.leaves >= maxLeaves) flush();
+    if (currentStats.items >= maxItems || currentStats.leaves >= maxLeaves) flush();
   }
   flush();
   return groups;
@@ -397,10 +397,10 @@ export function packSlides(doc: TreeDoc, options: PackOptions = {}): SlideGroup[
 
 function descendants(doc: TreeDoc, id: string): string[] {
   const out: string[] = [];
-  const walk = (nodeId: string): void => {
-    const node = doc.nodes[nodeId];
-    if (!node) return;
-    for (const childId of node.children) {
+  const walk = (itemId: string): void => {
+    const item = doc.items[itemId];
+    if (!item) return;
+    for (const childId of item.children) {
       if (out.includes(childId)) continue;
       out.push(childId);
       walk(childId);
@@ -411,8 +411,8 @@ function descendants(doc: TreeDoc, id: string): string[] {
 }
 
 function parentIdOf(doc: TreeDoc, id: string): string | null {
-  for (const node of Object.values(doc.nodes)) {
-    if (node.children.includes(id)) return node.id;
+  for (const item of Object.values(doc.items)) {
+    if (item.children.includes(id)) return item.id;
   }
   return null;
 }

@@ -1,14 +1,14 @@
 /** Project JSON import: one shape, tolerating files from older builds. */
 
 import { newId, now } from "./tree";
-import type { TreeNode, TreeDoc } from "./types";
+import type { TreeItem, TreeDoc } from "./types";
 
 interface ProjectFile {
   doc?: TreeDoc;
 }
 
 /**
- * Read a project file. Unknown node fields from older schemas, such as the
+ * Read a project file. Unknown item fields from older schemas, such as the
  * removed `type`, are dropped so they cannot travel back out in an export.
  */
 /** True when a file records four-character keys from the older scheme. */
@@ -27,13 +27,13 @@ export function parseProject(text: string): TreeDoc | null {
     return null;
   }
   const doc = data.doc;
-  if (!doc || !doc.nodes || typeof doc.nodes !== "object" || !("rootId" in doc)) return null;
+  if (!doc || !doc.items || typeof doc.items !== "object" || !("rootId" in doc)) return null;
 
-  const nodes: Record<string, TreeNode> = {};
-  for (const [id, node] of Object.entries(doc.nodes)) {
-    const clean = { ...node } as TreeNode & { type?: unknown };
+  const items: Record<string, TreeItem> = {};
+  for (const [id, item] of Object.entries(doc.items)) {
+    const clean = { ...item } as TreeItem & { type?: unknown };
     delete clean.type;
-    nodes[id] = clean;
+    items[id] = clean;
   }
 
   return {
@@ -42,6 +42,6 @@ export function parseProject(text: string): TreeDoc | null {
     version: 1,
     createdAt: now(),
     updatedAt: now(),
-    nodes,
+    items,
   };
 }
