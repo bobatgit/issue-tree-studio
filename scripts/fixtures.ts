@@ -79,3 +79,32 @@ export function fixtureWithComplete(): TreeDoc {
   if (firstChild) doc.items[firstChild].status = "complete";
   return doc;
 }
+
+/**
+ * A tree with enough rows to overflow a window, for the checks that a view
+ * really scrolls. The soft cap is 100, so this one also crosses it.
+ */
+export function fixtureLarge(branches = 120): TreeDoc {
+  const lines = [`- Why did profit fall?`];
+  for (let index = 0; index < branches; index += 1) {
+    lines.push(`  - Did branch ${index + 1} move?`);
+  }
+  return parseMarkdown(lines.join("\n"), "Large tree").doc;
+}
+
+/** Whether a container can actually be scrolled, by scrolling it. */
+export const CAN_SCROLL = (selector: string): string => `(() => {
+  const element = document.querySelector(${JSON.stringify(selector)});
+  if (!element) return null;
+  const before = element.scrollTop;
+  element.scrollTop = 400;
+  const moved = element.scrollTop > 0;
+  element.scrollTop = before;
+  return moved ? 1 : 0;
+})()`;
+
+/** Whether a container has more content than it can show. */
+export const OVERFLOWS = (selector: string): string => `(() => {
+  const element = document.querySelector(${JSON.stringify(selector)});
+  return element ? Math.round(element.scrollHeight - element.clientHeight) : null;
+})()`;

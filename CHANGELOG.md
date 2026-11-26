@@ -3,6 +3,18 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.5] - 2026-11-26
+
+### Fixed
+
+- **The Tree view could not be scrolled.** `.workspace` is a grid item of `.body`, and a grid item's `min-height` defaults to
+  `auto`, so the whole left column grew to its content instead of being held to the row. With 120 items the list
+  container measured 5,963px tall, taller than the window, and `overflow: auto` never engages when a box is never
+  shorter than its own content. `body { overflow: hidden }` then clipped it and no scrollbar appeared anywhere.
+  `.workspace` now carries `min-height: 0`, `.editor` carries `flex: 1`, and `.editor-scroll` carries `flex: 1`: the
+  list measures 708px with 5,286px of content and scrolls. The Diagram view had the same gap, and its plan list can
+  now scroll too. A probe case with 120 items checks that each view can really be scrolled, by scrolling it.
+
 ## [0.10.4] - 2026-11-26
 
 ### Fixed

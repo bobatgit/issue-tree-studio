@@ -15,7 +15,7 @@
  */
 
 import { Page } from "./cdp";
-import { fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import { CAN_SCROLL, OVERFLOWS, fixtureLarge, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 import type { Metrics } from "./cdp";
 
@@ -195,6 +195,25 @@ const CASES: ProbeCase[] = [
       { label: "Key sits over the key column", derived: "keyOffset", exact: 0 },
       { label: "Status is centred over the status column", derived: "statusOffset", min: -1, max: 1 },
       { label: "the heading row sticks while the list scrolls", derived: "headSticky", exact: 1 },
+    ],
+  },
+  {
+    name: "scroll-1440",
+    note: "every view scrolls when its content is taller than the window",
+    view: "tree",
+    size: [1440, 900],
+    doc: fixtureLarge(120),
+    selectors: [".editor-scroll", ".panel-scroll", ".panel-scroll .section", ".panel-scroll .finding", ".panel-scroll .textarea", ".panel-scroll .check"],
+    derived: {
+      listOverflow: OVERFLOWS(".editor-scroll"),
+      listCanScroll: CAN_SCROLL(".editor-scroll"),
+      panelOverflow: OVERFLOWS(".panel-scroll"),
+      panelCanScroll: CAN_SCROLL(".panel-scroll"),
+    },
+    checks: [
+      { label: "the list has more rows than fit", derived: "listOverflow", min: 100 },
+      { label: "the list can be scrolled", derived: "listCanScroll", exact: 1 },
+      { label: "the panel can be scrolled", derived: "panelCanScroll", exact: 1 },
     ],
   },
   {

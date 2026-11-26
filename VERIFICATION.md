@@ -467,3 +467,19 @@ Two lessons worth keeping. A measurement that passes locally is not evidence abo
 why the gate has both. And a `grep` pipeline over a build hides its failure: an earlier push in this phase went out
 with `tsc` failing because the pipeline swallowed the error and the shell continued past it. Exit codes are checked
 directly now.
+
+## 0.10.5 - the list did not scroll
+
+Reported by the user: with many items on screen there was no way to scroll. The probe reproduced it and named the
+cause in one run. `.editor-scroll` measured 5,963px tall, taller than the window, with `scrollHeight` equal to
+`clientHeight`, so it had no overflow of its own and `overflow: auto` never engaged. A grid item's `min-height`
+defaults to `auto`, and `.workspace` is a grid item of `.body`, so the left column grew to its content while the
+right column, which already carried `min-height: 0`, scrolled correctly. `body { overflow: hidden }` clipped the
+overflow and no scrollbar appeared.
+
+The chain now carries the heights it needs, and the check that guards it scrolls each container rather than reading
+its `overflow` property, because reading the property would have passed all along.
+
+The same measurement found a second fault that is not this bug and is not fixed here: the panel reports 1,690,558px
+of content, because the quality review emits one "Siblings may overlap" finding per pair of siblings, so the first
+finding sits 278,383px down the panel with 120 items. That is filed separately.
