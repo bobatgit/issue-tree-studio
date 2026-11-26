@@ -452,8 +452,9 @@ describe("folding in the diagram", () => {
 
   const boxes = (): number => document.querySelectorAll(".diagram-svg .nrect").length;
   const legend = (): string => document.querySelector(".legend")?.textContent ?? "";
-  const collapseA = (): void =>
+  const collapseA = (): void => {
     fireEvent.click(screen.getAllByRole("button", { name: /^Collapse A\?/ })[0]);
+  };
 
   it("folds from the connector, closes the gap, and the Tree agrees", async () => {
     await enter();
