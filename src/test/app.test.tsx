@@ -81,13 +81,32 @@ describe("markdown view", () => {
 
     fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
     const area = (await screen.findByLabelText("Markdown outline")) as HTMLTextAreaElement;
-    expect(area.value).toContain("- [ ] Root?");
+    expect(area.value).toContain("- [ ] Q0. Root?");
 
     fireEvent.change(area, { target: { value: "- Root?\n  - A?\n  - B?\n" } });
     fireEvent.keyDown(area, { key: "Enter", ctrlKey: true });
 
     fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
     await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
+  });
+
+  it("reports the pasted numbering it removed, with the new number", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    const area = (await screen.findByLabelText("Markdown outline")) as HTMLTextAreaElement;
+    fireEvent.change(area, { target: { value: "- Root?\n  - a) A numbered child?\n" } });
+    fireEvent.keyDown(area, { key: "Enter", ctrlKey: true });
+
+    await waitFor(() =>
+      expect(document.querySelector(".toasts")?.textContent).toMatch(/Cleaned 1 pasted number/),
+    );
+    expect(document.querySelector(".toasts")?.textContent).toContain("Q1 A numbered child?");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(2));
   });
 
   it("keeps a draft when the view changes", async () => {

@@ -206,22 +206,39 @@ Native, editable shapes written by PptxGenJS. No images, no screenshots.
 * An optional **key index** table lists key, type, level and wording so a reader can resolve a key from a
   meeting note.
 
+### Numbers
+
+Every item carries a number derived from its position: the root is `Q0`, its children are `Q1`, `Q2`, and
+anything deeper appends its position among its siblings, so a third-level item is `Q2.4.1`. A number is never
+stored, never enters the key hash and never reaches a version snapshot, so a reorder renumbers and an undo has
+nothing to restore. Folding a branch never changes the number of anything.
+
 ### CSV
 
 ```
-key,parent_key,level,status,label,path,branch_index,version
+number,label,key,level,parent_key,status,path,branch_index,version
 ```
 
 * UTF-8 **with BOM** and CRLF, so Excel on Windows reads non-ASCII labels correctly.
 * RFC 4180 quoting: commas, quotes and line breaks inside labels are escaped.
 * `status` is `open` or `complete`.
+* `number` leads, so the file reads as a report: `Q0` for the root, `Q2.4.1` where that is the position. The
+  importer resolves columns by name, so a file exported before this column existed still imports.
 * `path` is the key path (`R4KQ/K7M2/T3PW`); `branch_index` is the 1-based position among siblings, and 0 for
   the root; `version` is the version the export was taken from.
 
 ### Markdown
 
-A task list with a version comment: `- [ ]` for open and `- [x]` for complete. It round-trips through the
-importer without losing wording, structure or status, and a leading key in the form `K7M2 · ` is ignored.
+A task list with a version comment: `- [ ]` for open and `- [x]` for complete. Each line carries its number,
+then its wording, then its key at the end: `- [ ] Q2.1. How did revenue change? {[2GK88]}`. The export writes
+no heading, so the root is the first list line. It round-trips byte for byte apart from the version stamp.
+
+A pasted outline is cleaned on the way in. An enumerator in front of a wording is dropped, so `1. Revenue`,
+`a) Revenue`, `Q2.1. Revenue`, `(3) Revenue`, `[4] Revenue` and `#7 Revenue` all become `Revenue`, and the
+report after the paste names each line with the number it received. An enumerator is only dropped when a
+separator follows it, so `2024 revenue fell 3%`, `3-way split` and `Q1 results` stay whole. A trailing
+`{[2GK88]}` is read on shape alone and dropped whether or not it resolves, because a key is always recomputed
+from the wording and its path. The older `K7M2 · Label` prefix is still read.
 
 ### Project JSON
 
@@ -238,6 +255,7 @@ src/
     keys.ts     normalisation, SHA-256, Crockford Base32, collision promotion
     tree.ts     immutable tree operations, soft 100 and hard 500 caps
     markdown.ts generic list parsing and export
+    numbering.ts derived position numbers: Q0, Q1, Q2.4.1
     csv.ts      RFC 4180 export and import
     layout.ts   one layout engine for the preview and the slides, plus slide packing
     quality.ts  deterministic checks and token overlap

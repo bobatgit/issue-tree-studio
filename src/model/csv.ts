@@ -2,14 +2,25 @@
 
 import type { KeyMap, ItemStatus, TreeDoc, TreeItem } from "./types";
 import { ITEM_CAP } from "./types";
+import { itemNumbers } from "./numbering";
 import { buildDoc, flatten, newId, now } from "./tree";
 
+/**
+ * `number` leads, so the file reads as a report: a reader can see where a row
+ * sits without decoding the `path` column. Earning the place meant moving every
+ * other column along, which breaks a published contract, so this shipped with a
+ * minor version.
+ *
+ * The importer resolves columns by name, so it reads this order and the order
+ * shipped before it.
+ */
 export const CSV_HEADER = [
-  "key",
-  "parent_key",
-  "level",
-  "status",
+  "number",
   "label",
+  "key",
+  "level",
+  "parent_key",
+  "status",
   "path",
   "branch_index",
   "version",
@@ -34,6 +45,7 @@ export function toCsv(rows: readonly (readonly (string | number)[])[]): string {
 }
 
 export function exportCsv(doc: TreeDoc, keyMap: KeyMap, version = doc.version): string {
+  const numbers = itemNumbers(doc);
   const rows: (string | number)[][] = [[...CSV_HEADER]];
   for (const entry of flatten(doc)) {
     const info = keyMap.byItem[entry.item.id];
@@ -41,11 +53,12 @@ export function exportCsv(doc: TreeDoc, keyMap: KeyMap, version = doc.version): 
     const pathKeys = info?.pathKeys ?? [key];
     const parentKey = entry.parentId ? keyMap.byItem[entry.parentId]?.key ?? "" : "";
     rows.push([
-      key,
-      parentKey,
-      entry.depth,
-      entry.item.status,
+      numbers[entry.item.id] ?? "",
       entry.item.label,
+      key,
+      entry.depth,
+      parentKey,
+      entry.item.status,
       pathKeys.join("/"),
       entry.parentId ? entry.index + 1 : 0,
       version,

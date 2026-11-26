@@ -59,8 +59,55 @@ describe("csv export", () => {
     doc.items[doc.rootId as string].label = "¿Por qué cayó el beneficio? – año 2025";
     const csv = exportCsv(doc, computeKeyMap(doc));
     const rows = parseCsv(csv);
-    expect(rows[1][4]).toBe("¿Por qué cayó el beneficio? – año 2025");
+    expect(rows[1][1]).toBe("¿Por qué cayó el beneficio? – año 2025");
     expect(csv.charCodeAt(0)).toBe(0xfeff);
+  });
+});
+
+describe("the number column", () => {
+  it("leads the header, so the file reads as a report", () => {
+    expect([...CSV_HEADER]).toEqual([
+      "number",
+      "label",
+      "key",
+      "level",
+      "parent_key",
+      "status",
+      "path",
+      "branch_index",
+      "version",
+    ]);
+  });
+
+  it("carries the derived number, with Q0 on the root", () => {
+    const doc = sampleDoc();
+    const rows = parseCsv(exportCsv(doc, computeKeyMap(doc)));
+    expect(rows[1][0]).toBe("Q0");
+    expect(rows[2][0]).toBe("Q1");
+    expect(rows[3][0]).toBe("Q1.1");
+    expect(rows[4][0]).toBe("Q2");
+  });
+
+  it("reads the order that shipped before this release", () => {
+    const older = [
+      "key,parent_key,level,status,label,path,branch_index,version",
+      "a,,1,open,Root?,a,0,3",
+      "b,a,2,complete,Child?,a/b,1,3",
+    ].join("\r\n");
+    const result = importCsv(older, "Older file");
+    expect(result.warnings).toHaveLength(0);
+    expect(paths(result.doc)).toEqual(["Root?", "·Child?"]);
+  });
+
+  it("reads the order it writes now", () => {
+    const current = [
+      "number,label,key,level,parent_key,status,path,branch_index,version",
+      "Q0,Root?,a,1,,open,a,0,3",
+      "Q1,Child?,b,2,a,complete,a/b,1,3",
+    ].join("\r\n");
+    const result = importCsv(current, "Current file");
+    expect(result.warnings).toHaveLength(0);
+    expect(paths(result.doc)).toEqual(["Root?", "·Child?"]);
   });
 });
 
@@ -108,14 +155,14 @@ describe("csv import", () => {
 });
 
 describe("csv status", () => {
-  it("writes status in the fourth column", () => {
+  it("writes status in the sixth column", () => {
     const doc = sampleDoc();
     doc.items[doc.rootId as string].status = "complete";
     const rows = parseCsv(exportCsv(doc, computeKeyMap(doc)));
     expect(rows[0]).toEqual([...CSV_HEADER]);
-    expect(rows[0][3]).toBe("status");
-    expect(rows[1][3]).toBe("complete");
-    expect(rows[2][3]).toBe("open");
+    expect(rows[0][5]).toBe("status");
+    expect(rows[1][5]).toBe("complete");
+    expect(rows[2][5]).toBe("open");
   });
 
   it("reads status back and defaults unknown values to open", () => {

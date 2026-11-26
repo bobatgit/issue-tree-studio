@@ -81,6 +81,13 @@ const CASES: ProbeCase[] = [
     derived: {
       rows: `document.querySelectorAll(".row").length`,
       partialClips: PARTIAL_CLIPS,
+      numberedRows: `document.querySelectorAll(".row-number").length`,
+      /** The spread of the numbers' left edges: a column has none. */
+      numberSpread: `(() => {
+        const lefts = [...document.querySelectorAll(".row-number")].map((element) => Math.round(element.getBoundingClientRect().left));
+        if (lefts.length === 0) return null;
+        return Math.max(...lefts) - Math.min(...lefts);
+      })()`,
       indentStep: `(() => {
         const rows = [...document.querySelectorAll(".row")];
         const first = rows.find((row) => row.getAttribute("aria-level") === "1");
@@ -92,6 +99,8 @@ const CASES: ProbeCase[] = [
     checks: [
       { label: "the fixture renders every item", derived: "rows", exact: 18 },
       { label: "no label hides part of a line", derived: "partialClips", exact: 0 },
+      { label: "every row carries a number", derived: "numberedRows", exact: 18 },
+      { label: "the numbers line up in one column", derived: "numberSpread", exact: 0 },
       { label: "an item label is 18px", from: ".row .label-input:not(.root-label)", field: "fontSize", exact: 18 },
       { label: "the root label is 20px", from: ".row .label-input.root-label", field: "fontSize", exact: 20 },
       { label: "a panel heading is 13px", from: ".section-head", field: "fontSize", exact: 13 },
@@ -111,8 +120,7 @@ const CASES: ProbeCase[] = [
       rows: `document.querySelectorAll(".row").length`,
       partialClips: PARTIAL_CLIPS,
       /** Visible lines in the tallest label, which is the one at its cap. */
-      tallestLabelLines: `(() => {
-        const fields = [...document.querySelectorAll(".row .label-input")];
+      tallestLabelLines: `(() => {        const fields = [...document.querySelectorAll(".row .label-input")];
         if (fields.length === 0) return null;
         const field = fields.reduce((tallest, other) => (other.scrollHeight > tallest.scrollHeight ? other : tallest));
         const style = getComputedStyle(field);
@@ -120,12 +128,21 @@ const CASES: ProbeCase[] = [
         const pad = Number.parseFloat(style.paddingTop) + Number.parseFloat(style.paddingBottom);
         return Math.round(((field.clientHeight - pad) / line) * 1000) / 1000;
       })()`,
+      /** On a phone the whole first line belongs to the label. */
+      numberOnSecondLine: `(() => {
+        const row = document.querySelector(".app.phone .row");
+        const number = row ? row.querySelector(".row-number") : null;
+        const label = row ? row.querySelector(".label-input") : null;
+        if (!number || !label) return null;
+        return number.getBoundingClientRect().top > label.getBoundingClientRect().top ? 1 : 0;
+      })()`,
     },
     checks: [
       { label: "every item renders on a phone", derived: "rows", exact: 18 },
       { label: "a row is at least 44px tall", from: ".row", field: "height", min: 44 },
       { label: "the phone label is 18px too", from: ".app.phone .label-input", field: "fontSize", exact: 18 },
       { label: "no phone label hides part of a line", derived: "partialClips", exact: 0 },
+      { label: "the number sits on the second line", derived: "numberOnSecondLine", exact: 1 },
     ],
   },
   {
@@ -147,9 +164,14 @@ const CASES: ProbeCase[] = [
     view: "diagram",
     size: [1440, 900],
     selectors: [".diagram-svg", ".diagram-svg .nrect", ".legend", ".diagram-wrap"],
-    derived: { boxes: `document.querySelectorAll(".diagram-svg .nrect").length` },
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      /** Boxes whose first text is a number, so the first line is the number. */
+      numberedBoxes: `[...document.querySelectorAll(".diagram-svg text")].filter((element) => /^Q[0-9]/.test((element.textContent || "").trim())).length`,
+    },
     checks: [
       { label: "every item has a box", derived: "boxes", exact: 18 },
+      { label: "every box leads with its number", derived: "numberedBoxes", exact: 18 },
       { label: "the canvas is present", from: ".diagram-svg", field: "width", min: 200 },
     ],
   },

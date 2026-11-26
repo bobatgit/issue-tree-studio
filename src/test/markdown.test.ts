@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { cleanInline, parseMarkdown, toMarkdown } from "../model/markdown";
+import { computeKeyMap } from "../model/keys";
 import { countItems, flatten } from "../model/tree";
 
 const shape = (doc: ReturnType<typeof parseMarkdown>["doc"]): string[] =>
@@ -85,13 +86,69 @@ describe("markdown status", () => {
     expect(byLabel("Still open?")?.status).toBe("open");
 
     const md = toMarkdown(doc);
-    expect(md).toContain("- [ ] Root?");
-    expect(md).toContain("  - [x] Done?");
-    expect(md).toContain("  - [ ] Still open?");
+    expect(md).toContain("- [ ] Q0. Root?");
+    expect(md).toContain("  - [x] Q1. Done?");
+    expect(md).toContain("  - [ ] Q2. Still open?");
   });
 
   it("ignores a key prefix written before a label", () => {
     const doc = parseMarkdown("- K7M2 · Root?\n  - B8YV · Child?\n").doc;
     expect(shape(doc)).toEqual(["Root?", "·Child?"]);
+  });
+});
+
+/** The text without the version stamp, which carries a timestamp by design. */
+const withoutStamp = (md: string): string =>
+  md
+    .split("\n")
+    .filter((line) => !line.startsWith("<!--"))
+    .join("\n");
+
+describe("the number, the key and no heading", () => {
+  it("writes the number, then the wording, then the key at the end", () => {
+    const doc = parseMarkdown("- Root?\n  - Did revenue fall?\n").doc;
+    const keys = computeKeyMap(doc);
+    const md = toMarkdown(doc, 1, { keys: (id) => keys.byItem[id].key });
+    const order = flatten(doc).map((entry) => entry.item.id);
+    const lines = withoutStamp(md).trim().split("\n");
+    expect(lines[0]).toBe(`- [ ] Q0. Root? {[${keys.byItem[order[0]].key}]}`);
+    expect(lines[1]).toBe(`  - [ ] Q1. Did revenue fall? {[${keys.byItem[order[1]].key}]}`);
+  });
+
+  it("writes no heading, so the root is the first list line", () => {
+    const doc = parseMarkdown("# Why did profit fall?\n\n- Why did profit fall?\n  - Did revenue fall?\n").doc;
+    const md = toMarkdown(doc);
+    expect(md).not.toContain("# ");
+    expect(withoutStamp(md).trim().split("\n")[0]).toBe("- [ ] Q0. Why did profit fall?");
+  });
+
+  it("round-trips byte for byte apart from the stamp", () => {
+    const original = parseMarkdown(
+      "- Why did profit fall?\n  - Did revenue fall?\n    - Did price fall?\n  - Did cost rise?\n",
+    ).doc;
+    const first = computeKeyMap(original);
+    const once = toMarkdown(original, 1, { keys: (id) => first.byItem[id].key });
+    const reimported = parseMarkdown(once, original.name).doc;
+    const second = computeKeyMap(reimported);
+    const again = toMarkdown(reimported, 1, { keys: (id) => second.byItem[id].key });
+    expect(withoutStamp(again)).toBe(withoutStamp(once));
+  });
+
+  it("drops a trailing key token whether or not it resolves", () => {
+    const resolves = parseMarkdown("- Root? {[2GK88]}\n").doc;
+    const doesNot = parseMarkdown("- Root? {[ZZZZZ]}\n").doc;
+    expect(Object.values(resolves.items)[0].label).toBe("Root?");
+    expect(Object.values(doesNot.items)[0].label).toBe("Root?");
+  });
+
+  it("keeps a key-shaped word in single brackets", () => {
+    const doc = parseMarkdown("- Did the trend move? [TREND]\n").doc;
+    expect(Object.values(doc.items)[0].label).toBe("Did the trend move? [TREND]");
+  });
+
+  it("drops a key token on a line that also carries a pasted number", () => {
+    const result = parseMarkdown("- Root? {[2GK88]}\n  - a) Child? {[ABCDE]}\n");
+    expect(shape(result.doc)).toEqual(["Root?", "·Child?"]);
+    expect(result.stripped.map((entry) => entry.prefix)).toEqual(["a)"]);
   });
 });

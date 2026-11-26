@@ -5,6 +5,7 @@ import { exportCsv } from "../model/csv";
 import { diffSnapshots } from "../model/diff";
 import { computeKeyMap } from "../model/keys";
 import { parseMarkdown, toMarkdown } from "../model/markdown";
+import { noteStripping, strippingNote } from "../model/diagnostics";
 import { mergeParsed } from "../model/apply";
 import { importCsv } from "../model/csv";
 import { findingCounts, reviewTree, type Finding } from "../model/quality";
@@ -437,7 +438,8 @@ export function useWorkspace(): Workspace {
         toast("error", "The outline is empty. Revert to keep the tree.");
         return false;
       }
-      const parsed = parseMarkdown(text, current.name).doc;
+      const parsedResult = parseMarkdown(text, current.name);
+      const parsed = parsedResult.doc;
       const merged = mergeParsed(current, parsed);
       const total = countItems(merged);
       if (total === 0) {
@@ -447,6 +449,10 @@ export function useWorkspace(): Workspace {
       if (total > ITEM_CAP) {
         toast("error", `That outline has ${total} items. The cap is ${ITEM_CAP}.`);
         return false;
+      }
+      if (parsedResult.stripped.length > 0) {
+        noteStripping(parsedResult.stripped);
+        toast("info", strippingNote(parsedResult.stripped));
       }
       commit(merged, "import", "applied markdown");
       setSelection(merged.rootId);
@@ -605,6 +611,10 @@ export function useWorkspace(): Workspace {
         const parsed = parseMarkdown(text, name ?? "Imported outline");
         next = parsed.doc;
         warnings = parsed.warnings;
+        if (parsed.stripped.length > 0) {
+          noteStripping(parsed.stripped);
+          toast("info", strippingNote(parsed.stripped));
+        }
       } else if (format === "csv") {
         const parsed = importCsv(text, name ?? "Imported CSV");
         next = parsed.doc;

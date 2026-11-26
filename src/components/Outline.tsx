@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { copyText } from "../lib/ui";
+import { itemNumbers } from "../model/numbering";
 import { SAMPLES } from "../model/sample";
 import { descendantIds, maxDepth, parentOf, visibleEntries } from "../model/tree";
 import type { Workspace } from "../store/useWorkspace";
@@ -50,6 +51,7 @@ export function Outline({ ws, onImport }: Props) {
 
   const flat = useMemo(() => (doc ? visibleEntries(doc, ws.collapsed) : []), [doc, ws.collapsed]);
   const depth = useMemo(() => (doc ? maxDepth(doc) : 0), [doc]);
+  const numbers = useMemo(() => (doc ? itemNumbers(doc) : {}), [doc]);
 
   useEffect(() => {
     if (!focusRequest.current || !ws.selection) return;
@@ -220,7 +222,7 @@ export function Outline({ ws, onImport }: Props) {
                   ]
                     .filter(Boolean)
                     .join(" ")}
-                  style={{ marginLeft: (entry.depth - 1) * 15 }}
+                  style={{ "--indent": `${(entry.depth - 1) * 15}px` } as CSSProperties}
                   onClick={(event) => {
                     event.stopPropagation();
                     ws.select(item.id);
@@ -241,6 +243,7 @@ export function Outline({ ws, onImport }: Props) {
                     handleDrop(item.id, drop?.position ?? "into");
                   }}
                 >
+                  <span className="row-number">{numbers[item.id] ?? ""}</span>
                   <button
                     type="button"
                     className="grip"

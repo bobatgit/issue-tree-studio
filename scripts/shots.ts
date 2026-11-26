@@ -68,6 +68,25 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-12-numbers-1440",
+    note: "the number column, Q0 to Q2.2.2, at desktop width (#12)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-12-numbers-360",
+    note: "the phone row, where the number joins the key on the second line (#12)",
+    view: "tree",
+    size: [360, 780],
+    mobile: true,
+  },
+  {
+    name: "ticket-12-diagram-1440",
+    note: "every box leads with its number, beside the status marker (#12)",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
     name: "ticket-17-type-1440",
     note: "the type scale at desktop width, where the labels are 18px and the root 20px (#17)",
     view: "tree",

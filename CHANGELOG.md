@@ -3,6 +3,34 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.9.0] - 2026-11-26
+
+### Added
+
+- **Position numbers**, derived from where an item sits: the root is `Q0`, its children `Q1`, `Q2`, and anything
+  deeper appends its position among its siblings, so `Q2.4.1`. A number is never stored, never enters the key
+  hash and never reaches a version snapshot or a diff. It is shown in a column at the left of every tree row, on
+  its own first line inside a diagram box and a slide box, and it leads the CSV.
+- A report after a paste that removed pasted numbering, naming each line with the number the item received. The
+  full list is kept for Copy diagnostics.
+
+### Changed
+
+- **Breaking: the CSV header is nine columns and `number` leads it.**
+  `number,label,key,level,parent_key,status,path,branch_index,version`. The importer resolves columns by name, so
+  a file exported before this release still imports.
+- **Breaking: the markdown export is a plain list with no heading**, and the key moves to the end:
+  `- [ ] Q2.1. How did revenue change? {[2GK88]}`. The root is the first list line and carries `Q0`. The reader
+  still accepts the form older releases wrote, `K7M2 · Label`.
+- Pasted numbering is stripped before a label is stored, so it never reaches the key hash: `1. Revenue` and
+  `Revenue` now share one key. An enumerator is only dropped when a separator follows it, so `2024 revenue`,
+  `3-way split` and `Q1 results` stay whole. Letters and roman numerals are stripped whenever a separator
+  follows them, with no sequence check.
+- A trailing `{[2GK88]}` is read on shape alone and dropped whether or not it resolves, because a key is always
+  recomputed from the wording and its path.
+- Slide boxes carry the number on a first line with the status marker, so they are taller and a deck packs
+  fewer boxes per slide. Exporting still never refuses, including at 500 items.
+
 ## [0.8.1] - 2026-11-26
 
 ### Changed

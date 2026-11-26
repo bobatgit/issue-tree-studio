@@ -90,11 +90,22 @@ export function Diagram({ ws }: Props) {
                   stroke={item.status === "complete" ? "#2f6feb" : "#94A3B8"}
                   strokeWidth={0.012}
                 />
+                {/* The number leads, beside the status marker, on its own line. */}
+                <text
+                  x={item.x + 0.17}
+                  y={item.y + 0.05 + lineHeight * 0.8}
+                  fontSize={item.fontSize / 72}
+                  fontFamily="Consolas, monospace"
+                  fontWeight={600}
+                  fill={isRoot ? "#94A3B8" : "#64748B"}
+                >
+                  {item.number}
+                </text>
                 {item.lines.map((line, index) => (
                   <text
                     key={index}
                     x={item.x + 0.17}
-                    y={item.y + 0.05 + lineHeight * (index + 0.8)}
+                    y={item.y + 0.05 + lineHeight * (index + 1.8)}
                     fontSize={item.fontSize / 72}
                     fontFamily="Segoe UI, system-ui, sans-serif"
                     fontWeight={isRoot ? 600 : 400}

@@ -216,3 +216,65 @@ is the same state a new tab starts in.
   Whether it reads as a clock at a glance was judged from the picture, not measured.
 * Touch targets are asserted at 44px in the phone probe, but pinching and two-finger panning still need a real
   device and belong to #21.
+
+## Phase I - the numbering spine (0.9.0, breaking)
+
+Three tickets that had to land together, because the markdown round trip is the acceptance test for all
+three: the export writes a number and reads one back, so a change to either side alone fails it.
+
+| Ticket | What shipped |
+| --- | --- |
+| #12 | Numbers derived from position: `Q0`, `Q1`, `Q2.4.1`. A column at the left of every tree row, a first line of its own inside a diagram box and a slide box, and a new leading `number` column in the CSV |
+| #13 | Pasted numbering stripped before the label is stored, so it never reaches the hash, with a report naming each line and the number it received |
+| #14 | The markdown key moves to the end as `{[2GK88]}`, the heading is gone, and a trailing token is read on shape alone |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.9.0 |
+| `npx vitest run` | 15 files, 170 tests, all passing (118 before, 52 added, none deleted) |
+| `npm run smoke` | Four decks and four CSVs, every CSV round-trips with the nine-column header |
+| `npm run perf` | 500 items, deck 2.43 MB in 420 ms |
+| `npm run probe` | 22 of 22 checks, including four new ones for the numbers |
+| `npm run shots` | Tree, phone, diagram, markdown, rail, dialog and empty state |
+
+## The numbers, measured
+
+| Check | Value |
+| --- | --- |
+| `numberedRows` at 1440 | 18 of 18 rows carry a number |
+| `numberSpread` | 0. The numbers are a column, not a ragged gutter |
+| `numberedBoxes` in the diagram | 18 of 18 boxes lead with `Q…` |
+| `numberOnSecondLine` at 360 | 1. The whole first phone line belongs to the label |
+| `npm run perf` at 500 items | Exports with no refusal, 2.43 MB, up from 2.42 MB because boxes are taller |
+
+## What the tests hold
+
+* `numbering.test.ts` proves `Q0`, `Q1`, `Q1.1`, `Q1.2.1` and that a move renumbers without touching anything else.
+* `prefixes.test.ts` proves 21 enumerator forms are stripped, six wordings survive, and `1. Revenue` and
+  `Revenue` produce the same key. That last one is the guard that keeps the number out of the hash.
+* `markdown.test.ts` proves the written form, the missing heading, a byte-identical round trip apart from the
+  version stamp, and that a token is dropped whether or not it resolves while `[TREND]` in single brackets
+  survives.
+* `csv.test.ts` proves the nine-column header, the values, and that both the old and the new column orders
+  import.
+* `diagnostics.test.ts` proves the removal list is named in full and that a clean paste reports nothing.
+* `app.test.tsx` proves the paste report names the item's new number in the interface.
+
+## Two decisions worth recording
+
+* **The three tickets are one commit.** `markdown.ts` carries all three changes inside one function, so
+  splitting them would have produced three commits that are each red on their own. The commit carries three
+  `Fixes` lines, which is a deliberate departure from one commit per ticket.
+* **The ticket's "now" column was approximate again.** It describes 13px panel headings and a five-column CSV;
+  the live values were 11px and eight columns. Roles decided, as in phase H.
+
+## Known gaps in this phase
+
+* A wording that itself begins with an enumerator loses it on the next apply. The rule is "a stored number is
+  always discarded", and `1. Revenue` is exactly that case. The labels in the fixtures and the samples do not
+  hit it.
+* The stripping rule is deliberately blunt on letters: `A. Smith owns the report` becomes `Smith owns the
+  report`. The ticket accepted this because the report names every removal.

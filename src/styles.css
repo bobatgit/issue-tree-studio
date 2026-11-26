@@ -426,10 +426,23 @@ a.text-btn {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 20px 24px minmax(0, 1fr) 28px 64px 68px;
+  grid-template-columns: 52px 20px 24px minmax(0, 1fr) 28px 64px 68px;
+  margin-left: var(--indent, 0px);
   align-items: center; gap: 8px; padding: 4px 8px 4px 2px;
   border-radius: 7px;
   border: 1px solid transparent;
+}
+
+/**
+ * The number is a column. The row is indented, and the number shifts back by
+ * the same amount, so Q0, Q1 and Q1.2.1 all start at one left edge.
+ */
+.row-number {
+  margin-left: calc(-1 * var(--indent, 0px));
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--faint);
+  white-space: nowrap;
 }
 
 .row:hover {
@@ -1450,10 +1463,10 @@ kbd {
 }
 
 .app.phone .row {
-  grid-template-columns: 24px minmax(0, 1fr) 28px 64px 44px;
+  grid-template-columns: 24px 28px 34px 64px 44px;
   grid-template-areas:
     "chev label label label more"
-    "chev status key key more";
+    "chev status num key more";
   row-gap: 4px;
   padding: 8px 8px 8px 4px;
 }
@@ -1481,6 +1494,19 @@ kbd {
 .app.phone .row .key-chip {
   grid-area: key;
   justify-self: start;
+}
+
+.app.phone .row .row-number {
+  grid-area: num;
+  margin-left: 0;
+  justify-self: end;
+}
+
+/** The separator between the number and the key, as in Q1.1 · 2GK88. */
+.app.phone .row .row-number::after {
+  content: "·";
+  margin-left: 6px;
+  color: #98a2b3;
 }
 
 .app.phone .row .row-more {

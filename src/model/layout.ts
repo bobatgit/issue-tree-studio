@@ -6,6 +6,7 @@
  * them with a viewBox.
  */
 
+import { itemNumbers } from "./numbering";
 import type { KeyMap, ItemStatus, TreeDoc } from "./types";
 
 export interface LayoutOptions {
@@ -24,6 +25,8 @@ export interface LayoutItem {
   label: string;
   status: ItemStatus;
   key: string;
+  /** The position number, drawn on its own first line beside the status marker. */
+  number: string;
   x: number;
   y: number;
   w: number;
@@ -114,6 +117,7 @@ export function layoutTree(
   const gapX = options.gapX ?? 0.38;
   const gapY = options.gapY ?? 0.16;
   const showKeys = options.showKeys ?? true;
+  const numbers = itemNumbers(doc);
 
   interface Entry {
     id: string;
@@ -123,6 +127,7 @@ export function layoutTree(
     label: string;
     status: ItemStatus;
     key: string;
+    number: string;
   }
 
   const entries = new Map<string, Entry>();
@@ -140,6 +145,7 @@ export function layoutTree(
       label: item.label,
       status: item.status,
       key: keyMap.byItem[id]?.key ?? "----",
+      number: numbers[id] ?? "",
     });
     maxDepth = Math.max(maxDepth, depth);
     for (const childId of item.children) collect(childId, depth + 1, id);
@@ -175,7 +181,8 @@ export function layoutTree(
     linesByItem.set(entry.id, wrapText(entry.label, charsPerLine, maxLines));
   }
 
-  const contentH = (lines: string[]): number => PAD_Y * 2 + metaH + lines.length * lineHeight;
+  // One extra line for the number, which sits on its own first line in the box.
+  const contentH = (lines: string[]): number => PAD_Y * 2 + metaH + (lines.length + 1) * lineHeight;
   let boxH = Math.max(...[...linesByItem.values()].map(contentH), 0.3);
 
   // Leaf rows drive the height.
@@ -190,7 +197,7 @@ export function layoutTree(
     if (totalHeight() > options.maxHeight) {
       // 2) Shrink the boxes evenly so the whole tree still fits the slide.
       boxH = Math.max(0.12, (options.maxHeight - (leaves - 1) * 0.02) / leaves);
-      const allowedLines = Math.max(1, Math.floor((boxH - PAD_Y * 2 - metaH) / lineHeight));
+      const allowedLines = Math.max(1, Math.floor((boxH - PAD_Y * 2 - metaH) / lineHeight) - 1);
       linesByItem = new Map(
         [...linesByItem.entries()].map(([id, lines]) => [id, clipLines(lines, allowedLines)]),
       );
@@ -229,6 +236,7 @@ export function layoutTree(
       label: entry.label,
       status: entry.status,
       key: entry.key,
+      number: entry.number,
       x: (entry.depth - 1) * (boxWidth + gapX),
       y: cy - boxH / 2,
       w: boxWidth,

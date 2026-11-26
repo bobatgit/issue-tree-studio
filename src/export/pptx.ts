@@ -202,11 +202,15 @@ function drawItem(
     line: { color: style.border, width: isRoot ? 1.6 : 0.9 },
   });
 
-  slide.addText(item.status === "complete" ? "●" : "○", {
+  // The number shares the first line with the status marker, so the label starts
+  // one line lower. The layout engine already reserves that line.
+  const numberLine = Math.min(0.24, (box.fontSize * 1.24) / 72);
+
+  slide.addText(`${item.status === "complete" ? "●" : "○"} ${item.number}`, {
     x: box.x + 0.04,
     y: box.y + 0.03,
-    w: 0.16,
-    h: 0.16,
+    w: Math.max(0.3, box.w - 0.24),
+    h: numberLine,
     fontSize: Math.max(5, Math.min(7.5, box.fontSize * 0.7)),
     color: isRoot ? "E2E8F0" : MUTED,
     fontFace: "Segoe UI",
@@ -216,9 +220,9 @@ function drawItem(
 
   slide.addText(item.label || "Untitled item", {
     x: box.x + 0.17,
-    y: box.y + 0.04,
+    y: box.y + 0.04 + numberLine,
     w: Math.max(0.2, box.w - (box.showKeys && !box.dense ? 0.66 : 0.24)),
-    h: Math.max(0.15, box.h - 0.08 - metaH),
+    h: Math.max(0.15, box.h - 0.08 - metaH - numberLine),
     fontSize: box.fontSize,
     bold: isRoot,
     color: style.text,

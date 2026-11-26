@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildDiagnostics, treeJsonFromDiagnostics, type DiagnosticsMeta } from "../model/diagnostics";
+import {
+  buildDiagnostics,
+  noteStripping,
+  resetStripping,
+  strippedThisSession,
+  strippingNote,
+  treeJsonFromDiagnostics,
+  type DiagnosticsMeta,
+} from "../model/diagnostics";
 import { computeKeyMap } from "../model/keys";
 import { parseMarkdown } from "../model/markdown";
+import type { StrippedPrefix } from "../model/markdown";
 
 const meta: DiagnosticsMeta = {
   appVersion: "0.2.0",
@@ -53,5 +62,43 @@ describe("diagnostics block", () => {
 
   it("returns null when no tree block is present", () => {
     expect(treeJsonFromDiagnostics("just prose")).toBeNull();
+  });
+});
+
+describe("the pasted-number report", () => {
+  it("records nothing when the paste was already clean", () => {
+    resetStripping();
+    const parsed = parseMarkdown("- Why did profit fall?\n");
+    noteStripping(parsed.stripped);
+    expect(strippedThisSession()).toEqual([]);
+    expect(buildDiagnostics(parsed.doc, computeKeyMap(parsed.doc), meta)).toContain(
+      "pasted numbers removed this session: 0",
+    );
+  });
+
+  it("names every removal, with the number the item received", () => {
+    resetStripping();
+    const parsed = parseMarkdown("- Root?\n  - a) Did revenue fall?\n  - 2. Did cost rise?\n");
+    noteStripping(parsed.stripped);
+    expect(strippedThisSession()).toEqual([
+      "a) Did revenue fall?  ->  Q1 Did revenue fall?",
+      "2. Did cost rise?  ->  Q2 Did cost rise?",
+    ]);
+
+    const text = buildDiagnostics(parsed.doc, computeKeyMap(parsed.doc), meta);
+    expect(text).toContain("pasted numbers removed this session: 2");
+    expect(text).toContain("<summary>Pasted numbers removed</summary>");
+    expect(text).toContain("a) Did revenue fall?  ->  Q1 Did revenue fall?");
+  });
+
+  it("summarises two lines for the toast and counts the rest", () => {
+    const entries: StrippedPrefix[] = [
+      { pasted: "a) One?", prefix: "a)", number: "Q1", label: "One?" },
+      { pasted: "b) Two?", prefix: "b)", number: "Q2", label: "Two?" },
+      { pasted: "c) Three?", prefix: "c)", number: "Q3", label: "Three?" },
+    ];
+    expect(strippingNote(entries)).toContain("Cleaned 3 pasted numbers");
+    expect(strippingNote(entries)).toContain("and 1 more");
+    expect(strippingNote(entries)).toContain("Copy diagnostics");
   });
 });
