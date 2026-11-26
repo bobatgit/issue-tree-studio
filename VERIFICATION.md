@@ -498,3 +498,19 @@ The check was written to fail first and it did: the element measured `1x900` at 
 The reason nothing caught it in five phases of shots is worth recording: no shot after phase 5 appeared the collapsed
 panel. The rail was photographed once, for #19, before the collision existed. There is a standing gate shot of the
 collapsed rail now, so the state is in every run.
+
+## 0.10.6, corrected - the two production failures were one problem
+
+The collapsed panel's rail failed its production checks while passing locally, exactly as the fold controls had
+three releases earlier. The cause was the same in both cases: the probe drove the deployed site through its normal
+address, which the browser is free to serve from cache, and a cached document points at the previous bundle. The
+version check was cache-busted and the navigation was not, so the two disagreed and the disagreement looked like a
+deployed bug.
+
+`Page.open` now appends a cache-buster to the address it navigates to, and with that the production run passes
+57 of 57. Two things follow. The rail fix was live as soon as it deployed, and the fold-controls failure three
+releases earlier was probably this same cache rather than the nesting, which the 0.10.4 changelog entry claimed as
+the root cause. That entry is corrected here and in the changelog.
+
+The general lesson, which this batch has now taught twice: a local pass is not evidence about the deployed artifact,
+and a check that runs against production is worthless if it can be served something old.

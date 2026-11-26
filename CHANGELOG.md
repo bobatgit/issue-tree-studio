@@ -32,10 +32,11 @@ Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, m
 ### Fixed
 
 - The Diagram's fold controls were rendered as children of the canvas wrapper rather than inside the SVG, so they
-  were HTML elements playing an SVG role: they accepted a click against a local server, where the probe found them
-  and the fold appeared to work, but they never painted and the deployed bundle did not fold at all. This is the
-  defect the production probe caught, which is the whole reason the probe runs against the deployed site and not
-  only against a local server.
+  were HTML elements playing an SVG role and were never painted. The failing production measurement that prompted
+  this was, on later evidence, probably a stale cached document rather than this defect: the probe's navigation was
+  not cache-busted, and a cached page points at the old bundle, which makes a working build look broken. Both are
+  addressed. The nesting was wrong either way, and this entry originally claimed it as the root cause, which the
+  evidence at the time did not support.
 
 ## [0.10.3] - 2026-11-26
 

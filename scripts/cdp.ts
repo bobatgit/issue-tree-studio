@@ -175,7 +175,11 @@ export class Page {
       mobile,
     });
     await page.send("Emulation.setTouchEmulationEnabled", { enabled: mobile });
-    await page.send("Page.navigate", { url: address });
+    // Bust the document cache. A deployed page can be served from cache while its
+    // hashed assets have changed, and a stale document points at the old bundle,
+    // which makes a fixed bug look unfixed and an unfixed one look fixed.
+    const fresh = `${address}${address.includes("?") ? "&" : "?"}gate=${Date.now()}`;
+    await page.send("Page.navigate", { url: fresh });
 
     await page.waitFor(READY, 15000);
     await page.pause(settle);
