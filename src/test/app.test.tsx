@@ -266,3 +266,44 @@ describe("the key record", () => {
     expect(document.querySelector(".vmeta")?.textContent ?? "").not.toMatch(/key changes/);
   });
 });
+
+describe("the column headings", () => {
+  it("names the four columns, outside the tree role", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    const head = document.querySelector(".row-head");
+    expect(head).toBeTruthy();
+    for (const word of ["Item no.", "Item", "Key", "Status"]) {
+      expect(head?.textContent).toContain(word);
+    }
+    expect(head?.closest('[role="tree"]')).toBeNull();
+    expect(head?.getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("shows no headings when the tree is empty", async () => {
+    sessionStorage.setItem(
+      "its.doc",
+      JSON.stringify({
+        id: "empty",
+        name: "Empty",
+        rootId: null,
+        items: {},
+        version: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        settings: {
+          showKeysInEditor: true,
+          showKeysInExport: true,
+          includeOverviewSlide: true,
+          includeKeyIndexSlide: false,
+        },
+      }),
+    );
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".empty-outline")).toBeTruthy());
+    expect(document.querySelector(".row-head")).toBeNull();
+  });
+});
+

@@ -427,7 +427,7 @@ a.text-btn {
   position: relative;
   display: grid;
   --step: 22px;
-  grid-template-columns: 52px 20px auto 30px minmax(0, 1fr) 28px 82px 68px;
+  grid-template-columns: 52px 20px auto 30px minmax(0, 1fr) 82px 28px 68px;
   align-items: center; gap: 8px; padding: 4px 8px 4px 2px;
   border-radius: 7px;
   border: 1px solid transparent;
@@ -502,6 +502,52 @@ a.text-btn {
 /** A leaf keeps the arrow's width, so labels still line up column to column. */
 .chevron-slot {
   width: 30px;
+}
+
+/** Centred, so its heading can be centred over the same column. */
+.row .status-box {
+  justify-self: center;
+}
+
+/**
+ * The headings sit over their own columns, in the same grid the rows use, and
+ * stay visible while the list scrolls. The heading row is not part of the tree
+ * role, so a screen reader never announces it as an item.
+ */
+.row-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 52px 20px auto 30px minmax(0, 1fr) 82px 28px 68px;
+  align-items: end;
+  gap: 8px;
+  padding: 4px 8px 4px 2px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  border-bottom-color: var(--border);
+  background: var(--panel);
+  font-size: 13px;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.head-number {
+  grid-column: 1;
+}
+
+.head-label {
+  grid-column: 5;
+}
+
+.head-key {
+  grid-column: 6;
+}
+
+.head-status {
+  grid-column: 7;
+  justify-self: center;
 }
 
 .row:hover {
@@ -1543,6 +1589,10 @@ kbd {
 
 .app.phone .row .status-box {
   grid-area: status; width: 26px; height: 26px;
+}
+
+.app.phone .row-head {
+  display: none;
 }
 
 .app.phone .row .elbows {

@@ -142,6 +142,57 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "headings-1440",
+    note: "the four column headings sit over their own columns (#16)",
+    view: "tree",
+    size: [1440, 900],
+    selectors: [".row-head", ".head-number", ".head-label", ".head-key", ".head-status", ".row .row-number", ".row .label-wrap", ".row .label-input", ".row .key-chip", ".row .status-box"],
+    derived: {
+      /** Each heading against its column, in the first row. Distance in pixels. */
+      numberOffset: `(() => {
+        const head = document.querySelector(".row-head");
+        const cell = document.querySelector(".row .row-number");
+        const heading = head ? head.querySelector(".head-number") : null;
+        if (!heading || !cell) return null;
+        return Math.round(heading.getBoundingClientRect().left - cell.getBoundingClientRect().left);
+      })()`,
+      labelOffset: `(() => {
+        const head = document.querySelector(".row-head");
+        const cell = document.querySelector(".row .label-input");
+        const heading = head ? head.querySelector(".head-label") : null;
+        if (!heading || !cell) return null;
+        return Math.round(heading.getBoundingClientRect().left - cell.getBoundingClientRect().left);
+      })()`,
+      keyOffset: `(() => {
+        const head = document.querySelector(".row-head");
+        const cell = document.querySelector(".row .key-chip");
+        const heading = head ? head.querySelector(".head-key") : null;
+        if (!heading || !cell) return null;
+        return Math.round(heading.getBoundingClientRect().left - cell.getBoundingClientRect().left);
+      })()`,
+      /** The status heading is centred, so its centre is what has to line up. */
+      headSticky: `(() => {
+        const head = document.querySelector(".row-head");
+        return head && getComputedStyle(head).position === "sticky" ? 1 : 0;
+      })()`,
+      statusOffset: `(() => {
+        const head = document.querySelector(".row-head");
+        const cell = document.querySelector(".row .status-box");
+        const heading = head ? head.querySelector(".head-status") : null;
+        if (!heading || !cell) return null;
+        const centre = (element) => element.getBoundingClientRect().left + element.getBoundingClientRect().width / 2;
+        return Math.round(centre(heading) - centre(cell));
+      })()`,
+    },
+    checks: [
+      { label: "Item no. sits over the number column", derived: "numberOffset", exact: 0 },
+      { label: "Item sits over the item column", derived: "labelOffset", exact: 0 },
+      { label: "Key sits over the key column", derived: "keyOffset", exact: 0 },
+      { label: "Status is centred over the status column", derived: "statusOffset", min: -1, max: 1 },
+      { label: "the heading row sticks while the list scrolls", derived: "headSticky", exact: 1 },
+    ],
+  },
+  {
     name: "tree-360",
     note: "phone baseline: one pane, 44px targets",
     view: "tree",
@@ -161,6 +212,10 @@ const CASES: ProbeCase[] = [
         return Math.round(((field.clientHeight - pad) / line) * 1000) / 1000;
       })()`,
       /** On a phone the whole first line belongs to the label. */
+      headHidden: `(() => {
+        const head = document.querySelector(".row-head");
+        return head && getComputedStyle(head).display === "none" ? 1 : 0;
+      })()`,
       numberOnSecondLine: `(() => {
         const row = document.querySelector(".app.phone .row");
         const number = row ? row.querySelector(".row-number") : null;
@@ -175,6 +230,7 @@ const CASES: ProbeCase[] = [
       { label: "the phone label is 18px too", from: ".app.phone .label-input", field: "fontSize", exact: 18 },
       { label: "no phone label hides part of a line", derived: "partialClips", exact: 0 },
       { label: "the number sits on the second line", derived: "numberOnSecondLine", exact: 1 },
+      { label: "the heading row is hidden on a phone", derived: "headHidden", exact: 1 },
     ],
   },
   {

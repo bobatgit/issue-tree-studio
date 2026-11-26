@@ -224,6 +224,15 @@ export function Outline({ ws, onImport }: Props) {
       </div>
 
       <div className="editor-scroll" onClick={() => ws.select(null)}>
+        {flat.length > 0 ? (
+          <div className="row-head" aria-hidden="true">
+            <span className="head-number">Item no.</span>
+            <span className="head-label">Item</span>
+            <span className="head-key">Key</span>
+            <span className="head-status">Status</span>
+          </div>
+        ) : null}
+
         {flat.length === 0 ? (
           <div className="empty-outline">
             <p>
@@ -290,23 +299,7 @@ export function Outline({ ws, onImport }: Props) {
                   }}
                 >
                   <span className="row-number">{numbers[item.id] ?? ""}</span>
-                  <span
-                    className="elbows"
-                    style={{ "--levels": entry.depth - 1 } as CSSProperties}
-                    aria-hidden="true"
-                  >
-                    {(rails[item.id] ?? []).slice(1).map((hasRail, column) =>
-                      hasRail ? (
-                        <span key={column} className="rail" style={{ "--i": column } as CSSProperties} />
-                      ) : null,
-                    )}
-                    {entry.depth > 1 ? (
-                      <span
-                        className={`elbow ${isLastChild ? "last" : "more"}`}
-                        style={{ "--i": entry.depth - 2 } as CSSProperties}
-                      />
-                    ) : null}
-                  </span>
+
                   <button
                     type="button"
                     className="grip"
@@ -326,6 +319,24 @@ export function Outline({ ws, onImport }: Props) {
                   >
                     ⠿
                   </button>
+
+                  <span
+                    className="elbows"
+                    style={{ "--levels": entry.depth - 1 } as CSSProperties}
+                    aria-hidden="true"
+                  >
+                    {(rails[item.id] ?? []).slice(1).map((hasRail, column) =>
+                      hasRail ? (
+                        <span key={column} className="rail" style={{ "--i": column } as CSSProperties} />
+                      ) : null,
+                    )}
+                    {entry.depth > 1 ? (
+                      <span
+                        className={`elbow ${isLastChild ? "last" : "more"}`}
+                        style={{ "--i": entry.depth - 2 } as CSSProperties}
+                      />
+                    ) : null}
+                  </span>
 
                   {item.children.length > 0 ? (
                     <button
@@ -382,6 +393,18 @@ export function Outline({ ws, onImport }: Props) {
 
                   <button
                     type="button"
+                    className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
+                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}, ${item.status}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void copyKey(keyInfo?.key ?? "", item.id, item.label);
+                    }}
+                  >
+                    {keyInfo?.key ?? "····"}
+                  </button>
+
+                  <button
+                    type="button"
                     className={`status-box ${item.status}`}
                     aria-label={item.status === "complete" ? "Mark this item open" : "Mark this item complete"}
                     aria-pressed={item.status === "complete"}
@@ -392,18 +415,6 @@ export function Outline({ ws, onImport }: Props) {
                     }}
                   >
                     {item.status === "complete" ? "✓" : ""}
-                  </button>
-
-                  <button
-                    type="button"
-                    className={`key-chip ${keyInfo?.promoted ? "promoted" : ""}`}
-                    title={`Copy key ${keyInfo?.key ?? ""} — level ${entry.depth}, ${item.status}${keyInfo?.promoted ? " (extended after a collision)" : ""}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void copyKey(keyInfo?.key ?? "", item.id, item.label);
-                    }}
-                  >
-                    {keyInfo?.key ?? "····"}
                   </button>
 
                   <button

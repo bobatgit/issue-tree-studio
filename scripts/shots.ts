@@ -68,6 +68,12 @@ const SHOTS: Shot[] = [
     doc: EMPTY_DOC,
   },
   {
+    name: "ticket-16-headings-1440",
+    note: "the four column headings over their columns, and hidden on a phone (#16)",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
     name: "ticket-15-levels-1440",
     note: "elbows and rails at four levels, and the arrow states (#15)",
     view: "tree",
