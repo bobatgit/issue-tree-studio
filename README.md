@@ -18,6 +18,16 @@ npm run dev        # http://localhost:5173
 npm run build      # type-check plus production build into dist/
 npm test           # 88 unit and render tests
 npm run smoke      # writes real .pptx and .csv files into artifacts/
+npm run probe      # computed layout metrics read out of a real browser
+npm run shots      # screenshots of every view into docs/screenshots/
+```
+
+`npm run probe` and `npm run shots` are local only: they need `npm run dev` running and a headless browser
+with remote debugging on port 9222. CI has no browser, so it never runs them. Both print the setup command
+when either part is missing.
+
+```
+msedge --headless=new --remote-debugging-port=9222 --user-data-dir=temp/edge-cdp about:blank
 ```
 
 Requirements: Node 20 or newer. Tested on Node 22 and Windows 11.

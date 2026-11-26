@@ -1,0 +1,119 @@
+/**
+ * Visual gate: PNG evidence for an issue, taken from a real browser.
+ *
+ * Every visual ticket in this batch is closed with a picture attached to the
+ * issue. This script takes them, at a fixed size, from the same seeded document
+ * the probe measures, so the pictures and the numbers describe one state.
+ *
+ * Run: npm run shots                 all shots
+ *      npm run shots -- tree         only shots whose name contains "tree"
+ *
+ * Files land in docs/screenshots/.
+ */
+
+import path from "node:path";
+import { stat } from "node:fs/promises";
+import { Page } from "./cdp";
+import { seedSource, selectView, type ViewId } from "./fixtures";
+
+interface Shot {
+  name: string;
+  note: string;
+  view?: ViewId;
+  size?: [number, number];
+  mobile?: boolean;
+  /** Page source run before the shot, for a state such as folded. */
+  setup?: string;
+  /** An element to put a real pointer over before the shot. */
+  hover?: string;
+}
+
+const OUT = path.resolve("docs/screenshots");
+
+const SHOTS: Shot[] = [
+  {
+    name: "gate-tree-1440",
+    note: "the list at desktop width",
+    view: "tree",
+    size: [1440, 900],
+  },
+  {
+    name: "gate-tree-360",
+    note: "the list at phone width",
+    view: "tree",
+    size: [360, 780],
+    mobile: true,
+  },
+  {
+    name: "gate-tree-folded-1440",
+    note: "a folded branch and its hidden count",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const chevron = document.querySelector(".row .chevron"); if (chevron) chevron.click();`,
+  },
+  {
+    name: "gate-markdown-1440",
+    note: "the live markdown view",
+    view: "markdown",
+    size: [1440, 900],
+  },
+  {
+    name: "gate-diagram-1440",
+    note: "the diagram view",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
+    name: "gate-diagram-hover-1440",
+    note: "a hovered box, for the outline thickness",
+    view: "diagram",
+    size: [1440, 900],
+    hover: ".diagram-svg .nrect",
+  },
+];
+
+function slug(value: string): string {
+  return value.replace(/[^a-z0-9-]+/gi, "-").toLowerCase();
+}
+
+async function runShot(shot: Shot): Promise<void> {
+  const [width, height] = shot.size ?? [1440, 900];
+  const page = await Page.open({
+    seed: seedSource(),
+    width,
+    height,
+    mobile: shot.mobile ?? false,
+  });
+
+  try {
+    if (shot.view) await selectView(page, shot.view);
+    if (shot.setup) {
+      await page.evaluate(`(() => { ${shot.setup} })()`);
+      await page.pause(300);
+    }
+    if (shot.hover) await page.hover(shot.hover);
+
+    const file = path.join(OUT, `${slug(shot.name)}.png`);
+    await page.screenshot(file);
+    const size = (await stat(file)).size;
+    console.log(`${file}  ${width}x${height}  ${Math.round(size / 1024)}KB  ${shot.note}`);
+
+    if (page.errors.length > 0) {
+      console.log(`  ${page.errors.length} page error(s):`);
+      for (const error of page.errors.slice(0, 5)) console.log(`    ${error.split("\n")[0]}`);
+    }
+  } finally {
+    await page.close();
+  }
+}
+
+async function main(): Promise<void> {
+  const filter = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
+  const shots = filter ? SHOTS.filter((entry) => entry.name.includes(filter)) : SHOTS;
+  if (shots.length === 0) throw new Error(`No shot matches "${filter}".`);
+
+  for (const shot of shots) await runShot(shot);
+  console.log(`\n${shots.length} shot(s) written to ${OUT}`);
+}
+
+await main();

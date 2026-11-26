@@ -7,3 +7,4 @@ temp-pptx/
 .env
 .env.local
 *.log
+docs/screenshots/gate-*.png
