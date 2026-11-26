@@ -3,6 +3,22 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.6.0] - 2026-11-25
+
+### Changed
+
+- Keys are five Crockford Base32 characters. The length no longer grows with the node count; a real collision
+  still promotes deterministically to six or more. Existing trees are re-keyed on load, old keys stay resolvable
+  as aliases, and importing a file with four-character keys says they were upgraded.
+- The 100-node block becomes a nudge at 100 and a hard cap at 500. CSV and markdown imports keep the first 500
+  rows with a corrected warning; the markdown apply refuses text above 500.
+- The counter reads `n / 500` and turns amber at 100.
+
+### Measured
+
+- At 500 nodes: `computeKeyMap` 12 ms, `reviewTree` 23 ms, `toMarkdown` 2 ms, `exportCsv` 2 ms, deck build and
+  write 469 ms (2.4 MB). Recorded by `npm run perf`.
+
 ## [0.5.0] - 2026-11-25
 
 ### Added
