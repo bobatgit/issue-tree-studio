@@ -198,6 +198,41 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "rail-1440",
+    note: "the collapsed panel's rail stays inside its column, below the top bar",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const collapse = document.querySelector('[aria-label="Collapse panel"]');
+      if (collapse) collapse.click();`,
+    selectors: ['[aria-label="Tree panels"] > *', ".topbar", ".rail-btn"],
+    derived: {
+      /** The rail must not be positioned against an ancestor outside its column. */
+      railIsAbsolute: `(() => {
+        const rail = document.querySelector('[aria-label="Tree panels"] > *');
+        return rail && getComputedStyle(rail).position === "absolute" ? 1 : 0;
+      })()`,
+      /** Nor may it sit over the top bar, which is what a stray absolute line does. */
+      railOverlapsBar: `(() => {
+        const rail = document.querySelector('[aria-label="Tree panels"] > *');
+        const bar = document.querySelector(".topbar");
+        if (!rail || !bar) return null;
+        const a = rail.getBoundingClientRect();
+        const b = bar.getBoundingClientRect();
+        return a.top < b.bottom && a.bottom > b.top ? 1 : 0;
+      })()`,
+      /** The rail is the collapsed column, not a hairline. */
+      railWidth: `(() => {
+        const rail = document.querySelector('[aria-label="Tree panels"] > *');
+        return rail ? Math.round(rail.getBoundingClientRect().width) : null;
+      })()`,
+    },
+    checks: [
+      { label: "the rail is laid out, not positioned against an ancestor", derived: "railIsAbsolute", exact: 0 },
+      { label: "the rail does not sit over the top bar", derived: "railOverlapsBar", exact: 0 },
+      { label: "the rail fills its 44px column", derived: "railWidth", min: 40 },
+    ],
+  },
+  {
     name: "scroll-1440",
     note: "every view scrolls when its content is taller than the window",
     view: "tree",

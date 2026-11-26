@@ -41,6 +41,14 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
   },
   {
+    name: "gate-rail-1440",
+    note: "the collapsed panel's rail, which must stay in its column",
+    view: "tree",
+    size: [1440, 900],
+    setup: `const collapse = document.querySelector('[aria-label="Collapse panel"]');
+      if (collapse) collapse.click();`,
+  },
+  {
     name: "gate-tree-360",
     note: "the list at phone width",
     view: "tree",

@@ -483,3 +483,18 @@ its `overflow` property, because reading the property would have passed all alon
 The same measurement found a second fault that is not this bug and is not fixed here: the panel reports 1,690,558px
 of content, because the quality review emits one "Siblings may overlap" finding per pair of siblings, so the first
 finding sits 278,383px down the panel with 120 items. That is filed separately.
+
+## 0.10.6 - a class name collision in the collapsed panel
+
+Reported by the user: the collapsed Details and History panel drew a straight line over the Export button, outside the
+Tree's column. Two elements were both called `.rail`: the Tree's connector lines, added in phase 5, and the collapsed
+panel's container, which is older. Both rules applied to the panel's container, and the Tree's
+`position: absolute; width: 1px; background: var(--border-strong)` turned it into a hairline placed against its nearest
+positioned ancestor. The panel's class is `.panel-rail` now.
+
+The check was written to fail first and it did: the element measured `1x900` at `x=1397`, `railIsAbsolute` 1,
+`railOverlapsBar` 1, `railWidth` 1. Only then was the class renamed, and the same three checks pass.
+
+The reason nothing caught it in five phases of shots is worth recording: no shot after phase 5 appeared the collapsed
+panel. The rail was photographed once, for #19, before the collision existed. There is a standing gate shot of the
+collapsed rail now, so the state is in every run.

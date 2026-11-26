@@ -1537,7 +1537,8 @@ kbd {
   grid-template-columns: minmax(0, 1fr) 44px;
 }
 
-.rail {
+/** The collapsed panel's rail. Not `.rail`: the Tree's connector lines use that. */
+.panel-rail {
   display: flex;
   flex-direction: column;
   align-items: center;

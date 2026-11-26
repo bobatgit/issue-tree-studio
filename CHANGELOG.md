@@ -3,6 +3,18 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.6] - 2026-11-26
+
+### Fixed
+
+- **The collapsed Details and History panel drew a 1px vertical line across the window**, over the Export button and
+  outside its own column. The panel's container and the Tree's connector lines were both called `.rail`, so the panel
+  received the Tree's `position: absolute; width: 1px; background: ...` rule as well as its own flex layout, and an
+  absolutely positioned element is placed against its nearest positioned ancestor rather than its column. The panel's
+  class is `.panel-rail` now, and a probe case measures the collapsed rail three ways: that it is laid out rather than
+  absolutely positioned, that it does not overlap the top bar, and that it fills its 44px column. Each of those three
+  failed before the rename, which is how the check was proven to catch this rather than merely pass after it.
+
 ## [0.10.5] - 2026-11-26
 
 ### Fixed

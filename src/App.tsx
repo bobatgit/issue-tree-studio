@@ -189,7 +189,7 @@ export function App() {
           aria-label="Tree panels"
         >
           {collapsed && !phone ? (
-            <div className="rail">
+            <div className="panel-rail">
               <button
                 type="button"
                 className="rail-btn"
