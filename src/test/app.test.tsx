@@ -254,3 +254,15 @@ describe("a tab saved before the items rename", () => {
     expect(document.querySelector(".topbar")?.textContent).toMatch(/items/);
   });
 });
+
+describe("the key record", () => {
+  it("shows no previous keys and no key-change count", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(1));
+
+    expect(screen.queryByText("Previous keys")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: /History/ }));
+    expect(document.querySelector(".vmeta")?.textContent ?? "").not.toMatch(/key changes/);
+  });
+});

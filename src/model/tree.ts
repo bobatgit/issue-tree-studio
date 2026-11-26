@@ -45,7 +45,6 @@ export function createDoc(
     createdAt: timestamp,
     updatedAt: timestamp,
     settings: { ...settings },
-    aliases: [],
   };
 }
 
@@ -312,7 +311,6 @@ export function buildDoc(
     createdAt: timestamp,
     updatedAt: timestamp,
     settings: { ...settings },
-    aliases: [],
   };
 }
 
@@ -326,7 +324,7 @@ export function snapshotOf(doc: TreeDoc) {
 }
 
 export function docFromSnapshot(
-  base: Pick<TreeDoc, "id" | "version" | "createdAt" | "aliases">,
+  base: Pick<TreeDoc, "id" | "version" | "createdAt">,
   snapshot: {
     name: string;
     rootId: string | null;
@@ -343,6 +341,5 @@ export function docFromSnapshot(
     createdAt: base.createdAt,
     updatedAt: now(),
     settings: snapshot.settings,
-    aliases: base.aliases ?? [],
   };
 }

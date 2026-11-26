@@ -225,7 +225,6 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
         includeOverviewSlide: true,
         includeKeyIndexSlide: false,
       },
-      aliases: [],
     },
     warnings,
   };

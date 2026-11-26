@@ -3,18 +3,35 @@
  *
  * An item key is the first N characters of the Crockford Base32 encoding of a
  * SHA-256 digest over the item's normalised label plus the normalised labels of
- * its ancestors. Five characters give 33,554,432 values; at the 500-item hard cap
- * the chance of any two items colliding is about 0.37 percent. Real collisions are
- * detected and deterministically promoted to a longer key.
+ * its ancestors. Six characters give 1,073,741,824 values; at the 500-item hard
+ * cap the chance of any two items colliding is about 0.012 percent. Real
+ * collisions are detected and deterministically promoted to a longer key.
+ *
+ * The key string carries a hyphen after the third character, `A3E-B88`. The
+ * hyphen is part of the key everywhere it appears: the CSV, the markdown token,
+ * the clipboard and the deck. It is a reading aid for speaking a key aloud, and
+ * it carries no structure: a child's key is hashed from its own label path and
+ * has no relationship to its parent's.
  */
 
 import { sha256 } from "@noble/hashes/sha256";
 import type { KeyMap, TreeDoc } from "./types";
 
 export const KEY_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-export const DEFAULT_KEY_LENGTH = 5;
+export const DEFAULT_KEY_LENGTH = 6;
 export const MAX_KEY_LENGTH = 10;
+/** Where the reading hyphen goes in a key string. */
+export const KEY_GROUP = 3;
 const PATH_SEPARATOR = "\u001f";
+
+/**
+ * The key as a person reads it and says it: three characters, a hyphen, then the
+ * rest. A promoted key keeps the hyphen where it is and extends the second
+ * group, so "say the first three" always works.
+ */
+export function formatKey(hash: string): string {
+  return hash.length > KEY_GROUP ? `${hash.slice(0, KEY_GROUP)}-${hash.slice(KEY_GROUP)}` : hash;
+}
 
 const QUOTE_MAP: Record<string, string> = {
   "\u2018": "'",
@@ -114,7 +131,7 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
       itemId,
       rawPath,
       digest,
-      key: toBase32(hexToBytes(digest), length),
+      key: formatKey(toBase32(hexToBytes(digest), length)),
       length,
       promoted: false,
       depth,
@@ -154,7 +171,7 @@ export function computeKeyMap(doc: TreeDoc, baseLength = DEFAULT_KEY_LENGTH): Ke
       for (const loser of ordered.slice(1)) {
         if (loser.length >= MAX_KEY_LENGTH) continue;
         loser.length += 1;
-        loser.key = toBase32(hexToBytes(loser.digest), loser.length);
+        loser.key = formatKey(toBase32(hexToBytes(loser.digest), loser.length));
         loser.promoted = true;
         changed = true;
       }

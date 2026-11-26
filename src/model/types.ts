@@ -28,15 +28,6 @@ export interface DocSettings {
   includeKeyIndexSlide: boolean;
 }
 
-export interface KeyAlias {
-  itemId: string;
-  from: string;
-  to: string;
-  /** Version at which the key changed. */
-  v: number;
-  at: number;
-}
-
 export interface TreeDoc {
   id: string;
   name: string;
@@ -47,8 +38,6 @@ export interface TreeDoc {
   createdAt: number;
   updatedAt: number;
   settings: DocSettings;
-  /** Old key -> new key history, newest last. */
-  aliases: KeyAlias[];
 }
 
 export type VersionTrigger =
@@ -71,8 +60,6 @@ export interface VersionEntry {
   checkpoint?: string;
   snapshot: DocSnapshot;
   keys: Record<string, string>;
-  /** Aliases created by this version. */
-  aliases?: KeyAlias[];
 }
 
 export interface DocSnapshot {
@@ -91,7 +78,7 @@ export interface ItemKey {
   /** Keys of the ancestor chain, ending with this item's key. */
   pathKeys: string[];
   digestHex: string;
-  /** True when the key needed more than the default 4 characters. */
+  /** True when the key needed more than the six default characters. */
   promoted: boolean;
   depth: number;
 }
@@ -123,7 +110,6 @@ export const SOFT_CAP = 100;
 /** Hard stop: above this the UI and the deck stop being usable. */
 export const ITEM_CAP = 500;
 export const HISTORY_CAP = 5000;
-export const ALIAS_CAP = 2000;
 
 export const DEFAULT_SETTINGS: DocSettings = {
   showKeysInEditor: true,

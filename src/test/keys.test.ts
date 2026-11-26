@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { collisionRisk, computeKeyMap, keyForPath, normalizeLabel, toBase32 } from "../model/keys";
+import { collisionRisk, computeKeyMap, formatKey, keyForPath, normalizeLabel, toBase32 } from "../model/keys";
 import { parseMarkdown } from "../model/markdown";
 import { createDoc, updateLabel } from "../model/tree";
+import { generateTree } from "./testUtils";
 
 function docFrom(markdown: string) {
   return parseMarkdown(markdown, "test").doc;
@@ -26,10 +27,10 @@ describe("label normalisation", () => {
 });
 
 describe("key encoding", () => {
-  it("returns 5 Crockford Base32 characters", () => {
+  it("returns 6 Crockford Base32 characters", () => {
     const key = keyForPath("why did profit fall?");
-    expect(key).toHaveLength(5);
-    expect(key).toMatch(/^[0-9A-HJKMNP-TV-Z]{5}$/);
+    expect(key).toHaveLength(6);
+    expect(key).toMatch(/^[0-9A-HJKMNP-TV-Z]{6}$/);
   });
 
   it("never emits the ambiguous letters I, L, O or U", () => {
@@ -69,7 +70,7 @@ describe("document keys", () => {
     const map = computeKeyMap(doc);
     expect(Object.keys(map.byItem)).toHaveLength(Object.keys(doc.items).length);
     for (const info of Object.values(map.byItem)) {
-      expect(info.key).toHaveLength(5);
+      expect(info.key).toMatch(/^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3}$/);
       expect(info.path).toContain("why did profit fall?");
     }
   });
@@ -154,4 +155,32 @@ describe("document keys", () => {
     expect(Object.values(map.byItem).some((info) => info.promoted)).toBe(true);
   });
 
+});
+
+describe("the dashed key", () => {
+  it("reads as three characters, a hyphen, then the rest of the hash", () => {
+    const keys = Object.values(computeKeyMap(docFrom("- Root?\n  - A?\n  - B?\n")).byItem).map((info) => info.key);
+    expect(keys).toHaveLength(3);
+    for (const key of keys) {
+      expect(key).toMatch(/^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3}$/);
+      expect(key).toHaveLength(7);
+    }
+  });
+
+  it("leaves the first group at three characters however long the hash is", () => {
+    expect(formatKey("A3EB88")).toBe("A3E-B88");
+    expect(formatKey("A3EB88C")).toBe("A3E-B88C");
+    expect(formatKey("A3EB88C9")).toBe("A3E-B88C9");
+  });
+
+  it("keeps every key unique at the 500-item cap", () => {
+    const keys = Object.values(computeKeyMap(generateTree(500)).byItem).map((info) => info.key);
+    expect(keys).toHaveLength(500);
+    expect(new Set(keys).size).toBe(500);
+  });
+
+  it("puts the collision risk at six characters below one in a thousand", () => {
+    expect(collisionRisk(500, 6)).toBeLessThan(0.001);
+    expect(collisionRisk(500, 6)).toBeLessThan(collisionRisk(500, 5));
+  });
 });

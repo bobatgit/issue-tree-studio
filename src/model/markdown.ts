@@ -48,12 +48,6 @@ interface ListItem {
 }
 
 /**
- * The key, in the form older releases wrote it: `K7M2 · Label`. Still read, so a
- * file written before the key moved to the end still applies.
- */
-const KEY_PREFIX = /^[0-9A-HJKMNP-TV-Z]{4,5}(?: · | {2,})(.+)$/;
-
-/**
  * The key, in the form the markdown view writes now: `{[2GK88]}` at the end of
  * the line. Read on shape alone and never on resolution, because a key is always
  * recomputed from the label and its path: an unresolvable token carries no
@@ -66,7 +60,7 @@ const KEY_PREFIX = /^[0-9A-HJKMNP-TV-Z]{4,5}(?: · | {2,})(.+)$/;
 const TOKEN_OPEN = "{[";
 const TOKEN_CLOSE = "]}";
 /** Digits and every letter except I, L, O and U: the four a person mistypes. */
-const KEY_SHAPE = /^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{4,10}$/;
+const KEY_SHAPE = /^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3,10}$/i;
 
 /**
  * A pasted enumerator, the numbering an outline arrives carrying.
@@ -83,11 +77,6 @@ const KEY_SHAPE = /^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{4,10}$/;
  */
 const ENUMERATOR =
   /^(?:\(\d{1,3}(?:\.\d{1,3})*\)|\[\d{1,3}(?:\.\d{1,3})*\]|\d{1,3}(?:\.\d{1,3})*(?:\.|\)|\]|(?=[ \t]))|#\d{1,3}|Q\d+(?:\.\d+)*(?:\.|\))|[A-Za-z]{1,4}(?:\.|\))|\([A-Za-z]{1,4}\)|[•·‣–*+-])[ \t]+/;
-
-export function stripKeyPrefix(text: string): string {
-  const match = KEY_PREFIX.exec(text.trim());
-  return match ? match[1] : text;
-}
 
 /** Drop a trailing `{[KEY]}` token, whether or not it resolves. */
 export function stripKeyToken(text: string): string {
@@ -160,7 +149,7 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
       const status: ItemStatus = task && task[1].toLowerCase() === "x" ? "complete" : "open";
       const body = task ? raw.slice(task[0].length) : raw;
       const pasted = cleanInline(stripKeyToken(body));
-      const { label: withoutPrefix, prefix } = stripEnumerator(stripKeyPrefix(pasted));
+      const { label: withoutPrefix, prefix } = stripEnumerator(pasted);
       const label = cleanInline(withoutPrefix);
       if (prefix) removals.push({ pasted, prefix, index: items.length });
       if (!label) {

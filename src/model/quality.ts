@@ -199,7 +199,7 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
       push(
         "KEY_PROMOTED",
         "info",
-        `Key ${info.key} is longer than 4 characters`,
+        `Key ${info.key} is longer than the six default characters`,
         "A real hash collision was detected and resolved deterministically by extending this key. It stays unique.",
         info.itemId,
       );

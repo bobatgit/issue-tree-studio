@@ -244,7 +244,6 @@ export function HistoryPanel({ ws }: { ws: Workspace }) {
             <div className="vmeta">
               <span>{formatTime(entry.at)}</span>
               <span>{entry.trigger}</span>
-              {entry.aliases && entry.aliases.length > 0 ? <span>{entry.aliases.length} key changes</span> : null}
               {entry.checkpoint ? <span>★ {entry.checkpoint}</span> : null}
             </div>
             <div className="vactions">
@@ -308,10 +307,6 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
   const doc = ws.doc;
   const item = doc && ws.selection ? doc.items[ws.selection] : null;
   const info = item ? ws.keyMap.byItem[item.id] : null;
-  const aliases = useMemo(
-    () => (doc && item ? doc.aliases.filter((alias) => alias.itemId === item.id).slice(-6).reverse() : []),
-    [doc, item],
-  );
   const suggestions = useMemo(
     () => (doc && item ? heuristicMeceReview(doc, ws.keyMap, item.id) : []),
     [doc, ws.keyMap, item],
@@ -327,7 +322,7 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
       <div className="section">
         <div className="section-head">
           <span>Key</span>
-          <span>{info.promoted ? "extended after collision" : "5 characters"}</span>
+          <span>{info.promoted ? "extended after collision" : "6 characters"}</span>
         </div>
         <div className="key-big">
           <code>{info.key}</code>
@@ -336,12 +331,13 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
           </button>
         </div>
         <p className="key-explain">
-          SHA-256 of the normalised label path, cut to {info.length} Crockford Base32 characters. Five
-          characters hold 33,554,432 values; a real collision is promoted to six and flagged.
+          SHA-256 of the normalised label path, cut to {info.length} Crockford Base32 characters. Six
+          characters hold 1,073,741,824 values; a real collision is promoted to seven and flagged.
           <br />
           <code>{info.path.replace(/\u001f/g, " / ")}</code>
           <br />
-          Editing this label, or an ancestor&apos;s wording, changes the key. Old keys stay resolvable.
+          Editing this label, or an ancestor&apos;s wording, changes the key. The key reads as three
+          characters, a hyphen, then the rest.
         </p>
         <dl className="kv" style={{ marginTop: 10 }}>
           <dt>Key path</dt>
@@ -351,18 +347,6 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
           <dt>Children</dt>
           <dd>{item.children.length}</dd>
         </dl>
-        {aliases.length > 0 ? (
-          <div style={{ marginTop: 10 }}>
-            <div className="section-head">
-              <span>Previous keys</span>
-            </div>
-            {aliases.map((alias, index) => (
-              <div key={index} className="small muted">
-                {alias.from} → {alias.to} <span className="faint">in v{alias.v}</span>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </div>
 
       <div className="section">

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasLegacyKeys, parseProject } from "../model/project";
+import { parseProject } from "../model/project";
 import { countItems, flatten } from "../model/tree";
 
 const legacy = JSON.stringify({
@@ -47,14 +47,6 @@ describe("project import", () => {
     expect(parseProject("not json")).toBeNull();
     expect(parseProject(JSON.stringify({ hello: 1 }))).toBeNull();
     expect(parseProject(JSON.stringify({ doc: { items: {} } }))).toBeNull();
-  });
-});
-
-describe("legacy keys", () => {
-  it("detects four-character keys in aliases and version snapshots", () => {
-    expect(hasLegacyKeys('{"aliases":[{"from":"K7M2","to":"B8YVN"}]}')).toBe(true);
-    expect(hasLegacyKeys('{"versions":[{"keys":{"a":"K7M2"}}]}')).toBe(true);
-    expect(hasLegacyKeys('{"aliases":[{"from":"K7M2X","to":"B8YVN"}]}')).toBe(false);
   });
 });
 

@@ -91,9 +91,10 @@ describe("markdown status", () => {
     expect(md).toContain("  - [ ] Q2. Still open?");
   });
 
-  it("ignores a key prefix written before a label", () => {
+  it("no longer strips a key prefix an older release wrote", () => {
+    // Version compatibility is not a concern, so the old shape stays as wording.
     const doc = parseMarkdown("- K7M2 · Root?\n  - B8YV · Child?\n").doc;
-    expect(shape(doc)).toEqual(["Root?", "·Child?"]);
+    expect(shape(doc)).toEqual(["K7M2 · Root?", "·B8YV · Child?"]);
   });
 });
 
@@ -135,10 +136,14 @@ describe("the number, the key and no heading", () => {
   });
 
   it("drops a trailing key token whether or not it resolves", () => {
-    const resolves = parseMarkdown("- Root? {[2GK88]}\n").doc;
-    const doesNot = parseMarkdown("- Root? {[ZZZZZ]}\n").doc;
+    const resolves = parseMarkdown("- Root? {[2GK-882]}\n").doc;
+    const doesNot = parseMarkdown("- Root? {[ZZZ-ZZZ]}\n").doc;
     expect(Object.values(resolves.items)[0].label).toBe("Root?");
     expect(Object.values(doesNot.items)[0].label).toBe("Root?");
+
+    // The undashed five-character form is no longer a key, so it stays as wording.
+    const older = parseMarkdown("- Root? {[2GK88]}\n").doc;
+    expect(Object.values(older.items)[0].label).toBe("Root? {[2GK88]}");
   });
 
   it("keeps a key-shaped word in single brackets", () => {
@@ -147,7 +152,7 @@ describe("the number, the key and no heading", () => {
   });
 
   it("drops a key token on a line that also carries a pasted number", () => {
-    const result = parseMarkdown("- Root? {[2GK88]}\n  - a) Child? {[ABCDE]}\n");
+    const result = parseMarkdown("- Root? {[2GK-882]}\n  - a) Child? {[ABC-DEF]}\n");
     expect(shape(result.doc)).toEqual(["Root?", "·Child?"]);
     expect(result.stripped.map((entry) => entry.prefix)).toEqual(["a)"]);
   });

@@ -13,9 +13,10 @@ Nothing here restates an issue. If a decision is missing, the issue is the place
 | 1 | #18, #26 | Vocabulary and the settings dialog | 0.8.0 | once |
 | 2 | #17, #19 | Type scale and the history glyph | 0.8.1 | once |
 | 3 | #12, #13, #14 | The numbering spine | 0.9.0 | once |
-| 4 | #15, #16, #24, #25 | The list and the frame | 0.9.1 | once |
-| 5 | #20, #21, #23 | The diagram canvas | 0.9.2 | once |
-| 6 | #22 | Folding in the diagram | 0.9.3 | once |
+| 4 | #27 | Six-character keys | 0.10.0 | once |
+| 5 | #15, #16, #24, #25 | The list and the frame | 0.10.1 | once |
+| 6 | #20, #21, #23 | The diagram canvas | 0.10.2 | once |
+| 7 | #22 | Folding in the diagram | 0.10.3 | once |
 
 Within a phase, one commit per ticket, each carrying its own `Fixes #N`. All commits for the phase push
 together, once the phase is green. A phase is a release.
@@ -27,6 +28,7 @@ The dependency chain, and nothing else:
 ```
 #18  ->  every later ticket        the vocabulary all new code is written in
 #17  ->  #15, #16, #25             layout is tuned against the final type scale
+#27  ->  #15, #16, #24, #25       the row and box geometry is tuned around the chip's width
 #12  ->  #13  ->  #14              atomic; the markdown round trip needs all three
 #24  ->  #25                       the footer shares the inset
 #21  ->  #22                       folding sits inside the zoomable canvas
@@ -191,7 +193,31 @@ Watch for:
   the number is never stored.
 - The deck growing because every box gained a line. Exporting must still never refuse at 500 items.
 
-### Phase 4 - The list and the frame (0.9.1)
+### Phase 4 - Six-character keys (0.10.0)
+
+The batch's third breaking change, and the only one that touches every artifact at once.
+
+1. The hash becomes six Crockford Base32 characters, and the key string carries a hyphen after the third:
+   `A3E-B88`. Six characters hold 1,073,741,824 values, so a real collision at the 500-item cap is about 0.012
+   percent, against 0.37 percent at five.
+2. The dash goes into the CSV `key`, `parent_key` and `path` columns, the markdown token `{[A3E-B88]}`, the row
+   chip, the diagram box, the Details panel, the deck and the clipboard. Nothing strips it and nothing adds it.
+3. A real collision promotes deterministically, ordered by digest, and the second group extends: `A3E-B88C`. The
+   first group is always three characters, so "say the first three" keeps working.
+4. The alias mechanism goes: the records, the Previous keys list, the key-change count in History, the `aliases`
+   field in the stored document, and the `KeyAlias` type. An old key no longer resolves anywhere.
+5. The reader stops accepting the old `K7M2 · Label` prefix, and every string that says five characters, or that
+   explains a four-to-five promotion, is corrected.
+6. The markdown token shape becomes three characters, a hyphen, then three or more.
+
+Gates: tests, build, smoke with every CSV round-tripping with dashes in the key and path columns, perf at 500
+items, probe on the chip width and the diagram box, shots of a row, the diagram and the deck, and a manual pass on
+the deck.
+
+Watch for: the chip is wider, so the row's key column and the diagram box's key text both need re-measuring. That
+is why this phase lands before the layout work rather than after it.
+
+### Phase 5 - The list and the frame (0.10.1)
 
 Four chrome tickets, one visual pass. Order: #15, then #16, then #24, then #25.
 
@@ -209,7 +235,7 @@ view at 1440 and 360, plus a folded row.
 Watch for: the four tickets sharing one stylesheet, so a change for the footer moving a heading. The phase-2
 probe numbers are the reference.
 
-### Phase 5 - The diagram canvas (0.9.2)
+### Phase 6 - The diagram canvas (0.10.2)
 
 Order: #20, then #21, then #23.
 
@@ -226,7 +252,7 @@ Manual: open the deck in PowerPoint and confirm the tick is two editable shapes.
 Watch for: the hover fix only being correct at Fit. The stroke is in user units, so it must be measured at
 each zoom level.
 
-### Phase 6 - Folding in the diagram (0.9.3)
+### Phase 7 - Folding in the diagram (0.10.3)
 
 One ticket, because it is the most interactive change in the batch and it sits on the canvas from phase 5
 and the fold state from phase 4.
@@ -267,6 +293,6 @@ Watch for: a pan drag being read as a chevron click. They are different targets 
 
 ## Goal creation order
 
-One goal per phase, and the earliest phase must end up focused, so create them in reverse: phase 6, then 5,
-then 4, then 3, then 2, then 1. Each goal's objective names its tickets and the gate it must pass, and refers
-to the issue for the detail rather than repeating it.
+The seven phases are tracked as the ordered task tree of one Sisyphus goal. Each phase task names its tickets
+and the gate it must pass, and refers to the issue for the detail rather than repeating it. A phase task is
+completed only once its own tickets are, and the phase's push has produced a green deploy.

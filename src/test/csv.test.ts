@@ -177,3 +177,15 @@ describe("csv status", () => {
     expect(byLabel("Child?")?.status).toBe("open");
   });
 });
+
+describe("dashes in the key columns", () => {
+  it("writes the form a person reads, everywhere a key appears", () => {
+    const doc = sampleDoc();
+    const keys = computeKeyMap(doc);
+    const rows = parseCsv(exportCsv(doc, keys));
+    expect(rows[1][2]).toMatch(/^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3}$/);
+    expect(rows[2][4]).toBe(rows[1][2]);
+    expect(rows[2][6]).toBe(`${rows[1][2]}/${rows[2][2]}`);
+    expect(importCsv(exportCsv(doc, keys)).warnings).toHaveLength(0);
+  });
+});

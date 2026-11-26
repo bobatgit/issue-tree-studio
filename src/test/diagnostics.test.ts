@@ -36,7 +36,7 @@ describe("diagnostics block", () => {
     expect(text).toContain("build: 0.2.0 (c861e80)");
     expect(text).toContain("2026-11-24T12:00:00.000Z");
     expect(text).toContain("items: 3 / 500, depth 2");
-    expect(text).toContain("keys: length 5, promoted 0, collisions 0");
+    expect(text).toContain("keys: length 6, promoted 0, collisions 0");
     expect(text).toContain("status: open 3, complete 0");
     expect(text).toContain("page: https://bobatgit.github.io/issue-tree-studio/");
   });

@@ -35,7 +35,6 @@ import {
 } from "../model/tree";
 import type {
   DocSettings,
-  KeyAlias,
   KeyMap,
   MeceFlags,
   ItemStatus,
@@ -43,8 +42,8 @@ import type {
   VersionEntry,
   VersionTrigger,
 } from "../model/types";
-import { ALIAS_CAP, DEFAULT_SETTINGS, ITEM_CAP } from "../model/types";
-import { hasLegacyKeys, parseProject } from "../model/project";
+import { DEFAULT_SETTINGS, ITEM_CAP } from "../model/types";
+import { parseProject } from "../model/project";
 import * as db from "./storage";
 import { migrateLegacy } from "./storage";
 
@@ -209,12 +208,6 @@ export function useWorkspace(): Workspace {
         { snapshot, keys: nextKeyRecord },
       );
 
-      const aliases: KeyAlias[] = [];
-      for (const [itemId, newKey] of Object.entries(nextKeyRecord)) {
-        const oldKey = keysRef.current[itemId];
-        if (oldKey && oldKey !== newKey) aliases.push({ itemId, from: oldKey, to: newKey, v, at });
-      }
-
       keysRef.current = nextKeyRecord;
       lastSnapshotRef.current = snapshot;
 
@@ -222,7 +215,6 @@ export function useWorkspace(): Workspace {
         ...pending.doc,
         version: v,
         updatedAt: at,
-        aliases: [...pending.doc.aliases, ...aliases].slice(-ALIAS_CAP),
       };
 
       const entry: VersionEntry = {
@@ -234,7 +226,6 @@ export function useWorkspace(): Workspace {
         checkpoint: checkpointName,
         snapshot,
         keys: nextKeyRecord,
-        aliases,
       };
 
       setDocState(withVersion);
@@ -295,7 +286,6 @@ export function useWorkspace(): Workspace {
         summary: "created",
         snapshot: snapshotOf(next),
         keys: keysRef.current,
-        aliases: [],
       };
       await db.putVersion(entry);
       setDocState(next);
@@ -621,12 +611,6 @@ export function useWorkspace(): Workspace {
         warnings = parsed.warnings;
       } else {
         const parsed = parseProject(text);
-        if (parsed && hasLegacyKeys(text)) {
-          toast(
-            "info",
-            "This file used the older four-character keys. They were upgraded to five; old keys still resolve.",
-          );
-        }
         if (!parsed) {
           toast("error", "That JSON is not an Issue Tree Studio project.");
           return;
