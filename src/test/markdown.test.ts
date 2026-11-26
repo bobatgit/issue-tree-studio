@@ -45,11 +45,11 @@ describe("markdown import", () => {
     expect(shape(doc)).toEqual(["Root?", "·A?"]);
   });
 
-  it("enforces the 100-node cap", () => {
-    const lines = ["- Root?", ...Array.from({ length: 150 }, (_, index) => `  - Item ${index}?`)];
+  it("enforces the 500-node cap", () => {
+    const lines = ["- Root?", ...Array.from({ length: 600 }, (_, index) => `  - Item ${index}?`)];
     const result = parseMarkdown(lines.join("\n"));
-    expect(countNodes(result.doc)).toBe(100);
-    expect(result.warnings.join(" ")).toContain("100");
+    expect(countNodes(result.doc)).toBe(500);
+    expect(result.warnings.join(" ")).toContain("500");
   });
 
   it("starts a single-root tree when no list exists", () => {

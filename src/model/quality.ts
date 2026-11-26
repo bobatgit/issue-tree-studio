@@ -4,7 +4,7 @@
  */
 
 import type { KeyMap, TreeDoc } from "./types";
-import { NODE_CAP } from "./types";
+import { NODE_CAP, SOFT_CAP } from "./types";
 import { flatten, subtreeIds } from "./tree";
 
 export type FindingLevel = "error" | "warn" | "info";
@@ -211,9 +211,14 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
 
   const nodeCount = Object.keys(doc.nodes).length;
   if (nodeCount >= NODE_CAP) {
-    push("NODE_COUNT_CAP", "warn", "The tree is at the 100-node cap", "Remove or merge nodes before adding more.");
-  } else if (nodeCount >= 80) {
-    push("NODE_COUNT_HIGH", "info", `${nodeCount} of ${NODE_CAP} nodes used`, "The cap keeps the tree readable on slides.");
+    push("NODE_COUNT_CAP", "warn", `The tree is at the ${NODE_CAP}-node hard cap`, "Remove or merge nodes before adding more.");
+  } else if (nodeCount >= SOFT_CAP) {
+    push(
+      "NODE_COUNT_HIGH",
+      "info",
+      `${nodeCount} of ${NODE_CAP} nodes used`,
+      "Past this size the tree gets hard to read. Nothing is blocked.",
+    );
   }
 
   const unconfirmed = flat.filter(

@@ -1,5 +1,6 @@
 import { APP_VERSION, BUILD_SHA, REPO_URL } from "../lib/appInfo";
 import { titleOf } from "../model/tree";
+import { NODE_CAP, SOFT_CAP } from "../model/types";
 import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
@@ -14,7 +15,7 @@ export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
 
   if (!doc) return null;
 
-  const capClass = ws.nodeCount >= 100 ? "full" : ws.nodeCount >= 80 ? "warn" : "";
+  const capClass = ws.nodeCount >= NODE_CAP ? "full" : ws.nodeCount >= SOFT_CAP ? "warn" : "";
 
   return (
     <header className="topbar">
@@ -39,8 +40,11 @@ export function TopBar({ ws, onImport, onExport, onSettings }: Props) {
         {ws.pendingVersion ? <span className="dot" title="A version is being written" /> : null}
       </span>
 
-      <span className={`pill cap ${capClass}`} title="Hard cap of 100 nodes keeps the tree readable">
-        {ws.nodeCount} / 100 nodes
+      <span
+        className={`pill cap ${capClass}`}
+        title={`A nudge appears at ${SOFT_CAP} nodes; the hard cap is ${NODE_CAP}.`}
+      >
+        {ws.nodeCount} / {NODE_CAP} nodes
       </span>
 
       <span className="topbar-spacer" />

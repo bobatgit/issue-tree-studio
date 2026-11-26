@@ -11,6 +11,14 @@ interface ProjectFile {
  * Read a project file. Unknown node fields from older schemas, such as the
  * removed `type`, are dropped so they cannot travel back out in an export.
  */
+/** True when a file records four-character keys from the older scheme. */
+export function hasLegacyKeys(text: string): boolean {
+  return (
+    /"(?:from|to)":[ ]*"[0-9A-HJKMNP-TV-Z]{4}"/.test(text) ||
+    /"keys":[ ]*\{[^}]*:[ ]*"[0-9A-HJKMNP-TV-Z]{4}"/.test(text)
+  );
+}
+
 export function parseProject(text: string): TreeDoc | null {
   let data: ProjectFile;
   try {

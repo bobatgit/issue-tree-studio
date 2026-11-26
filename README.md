@@ -37,8 +37,8 @@ key = Crockford Base32(digest)[0..4] K7M2
 
 * **Crockford Base32** uses the alphabet `0-9 A-Z` without `I`, `L`, `O` and `U`, so a key survives being
   read aloud, copied by hand or typed from a screenshot.
-* **Four characters** give 1,048,576 values. At the hard cap of 100 nodes the chance that any two nodes share
-  a key is 0.47 percent (birthday bound: `n(n-1) / 2 / 32^4`).
+* **Five characters** give 33,554,432 values. At the hard cap of 500 nodes the chance that any two nodes share
+  a key is 0.37 percent (birthday bound: `n(n-1) / 2 / 32^5`).
 * **Path scope** means the same wording under two different parents gets two different keys, and a sibling
   reorder never changes a key.
 * **Editing changes keys.** Change a label and that node plus all of its descendants get new keys, because
@@ -72,7 +72,7 @@ Paste it or drop a `.md` / `.txt` file. The importer accepts:
 * Inline decoration is removed: `**bold**`, `_italic_`, `` `code` ``, `[text](url)` and HTML tags.
 * One top-level item becomes the root. Several top-level items get a shared root named after the first
   heading, and the import warns about it.
-* The first 100 nodes are kept and the rest are dropped with a warning.
+* The first 500 nodes are kept and the rest are dropped with a warning.
 
 ### CSV
 
@@ -107,7 +107,8 @@ Every node is a question. Each node also has a status, **Open** or **Complete**:
 toggles it, the markdown export writes `- [ ]` and `- [x]`, and a complete node with an open child raises a
 warning instead of changing anything automatically.
 
-The hard cap is **100 nodes**. The 101st add is blocked with a message, and the counter turns amber at 80.
+The soft cap is **100 nodes**: past it a dismissible nudge suggests the tree has outgrown a single page, and
+nothing is blocked. The hard cap is **500**: the 501st add is refused, and the counter turns amber at 100.
 
 ---
 
@@ -218,7 +219,7 @@ between machines or to archive it.
 src/
   model/        pure functions, no React
     keys.ts     normalisation, SHA-256, Crockford Base32, collision promotion
-    tree.ts     immutable tree operations, 100-node cap
+    tree.ts     immutable tree operations, soft 100 and hard 500 caps
     markdown.ts generic list parsing and export
     csv.ts      RFC 4180 export and import
     layout.ts   one layout engine for the preview and the slides, plus slide packing
@@ -242,7 +243,7 @@ framework-free and could be reused by another UI.
 
 ## 8. Limits and privacy
 
-* 100 nodes per tree; 4-character keys; 5,000 versions.
+* 500 nodes per tree (nudge at 100); 5-character keys; version history bounded by the tab's storage budget.
 * One browser profile holds the library. Export a project file to move or back up a tree.
 * No network calls at all. Nothing is sent anywhere; there is no analytics and no telemetry.
 * `sessionStorage` is the store. Closing the tab ends the tree; private browsing clears it sooner.

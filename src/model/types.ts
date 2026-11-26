@@ -118,7 +118,10 @@ export interface DocSummary {
   nodeCount: number;
 }
 
-export const NODE_CAP = 100;
+/** Past this size the tree is hard to read. A nudge, never a block. */
+export const SOFT_CAP = 100;
+/** Hard stop: above this the UI and the deck stop being usable. */
+export const NODE_CAP = 500;
 export const HISTORY_CAP = 5000;
 export const ALIAS_CAP = 2000;
 

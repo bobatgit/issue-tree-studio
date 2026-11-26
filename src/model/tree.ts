@@ -168,7 +168,7 @@ export function setSettings(doc: TreeDoc, settings: Partial<DocSettings>): TreeD
   });
 }
 
-/** Add a child. Returns null when the 100-node cap blocks it. */
+/** Add a child. Returns null when the hard cap blocks it. */
 export function addChild(
   doc: TreeDoc,
   parentId: string,

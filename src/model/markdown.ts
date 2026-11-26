@@ -127,7 +127,7 @@ export function parseMarkdown(text: string, name = "Imported outline"): OutlineP
   const capped = items.slice(0, NODE_CAP);
   if (items.length > NODE_CAP) {
     warnings.push(
-      `Outline had ${items.length} items. Kept the first ${NODE_CAP} to stay inside the 100-node cap.`,
+      `Outline had ${items.length} items. Kept the first ${NODE_CAP} to stay inside the ${NODE_CAP}-node cap.`,
     );
   }
 

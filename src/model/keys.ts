@@ -3,17 +3,16 @@
  *
  * A node key is the first N characters of the Crockford Base32 encoding of a
  * SHA-256 digest over the node's normalised label plus the normalised labels of
- * its ancestors. Four characters give 1,048,576 values; at the 100-node cap the
- * chance of any two nodes colliding is about 0.47%. Real collisions are
+ * its ancestors. Five characters give 33,554,432 values; at the 500-node hard cap
+ * the chance of any two nodes colliding is about 0.37 percent. Real collisions are
  * detected and deterministically promoted to a longer key.
  */
 
 import { sha256 } from "@noble/hashes/sha256";
 import type { KeyMap, TreeDoc } from "./types";
-import { NODE_CAP } from "./types";
 
 export const KEY_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-export const DEFAULT_KEY_LENGTH = 4;
+export const DEFAULT_KEY_LENGTH = 5;
 export const MAX_KEY_LENGTH = 10;
 const PATH_SEPARATOR = "\u001f";
 
@@ -204,12 +203,6 @@ function hexToBytes(hex: string): Uint8Array {
     out[i] = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);
   }
   return out;
-}
-
-export function keyLengthFor(count: number): number {
-  // Keep the promise "short as possible": at the cap, report the observed need.
-  if (count <= NODE_CAP) return DEFAULT_KEY_LENGTH;
-  return DEFAULT_KEY_LENGTH + 1;
 }
 
 /** Probability that at least two of `count` uniformly distributed keys collide. */

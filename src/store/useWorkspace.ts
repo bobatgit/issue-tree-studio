@@ -43,7 +43,7 @@ import type {
   VersionTrigger,
 } from "../model/types";
 import { ALIAS_CAP, DEFAULT_SETTINGS, NODE_CAP } from "../model/types";
-import { parseProject } from "../model/project";
+import { hasLegacyKeys, parseProject } from "../model/project";
 import * as db from "./storage";
 import { migrateLegacy } from "./storage";
 
@@ -325,7 +325,7 @@ export function useWorkspace(): Workspace {
     const current = docRef.current;
     if (!current) return null;
     if (atCap(current)) {
-      toast("error", "The 100-node cap is reached. Merge or delete a node first.");
+      toast("error", `The ${NODE_CAP}-node cap is reached. Merge or delete a node first.`);
       return null;
     }
     return current;
@@ -611,6 +611,12 @@ export function useWorkspace(): Workspace {
         warnings = parsed.warnings;
       } else {
         const parsed = parseProject(text);
+        if (parsed && hasLegacyKeys(text)) {
+          toast(
+            "info",
+            "This file used the older four-character keys. They were upgraded to five; old keys still resolve.",
+          );
+        }
         if (!parsed) {
           toast("error", "That JSON is not an Issue Tree Studio project.");
           return;

@@ -143,7 +143,7 @@ export function importCsv(text: string, name = "Imported CSV"): CsvParseResult {
 
   const capped = dataRows.slice(0, NODE_CAP);
   if (dataRows.length > NODE_CAP) {
-    warnings.push(`CSV had ${dataRows.length} rows. Kept the first ${NODE_CAP} to stay inside the 100-node cap.`);
+    warnings.push(`CSV had ${dataRows.length} rows. Kept the first ${NODE_CAP} to stay inside the ${NODE_CAP}-node cap.`);
   }
 
   const nodes: Record<string, TreeNode> = {};

@@ -93,12 +93,12 @@ describe("csv import", () => {
     expect(paths(result.doc)).toEqual(["Two roots", "·Alpha?", "·Beta?"]);
   });
 
-  it("enforces the 100-node cap", () => {
+  it("enforces the 500-node cap", () => {
     const rows = ["key,parent_key,label", "root,,Root?"];
-    for (let index = 0; index < 150; index += 1) rows.push(`n${index},root,Item ${index}?`);
+    for (let index = 0; index < 600; index += 1) rows.push(`n${index},root,Item ${index}?`);
     const result = importCsv(rows.join("\r\n"));
-    expect(countNodes(result.doc)).toBe(100);
-    expect(result.warnings.join(" ")).toContain("100");
+    expect(countNodes(result.doc)).toBe(500);
+    expect(result.warnings.join(" ")).toContain("500");
   });
 
   it("reports a missing label column", () => {

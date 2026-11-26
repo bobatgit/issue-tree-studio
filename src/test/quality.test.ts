@@ -66,10 +66,17 @@ describe("quality checks", () => {
     expect(result.findings.filter((finding) => finding.level === "error")).toHaveLength(0);
   });
 
-  it("stops at the node cap and says so", () => {
-    const lines = ["- Root?", ...Array.from({ length: 120 }, (_, index) => `  - Item ${index}?`)];
-    const result = review(lines.join("\n"));
-    expect(result.codes).toContain("NODE_COUNT_CAP");
+  it("nudges past the soft cap and stops at the hard cap", () => {
+    const nudge = review(
+      ["- Root?", ...Array.from({ length: 120 }, (_, index) => `  - Item ${index}?`)].join("\n"),
+    );
+    expect(nudge.codes).toContain("NODE_COUNT_HIGH");
+    expect(nudge.codes).not.toContain("NODE_COUNT_CAP");
+
+    const capped = review(
+      ["- Root?", ...Array.from({ length: 520 }, (_, index) => `  - Item ${index}?`)].join("\n"),
+    );
+    expect(capped.codes).toContain("NODE_COUNT_CAP");
   });
 
   it("counts findings by severity", () => {

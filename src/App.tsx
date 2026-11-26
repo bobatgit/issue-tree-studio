@@ -5,6 +5,7 @@ import { MarkdownView } from "./components/MarkdownView";
 import { Outline } from "./components/Outline";
 import { HistoryPanel, NodePanel, QualityPanel } from "./components/Panels";
 import { TopBar } from "./components/TopBar";
+import { NODE_CAP, SOFT_CAP } from "./model/types";
 import { useWorkspace } from "./store/useWorkspace";
 
 type Tab = "details" | "history";
@@ -45,6 +46,20 @@ export function App() {
       });
     }
   }, [collapsed]);
+
+  useEffect(() => {
+    if (ws.nodeCount < SOFT_CAP) return;
+    try {
+      if (sessionStorage.getItem("its.nudged") === "1") return;
+      sessionStorage.setItem("its.nudged", "1");
+    } catch {
+      return;
+    }
+    ws.toast(
+      "info",
+      `${ws.nodeCount} nodes. Trees this deep get hard to read; the hard cap is ${NODE_CAP}. Nothing is blocked.`,
+    );
+  }, [ws.nodeCount, ws.toast]);
 
   useEffect(() => {
     try {

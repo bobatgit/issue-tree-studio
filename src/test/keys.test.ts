@@ -26,10 +26,10 @@ describe("label normalisation", () => {
 });
 
 describe("key encoding", () => {
-  it("returns 4 Crockford Base32 characters", () => {
+  it("returns 5 Crockford Base32 characters", () => {
     const key = keyForPath("why did profit fall?");
-    expect(key).toHaveLength(4);
-    expect(key).toMatch(/^[0-9A-HJKMNP-TV-Z]{4}$/);
+    expect(key).toHaveLength(5);
+    expect(key).toMatch(/^[0-9A-HJKMNP-TV-Z]{5}$/);
   });
 
   it("never emits the ambiguous letters I, L, O or U", () => {
@@ -69,7 +69,7 @@ describe("document keys", () => {
     const map = computeKeyMap(doc);
     expect(Object.keys(map.byNode)).toHaveLength(Object.keys(doc.nodes).length);
     for (const info of Object.values(map.byNode)) {
-      expect(info.key).toHaveLength(4);
+      expect(info.key).toHaveLength(5);
       expect(info.path).toContain("why did profit fall?");
     }
   });

@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "tsx scripts/smoke.ts"
+    "smoke": "tsx scripts/smoke.ts",
+    "perf": "tsx scripts/perf.ts"
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
