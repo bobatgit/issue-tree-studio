@@ -434,3 +434,67 @@ describe("the diagram zoom", () => {
     expect(document.querySelector(".row.selected")).toBeNull();
   });
 });
+
+describe("folding in the diagram", () => {
+  const enter = async (): Promise<void> => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+      { label: "A1?", depth: 3 },
+      { label: "A2?", depth: 3 },
+      { label: "B?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(5));
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".diagram-svg")).toBeTruthy());
+  };
+
+  const boxes = (): number => document.querySelectorAll(".diagram-svg .nrect").length;
+  const legend = (): string => document.querySelector(".legend")?.textContent ?? "";
+  const collapseA = (): void =>
+    fireEvent.click(screen.getAllByRole("button", { name: /^Collapse A\?/ })[0]);
+
+  it("folds from the connector, closes the gap, and the Tree agrees", async () => {
+    await enter();
+    expect(boxes()).toBe(5);
+
+    collapseA();
+    await waitFor(() => expect(boxes()).toBe(3));
+    expect(document.querySelector(".folded-count")?.textContent).toContain("2 hidden");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
+  });
+
+  it("shows a fold made in the Tree", async () => {
+    await enter();
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    collapseA();
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
+
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(boxes()).toBe(3));
+    expect(document.querySelector(".folded-count")?.textContent).toContain("2 hidden");
+  });
+
+  it("counts only the leaves still on screen", async () => {
+    await enter();
+    expect(legend()).toContain("3 leaf rows");
+    collapseA();
+    // A folded branch has no visible children, so its own row becomes a leaf row.
+    await waitFor(() => expect(legend()).toContain("2 leaf rows"));
+  });
+
+  it("does not select the item whose chevron was clicked", async () => {
+    await enter();
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    fireEvent.click(screen.getAllByRole("treeitem")[0]);
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+
+    collapseA();
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(screen.getAllByRole("treeitem")).toHaveLength(3));
+    expect(document.querySelector(".row.selected")?.textContent).toContain("Root?");
+  });
+});

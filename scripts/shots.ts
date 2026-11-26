@@ -87,6 +87,15 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
   },
   {
+    name: "ticket-22-folded-1440",
+    note: "a folded branch: the connector ends at the chevron, and the box counts what it hides (#22)",
+    view: "diagram",
+    size: [1440, 900],
+    doc: fixtureWithComplete(),
+    setup: `const chevron = document.querySelector('[aria-label="Collapse Did revenue decline?"]');
+      if (chevron) chevron.dispatchEvent(new MouseEvent("click", { bubbles: true }));`,
+  },
+  {
     name: "ticket-23-markers-1440",
     note: "a complete marker beside an open one, in the shared square (#23)",
     view: "diagram",

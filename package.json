@@ -1,7 +1,7 @@
 {
   "name": "issue-tree-studio",
   "private": true,
-  "version": "0.10.2",
+  "version": "0.10.3",
   "type": "module",
   "description": "Single-page issue tree builder: markdown in, hash-keyed issue tree out as PowerPoint, CSV and JSON.",
   "scripts": {

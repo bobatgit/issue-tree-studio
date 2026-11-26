@@ -3,6 +3,18 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.3] - 2026-11-26
+
+### Added
+
+- Fold branches in the Diagram view, on the same folded set the Tree view uses, so folding in one view folds in the
+  other and one sessionStorage key serves both. The control is a chevron on the connector that leaves a parent
+  towards its children, drawn in the Tree's three states and in diagram units rather than pixels. A folded branch
+  leaves the layout, so the remaining boxes use the space and its edges go with it; the connector stops at the
+  chevron, so the branch visibly ends rather than fading out; and the folded box carries the count of every item
+  inside it at any depth. The legend counts rows with no visible children, so a folded branch's own row becomes a
+  leaf row there. The exported deck is unchanged and still carries every item.
+
 ## [0.10.2] - 2026-11-26
 
 ### Fixed

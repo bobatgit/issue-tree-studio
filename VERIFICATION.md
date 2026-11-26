@@ -417,3 +417,40 @@ what a finished item looks like.
   file is produced at 500 items, but the marker as it appears in PowerPoint is unverified.
 * Panning at 500 items is not measured. The ticket asks for that to be reported rather than pre-emptively
   optimised.
+
+## Phase M - folding in the diagram (0.10.3)
+
+| Ticket | What shipped |
+| --- | --- |
+| #22 | The Diagram folds on the Tree's folded set, with a chevron on the outgoing connector, a layout that closes the gap, and the hidden count on the folded box |
+
+## Commands
+
+| Command | Result |
+| --- | --- |
+| `npx tsc -b` | Clean |
+| `npm run build` | Clean; the bundle carries 0.10.3 |
+| `npx vitest run` | 16 files, 196 tests, all passing (192 before, four added, none deleted) |
+| `npm run smoke` | Four decks and four CSVs; the deck byte sizes are **identical** to the phase before, which is what "folding must not change the deck" means |
+| `npm run probe` | 51 of 51 checks, including a folded branch leaving 12 of 18 boxes in the layout and reporting 6 hidden |
+| `npm run shots` | A folded diagram, and the earlier views |
+
+## What the measurements caught
+
+* **The legend's meaning.** My first expectation was that folding a branch leaves one leaf row. It leaves two: a
+  folded branch has no visible children, so its own row is a leaf row now. That is the honest reading of "leaf
+  rows", and the test records it rather than the number I first guessed.
+* **A test that depended on tree order.** The probe's fold clicked the first chevron in the document, which is the
+  root's, so it hid the whole tree. It now selects the chevron by its name. This is the same class of fragility
+  that issue #28 is about.
+
+## The batch, closed
+
+Fifteen filed issues, plus #27 which the user filed during the batch, delivered across seven phases and seven
+releases: 0.8.0, 0.8.1, 0.9.0, 0.10.0, 0.10.1, 0.10.2, 0.10.3. Sixteen test files and 196 tests, from eleven files
+and 107 tests at the start. Every phase deployed, and the probe suite runs against the deployed bundle as well as
+against a local server.
+
+Two things remain open, both recorded and neither blocking: **#28**, the item map's order not being the tree's
+order, which the slide packing reads; and the human checks this batch cannot perform for itself, which are the
+exported deck in PowerPoint, pinch and two-finger pan on real touch hardware, and the diagram at 500 items.

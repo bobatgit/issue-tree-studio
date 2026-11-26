@@ -312,6 +312,29 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "diagram-folded-1440",
+    note: "a folded branch leaves the layout, and the box counts what it hides (#22)",
+    view: "diagram",
+    size: [1440, 900],
+    doc: fixtureWithComplete(),
+    setup: `const chevron = document.querySelector('[aria-label="Collapse Did revenue decline?"]');
+      if (chevron) chevron.dispatchEvent(new MouseEvent("click", { bubbles: true }));`,
+    selectors: [".diagram-svg .nrect", ".legend", ".folded-count"],
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      foldedCount: `(() => {
+        const element = document.querySelector(".folded-count");
+        if (!element) return null;
+        const value = Number.parseInt((element.textContent || "").trim(), 10);
+        return Number.isFinite(value) ? value : null;
+      })()`,
+    },
+    checks: [
+      { label: "the folded branch left the layout", derived: "boxes", exact: 12 },
+      { label: "the box says what it hides", derived: "foldedCount", exact: 6 },
+    ],
+  },
+  {
     name: "diagram-markers-1440",
     note: "the shared status marker: a rounded square, and a tick when complete (#23)",
     view: "diagram",
