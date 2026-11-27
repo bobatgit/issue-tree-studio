@@ -1188,16 +1188,6 @@ kbd {
   stroke-width: 0.022;
 }
 
-.ai-box {
-  border: 1px dashed var(--border-strong);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--panel-alt);
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
 /* ---------- toasts & modal ---------- */
 
 .toasts {

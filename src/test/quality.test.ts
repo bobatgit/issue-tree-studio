@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { computeKeyMap } from "../model/keys";
-import { heuristicMeceReview } from "../model/mece";
 import { parseMarkdown } from "../model/markdown";
 import { findingCounts, overlapScore, reviewTree } from "../model/quality";
 import { buildDoc, createDoc } from "../model/tree";
@@ -162,25 +161,5 @@ expect(overlaps[0].detail).toContain("120 branches");
     const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
     expect(codes).not.toContain("OVERLAP_SIBLING");
     expect(codes).not.toContain("DUPLICATE_SIBLING");
-  });
-});
-
-describe("a wide split's MECE review", () => {
-  const wide = (count: number) => {
-    const items = [{ label: "Root?", depth: 1 }];
-    for (let index = 0; index < count; index += 1) {
-      items.push({ label: `Did branch ${index + 1} move?`, depth: 2 });
-    }
-    const doc = buildDoc("Wide", items);
-    return heuristicMeceReview(doc, computeKeyMap(doc), doc.rootId as string);
-  };
-
-  it("gives one overlap suggestion for the split, not one per pair", () => {
-    const suggestions = wide(120);
-    const wordy = suggestions.filter((suggestion) => suggestion.code === "OVERLAP_WORDS");
-    expect(wordy).toHaveLength(1);
-    expect(wordy[0].message).toContain("120 branches");
-    // Before grouping this was 6,903 suggestions, which the panel rendered in full.
-    expect(suggestions.length).toBeLessThan(10);
   });
 });

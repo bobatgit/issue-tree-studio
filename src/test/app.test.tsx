@@ -53,11 +53,22 @@ describe("app shell", () => {
     expect(document.querySelector(".doc-title")?.textContent).toContain("Stored root?");
   });
 
-  it("shows the four-argument quality panel with the MECE seam disabled", async () => {
+});
+
+describe("the Details panel", () => {
+  it("carries no MECE review, and keeps the deterministic checks", async () => {
     render(<App />);
-    await waitFor(() => expect(screen.getByText(/AI MECE review/)).toBeTruthy());
-    expect(screen.getAllByText(/not configured/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/MECE self-check/)).toBeTruthy();
+    await waitFor(() => expect(document.querySelector(".panel-scroll")).toBeTruthy());
+    const panel = document.querySelector(".panel-scroll")?.textContent ?? "";
+
+    expect(panel).not.toContain("MECE self-check");
+    expect(panel).not.toContain("AI MECE review");
+    expect(panel).not.toContain("Selected split");
+    expect(panel).not.toContain("MECE check");
+    expect(panel).not.toContain("not configured");
+
+    // The checks the user chose to keep, and the ones 0.10.7 made bounded.
+    expect(panel).toContain("Checks");
   });
 });
 

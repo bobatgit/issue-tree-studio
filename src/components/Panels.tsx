@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 const FINDING_PAGE = 50;
 import { diffSnapshots } from "../model/diff";
 import { copyText, downloadText, formatTime, slugify } from "../lib/ui";
-import { MECE_SELF_CHECK, disabledAiReviewer, heuristicMeceReview } from "../model/mece";
 import { snapshotOf } from "../model/tree";
 import type { VersionDiff } from "../model/diff";
 import type { Workspace } from "../store/useWorkspace";
@@ -31,8 +30,6 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
   // The counts above are counted over every finding, so a bounded list hides none of them.
   const listed = showAll ? ws.findings : ws.findings.slice(0, FINDING_PAGE);
   const capClass = ws.itemCount >= 100 ? "full" : ws.itemCount >= 80 ? "warn" : "";
-  const meceItem = doc && ws.selection ? doc.items[ws.selection] : null;
-  const meceSplit = useMemo(() => (doc && ws.selection ? heuristicMeceReview(doc, ws.keyMap, ws.selection) : []), [doc, ws.keyMap, ws.selection]);
 
   if (!doc) return null;
 
@@ -99,51 +96,7 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
         )}
       </div>
 
-      <div className="section">
-        <div className="section-head">
-          <span>Selected split</span>
-          <span>{meceItem ? ws.keyMap.byItem[meceItem.id]?.key ?? "none" : "none"}</span>
-        </div>
-        {!meceItem ? (
-          <p className="empty-note">Select an item to review its split.</p>
-        ) : (
-          <>
-            <p className="small" style={{ marginTop: 0 }}>
-              <strong>{meceItem.label || "Untitled"}</strong> · {meceItem.children.length} branches
-            </p>
-            {meceSplit.length === 0 ? (
-              <p className="small muted">No overlap or coverage warning for this split.</p>
-            ) : (
-              meceSplit.map((suggestion, index) => (
-                <div key={index} className="diff-block">
-                  <span className={`sev ${suggestion.level}`} /> <strong>{suggestion.message}</strong>
-                  <div className="small muted" style={{ marginTop: 4 }}>
-                    {suggestion.itemKeys.join(" · ")}
-                  </div>
-                </div>
-              ))
-            )}
-          </>
-        )}
-      </div>
 
-      <div className="section">
-        <div className="section-head">
-          <span>MECE self-check</span>
-        </div>
-        <ul className="small muted" style={{ paddingLeft: 17, lineHeight: 1.6 }}>
-          {MECE_SELF_CHECK.map((question) => (
-            <li key={question}>{question}</li>
-          ))}
-        </ul>
-        <div className="ai-box">
-          <strong>AI MECE review</strong>
-          <div style={{ marginTop: 3 }}>{disabledAiReviewer.reason}</div>
-          <div className="small" style={{ marginTop: 6 }}>
-            Status: <em>not configured</em>. The deterministic checks above still run on every keystroke.
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -325,10 +278,6 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
   const doc = ws.doc;
   const item = doc && ws.selection ? doc.items[ws.selection] : null;
   const info = item ? ws.keyMap.byItem[item.id] : null;
-  const suggestions = useMemo(
-    () => (doc && item ? heuristicMeceReview(doc, ws.keyMap, item.id) : []),
-    [doc, ws.keyMap, item],
-  );
 
   if (!doc) return null;
   if (!item || !info) {
@@ -402,40 +351,6 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
         </div>
       </div>
 
-      <div className="section">
-        <div className="section-head">
-          <span>MECE check</span>
-        </div>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={Boolean(item.mece?.exhaustive)}
-            onChange={(event) => ws.setMece(item.id, { ...item.mece, exhaustive: event.target.checked })}
-          />
-          <span>
-            <strong>Exhaustive</strong>
-            <br />
-            <span className="muted small">The branches together cover everything that could answer this item.</span>
-          </span>
-        </label>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={Boolean(item.mece?.exclusive)}
-            onChange={(event) => ws.setMece(item.id, { ...item.mece, exclusive: event.target.checked })}
-          />
-          <span>
-            <strong>Mutually exclusive</strong>
-            <br />
-            <span className="muted small">No two branches describe the same thing.</span>
-          </span>
-        </label>
-        {suggestions.map((suggestion, index) => (
-          <div key={index} className="small muted" style={{ marginTop: 6 }}>
-            <span className={`sev ${suggestion.level}`} /> {suggestion.message}
-          </div>
-        ))}
-      </div>
 
       <div className="section" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         <button type="button" className="text-btn" onClick={() => ws.addChild(item.id)}>
