@@ -612,3 +612,40 @@ question that is easy not to ask.
 **Also attempted and reverted.** Adding `scripts/` to `tsconfig.node.json` needs a third project, because the
 scripts import from `src/`. The build gate therefore still does not typecheck the probe, which is how two probe
 syntax errors of mine reached a gate run instead of a compile.
+
+## 0.11.2 - the diagram's controls
+
+Two tickets, #32 (commit 624ff04) and #33 (commit f8b47c6).
+
+**#32.** The cause was proven before the fix: with `Element.prototype.setPointerCapture` replaced by a no-op in
+the page, the same click on the same fold control took the diagram from 18 boxes to 1. Nothing was wrong with the
+fold state, the layout or `visibleEntries`. The canvas wrapper captured the pointer on every press, and while a
+pointer is captured the click is retargeted to the capturing element, so the `onClick` on a fold control's group
+and on a box's group never fired. Capture now begins when a drag crosses its movement threshold, and immediately
+for a two-finger pinch, since two fingers are never a click.
+
+Verified with real input events: one click folds the root to a single box, a second brings all 18 back, a drag of
+160 by 120 moves the canvas by exactly that while folding nothing, and a real wheel and a real key both behave.
+
+**#33.** An open item's marker is filled `none`, so it was not hit-testable at all: a click at its centre landed
+on the box underneath, which the probe measured. It has a painted but transparent hit area of 0.42 inches now, a
+checkbox role, an accessible name built from the item's number and label, a tab stop, Enter and Space, and a focus
+ring. A click on the box deliberately does nothing, and a test asserts the selection does not move.
+
+**Two corrections of mine, recorded.** The first pan check compared the scroll against zero and reported 1151
+after a zoom whose focus-preserving scroll had already moved the canvas, so it would have passed with no drag at
+all; it compares against a baseline the drag helper records immediately before the press. And the justification I
+gave for moving the box's fill into CSS - that an inline `fill` cannot be overridden - was wrong: a presentation
+attribute loses to any CSS rule. The move stayed, because it puts the box's colours with the other box styles.
+
+**One defect of mine, caught by eye rather than by a check.** A completed root box drew white text on pale green,
+because the root's text colour is white to suit its dark fill. The screenshot showed it and no check would have.
+The completed box's own texts are dark green now.
+
+**Tests: 213 to 216. Probe: 73 to 84 checks.** The gate gained a real press and release, a real drag, and a real
+key through `rawKeyDown`, so Space neither inserts a character nor scrolls the page. `tsc` still does not
+typecheck `scripts/`, and two probe syntax errors of mine in this phase were caught only when the probe ran.
+
+**This cycle's evidence shots were retaken with a current build stamp.** The dev server had been running since
+before the phase's commits, so the footer read `0.10.7 · c5bc8cb`. They were retaken with the name filter, and a
+check confirmed that no shot from an earlier cycle changed.

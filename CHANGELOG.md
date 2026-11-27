@@ -3,6 +3,24 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.11.2] - 2026-11-27
+
+### Fixed
+
+- **The diagram's controls work.** Every click inside the canvas was retargeted by a pointer capture taken on
+  each press, so the fold controls and the boxes never reached their own handlers. The capture is taken now when
+  a drag passes its movement threshold, and at once for a two-finger pinch: the pan still tracks, and a click is
+  left alone. This also corrects the record for 0.10.4, whose fix moved the controls inside the SVG and never
+  addressed the cause.
+
+### Added
+
+- **Completing an item from the diagram.** The status marker is the control. It has a hit area sized for a 44px
+  target, it is a checkbox to assistive technology, and it works from the keyboard with Enter and Space as well
+  as by click. Clicking the box itself does nothing, on purpose.
+- **A completed item is highlighted green**, in the diagram, in the Tree's checkbox and in the deck. One
+  definition decides that colour, so the screen and the slide cannot drift apart.
+
 ## [0.11.1] - 2026-11-27
 
 ### Fixed
