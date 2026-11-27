@@ -1,6 +1,6 @@
 /** Pure, immutable tree operations. Every function returns a new document. */
 
-import type { DocSettings, FlatItem, MeceFlags, ItemStatus, TreeDoc, TreeItem } from "./types";
+import type { DocSettings, FlatItem, ItemStatus, TreeDoc, TreeItem } from "./types";
 import { DEFAULT_SETTINGS, ITEM_CAP } from "./types";
 
 export function newId(): string {
@@ -46,6 +46,37 @@ export function createDoc(
     updatedAt: timestamp,
     settings: { ...settings },
   };
+}
+
+/**
+ * The item as versions before 0.11.0 stored it. Those fields are gone from the
+ * model, and this is what reading an older document has to know about them.
+ */
+interface ItemBefore0110 extends TreeItem {
+  note?: string;
+  mece?: { exhaustive?: boolean; exclusive?: boolean };
+}
+
+/**
+ * Drop the fields this version no longer stores.
+ *
+ * 0.11.0 removed the note and the MECE flags. A document saved before it still
+ * loads, with only those fields dropped, so a tab does not carry data that
+ * nothing reads. The document's identity, labels, statuses and structure are
+ * returned untouched, and a document with nothing to drop is returned as it was.
+ */
+export function dropRetiredFields(doc: TreeDoc): TreeDoc {
+  const entries = Object.entries(doc.items) as [string, ItemBefore0110][];
+  if (!entries.some(([, item]) => "note" in item || "mece" in item)) return doc;
+
+  const items: Record<string, TreeItem> = {};
+  for (const [id, item] of entries) {
+    const kept: ItemBefore0110 = { ...item };
+    delete kept.note;
+    delete kept.mece;
+    items[id] = kept;
+  }
+  return { ...doc, items };
 }
 
 export function flatten(doc: TreeDoc): FlatItem[] {
@@ -168,14 +199,6 @@ export function updateLabel(doc: TreeDoc, id: string, label: string): TreeDoc {
 
 export function setStatus(doc: TreeDoc, id: string, status: ItemStatus): TreeDoc {
   return withItem(doc, id, { status });
-}
-
-export function setNote(doc: TreeDoc, id: string, note: string): TreeDoc {
-  return withItem(doc, id, { note });
-}
-
-export function setMece(doc: TreeDoc, id: string, flags: MeceFlags): TreeDoc {
-  return withItem(doc, id, { mece: { ...flags } });
 }
 
 export function setDocName(doc: TreeDoc, name: string): TreeDoc {

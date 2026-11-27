@@ -316,40 +316,6 @@ export function ItemPanel({ ws }: { ws: Workspace }) {
         </dl>
       </div>
 
-      <div className="section">
-        <div className="section-head">
-          <span>Wording</span>
-        </div>
-        <div className="field">
-          <label htmlFor="item-label">Label</label>
-          <textarea
-            id="item-label"
-            className="textarea"
-            value={item.label}
-            onChange={(event) => ws.editLabel(item.id, event.target.value)}
-          />
-        </div>
-        <div className="field">
-          <label>Status</label>
-          <button
-            type="button"
-            className={`status-toggle ${item.status}`}
-            onClick={() => ws.setStatus(item.id, item.status === "complete" ? "open" : "complete")}
-          >
-            {item.status === "complete" ? "Complete" : "Open"}
-          </button>
-        </div>
-        <div className="field">
-          <label htmlFor="item-note">Note</label>
-          <textarea
-            id="item-note"
-            className="textarea"
-            placeholder="Data source, test, owner or evidence (kept in the project file)"
-            value={item.note ?? ""}
-            onChange={(event) => ws.setNote(item.id, event.target.value)}
-          />
-        </div>
-      </div>
 
 
       <div className="section" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>

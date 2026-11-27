@@ -92,6 +92,25 @@ export function fixtureLarge(branches = 120): TreeDoc {
   return parseMarkdown(lines.join("\n"), "Large tree").doc;
 }
 
+/**
+ * A tree whose findings still outnumber the panel's page, so the panel has to
+ * scroll. 181 items: 60 branches, each with two identically worded children,
+ * which is one duplicate finding per branch.
+ *
+ * fixtureLarge no longer does this. 120 similar siblings group into a single
+ * finding, which is the point of that grouping: the panel's size must not grow
+ * with the tree's.
+ */
+export function fixtureManyFindings(branches = 60): TreeDoc {
+  const lines = ["- Why did profit fall?"];
+  for (let index = 0; index < branches; index += 1) {
+    lines.push(`  - Did branch ${index + 1} move?`);
+    lines.push("    - Same wording?");
+    lines.push("    - Same wording?");
+  }
+  return parseMarkdown(lines.join("\n"), "Many findings").doc;
+}
+
 /** Whether a container can actually be scrolled, by scrolling it. */
 export const CAN_SCROLL = (selector: string): string => `(() => {
   const element = document.querySelector(${JSON.stringify(selector)});

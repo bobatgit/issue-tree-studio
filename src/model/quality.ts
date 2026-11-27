@@ -1,5 +1,5 @@
 /**
- * Deterministic quality and MECE checks. No model is involved: every finding
+ * Deterministic quality checks. No model is involved: every finding
  * can be reproduced from the tree alone.
  */
 
@@ -248,19 +248,6 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
       "info",
       `${itemCount} of ${ITEM_CAP} items used`,
       "Past this size the tree gets hard to read. Nothing is blocked.",
-    );
-  }
-
-  const unconfirmed = flat.filter(
-    (entry) => entry.item.children.length >= 2 && (!entry.item.mece || (!entry.item.mece.exhaustive && !entry.item.mece.exclusive)),
-  );
-  if (unconfirmed.length > 0) {
-    push(
-      "MECE_UNCONFIRMED",
-      "info",
-      `${unconfirmed.length} split${unconfirmed.length === 1 ? "" : "s"} not confirmed as MECE`,
-      "Open an item and confirm that its branches are exhaustive and mutually exclusive.",
-      unconfirmed[0].item.id,
     );
   }
 

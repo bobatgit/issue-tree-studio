@@ -893,21 +893,6 @@ kbd {
   font-size: 13px;
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  margin-bottom: 12px;
-}
-
-.field > label {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--faint);
-  font-weight: 650;
-}
-
 .input,
 .textarea,
 .select {
@@ -1361,20 +1346,6 @@ kbd {
 .status-box.complete {
   background: #2f6feb;
   border-color: #2f6feb;
-}
-
-.status-toggle {
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 5px; height: 32px; font-size: 14px; font-weight: 600;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.status-toggle.complete {
-  background: #eef4ff;
-  border-color: #b9d0f7;
-  color: #2f6feb;
 }
 
 .chevron {

@@ -1,12 +1,5 @@
 /** Core data model for Issue Tree Studio. */
 
-export interface MeceFlags {
-  /** The children together cover everything that could explain or achieve the parent. */
-  exhaustive?: boolean;
-  /** No two children describe the same thing. */
-  exclusive?: boolean;
-}
-
 export type ItemStatus = "open" | "complete";
 
 export const ITEM_STATUSES: ItemStatus[] = ["open", "complete"];
@@ -17,8 +10,6 @@ export interface TreeItem {
   status: ItemStatus;
   /** Child ids in display order. */
   children: string[];
-  note?: string;
-  mece?: MeceFlags;
 }
 
 export interface DocSettings {
@@ -45,7 +36,6 @@ export type VersionTrigger =
   | "edit"
   | "structure"
   | "type"
-  | "mece"
   | "status"
   | "import"
   | "restore"

@@ -1,9 +1,9 @@
 /**
  * Applying a markdown outline back onto the live tree.
  *
- * The outline carries labels, status and keys, but not notes or MECE flags. A
- * item whose normalised label path is unchanged keeps its id, its note and its
- * flags, so an apply cannot quietly lose work that the text never described.
+ * The outline carries labels, status and keys, and nothing else. An item whose
+ * normalised label path is unchanged keeps its id, so an apply cannot quietly
+ * lose the identity of work that the text never described.
  */
 
 import { diffSnapshots, type SnapshotWithKeys } from "./diff";
@@ -34,11 +34,11 @@ function keyRecord(map: KeyMap): Record<string, string> {
 }
 
 /**
- * Replace the structure while keeping ids, notes and flags.
+ * Replace the structure while keeping every item's identity.
  *
- * An item is matched by its label path first, so a rename does not lose a note
+ * An item is matched by its label path first, so a rename does not lose its id
  * when the position is unchanged, and by position second, so an insertion does
- * not shift every note below it.
+ * not shift everything below it.
  */
 export function mergeParsed(current: TreeDoc, parsed: TreeDoc): TreeDoc {
   const previous = pathIndex(current);
@@ -66,8 +66,6 @@ export function mergeParsed(current: TreeDoc, parsed: TreeDoc): TreeDoc {
       label: item.label,
       status: item.status,
       children,
-      ...(match?.note ? { note: match.note } : {}),
-      ...(match?.mece ? { mece: match.mece } : {}),
     };
     return nextId;
   };

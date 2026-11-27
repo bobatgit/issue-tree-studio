@@ -15,7 +15,7 @@
  */
 
 import { Page } from "./cdp";
-import { CAN_SCROLL, OVERFLOWS, fixtureLarge, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import { CAN_SCROLL, OVERFLOWS, fixtureManyFindings, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 import type { Metrics } from "./cdp";
 
@@ -237,13 +237,12 @@ const CASES: ProbeCase[] = [
     note: "every view scrolls when its content is taller than the window",
     view: "tree",
     size: [1440, 900],
-    doc: fixtureLarge(120),
-    selectors: [".editor-scroll", ".panel-scroll", ".panel-scroll .meter", ".panel-scroll .finding-more", ".panel-scroll .kv", ".panel-scroll .ai-box", ".panel-scroll .empty-note", ".panel-scroll .key-big", ".panel-scroll .section"],
+    doc: fixtureManyFindings(),
+    selectors: [".editor-scroll", ".panel-scroll", ".panel-scroll .finding-more", ".panel-scroll .kv", ".panel-scroll .empty-note", ".panel-scroll .key-big", ".panel-scroll .section"],
     derived: {
       listOverflow: OVERFLOWS(".editor-scroll"),
       listCanScroll: CAN_SCROLL(".editor-scroll"),
       panelOverflow: OVERFLOWS(".panel-scroll"),
-      /** The first eight children, in DOM order, with their heights. */
       panelCanScroll: CAN_SCROLL(".panel-scroll"),
     },
     checks: [

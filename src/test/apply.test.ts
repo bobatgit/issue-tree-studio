@@ -7,17 +7,14 @@ import { ITEM_CAP } from "../model/types";
 const base = () => parseMarkdown("- Root?\n  - A?\n  - B?\n").doc;
 
 describe("apply markdown", () => {
-  it("keeps notes and flags when the label path is unchanged", () => {
+  it("keeps an item's identity, and takes the status from the outline", () => {
     const current = base();
     const a = Object.values(current.items).find((item) => item.label === "A?") as { id: string };
-    const original = current.items[a.id];
-    current.items[a.id] = { ...original, note: "evidence", mece: { exhaustive: true } };
 
-    const merged = mergeParsed(current, parseMarkdown("- Root?\n  - A?\n  - B?\n  - C?\n").doc);
+    const merged = mergeParsed(current, parseMarkdown("- Root?\n  - [x] A?\n  - B?\n  - C?\n").doc);
     const mergedA = Object.values(merged.items).find((item) => item.label === "A?");
     expect(mergedA?.id).toBe(a.id);
-    expect(mergedA?.note).toBe("evidence");
-    expect(mergedA?.mece?.exhaustive).toBe(true);
+    expect(mergedA?.status).toBe("complete");
     expect(countItems(merged)).toBe(4);
   });
 

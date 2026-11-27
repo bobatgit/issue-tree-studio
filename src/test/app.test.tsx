@@ -70,6 +70,26 @@ describe("the Details panel", () => {
     // The checks the user chose to keep, and the ones 0.10.7 made bounded.
     expect(panel).toContain("Checks");
   });
+
+  it("has no Note, Label or Status editor, while the Tree keeps both", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".panel-scroll")).toBeTruthy());
+    const panel = document.querySelector(".panel-scroll") as HTMLElement;
+
+    expect(panel.querySelector("#item-note")).toBeNull();
+    expect(panel.querySelector("#item-label")).toBeNull();
+    expect(panel.querySelector(".status-toggle")).toBeNull();
+    expect(panel.textContent).not.toContain("Wording");
+
+    // Removing the panel's editors does not remove the ability to edit a label or
+    // complete an item: both live in the row, which is why this is safe.
+    expect(document.querySelector("textarea[data-label-id]")).toBeTruthy();
+    expect(screen.getAllByLabelText("Mark this item complete").length).toBeGreaterThan(0);
+  });
 });
 
 describe("item status", () => {

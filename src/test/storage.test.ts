@@ -49,3 +49,29 @@ describe("the per-tab store", () => {
     expect(await listDocs()).toEqual([]);
   });
 });
+
+describe("loading a document written before 0.11.0", () => {
+  it("drops the retired note and MECE fields and keeps the rest", async () => {
+    const doc = buildDoc("Old", [
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    const rootId = doc.rootId as string;
+    const childId = doc.items[rootId].children[0];
+    const raw = JSON.parse(JSON.stringify(doc)) as {
+      items: Record<string, Record<string, unknown>>;
+    };
+    raw.items[childId].note = "evidence";
+    raw.items[childId].mece = { exhaustive: true };
+    sessionStorage.setItem("its.doc", JSON.stringify(raw));
+
+    const loaded = await getDoc();
+    expect(loaded).not.toBeNull();
+    const item = loaded?.items[childId];
+    expect(item).toBeTruthy();
+    expect(item && "note" in item).toBe(false);
+    expect(item && "mece" in item).toBe(false);
+    expect(item?.label).toBe("A?");
+    expect(loaded?.items[rootId].children).toEqual([childId]);
+  });
+});

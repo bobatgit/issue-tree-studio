@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { parseMarkdown } from "../model/markdown";
+import type { TreeDoc } from "../model/types";
 import {
   addChild,
   addSibling,
   atCap,
   buildDoc,
   countItems,
+  dropRetiredFields,
   createDoc,
   flatten,
   indentItem,
@@ -137,5 +139,44 @@ describe("collapsed branches", () => {
   it("keeps everything visible when nothing is collapsed", () => {
     const doc = parseMarkdown("- Root?\n  - A?\n").doc;
     expect(visibleEntries(doc, new Set()).length).toBe(countItems(doc));
+  });
+});
+
+describe("retired fields", () => {
+  /** A document as 0.10.x wrote it, with the two fields 0.11.0 removed. */
+  const legacy = () => {
+    const doc = buildDoc("Legacy", [
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    const rootId = doc.rootId as string;
+    const childId = doc.items[rootId].children[0];
+    const raw = JSON.parse(JSON.stringify(doc)) as {
+      items: Record<string, Record<string, unknown>>;
+    };
+    raw.items[childId].note = "evidence";
+    raw.items[childId].mece = { exhaustive: true, exclusive: false };
+    return { raw: raw as unknown as TreeDoc, rootId, childId };
+  };
+
+  it("drops a note and MECE flags, and alters nothing else", () => {
+    const { raw, rootId, childId } = legacy();
+    const before = raw.items[rootId];
+
+    const cleaned = dropRetiredFields(raw);
+    const item = cleaned.items[childId];
+
+    expect("note" in item).toBe(false);
+    expect("mece" in item).toBe(false);
+    expect(item.label).toBe("A?");
+    expect(item.status).toBe("open");
+    expect(cleaned.items[rootId].children).toEqual(before.children);
+    expect(cleaned.name).toBe(raw.name);
+    expect(cleaned.version).toBe(raw.version);
+  });
+
+  it("returns the same document when there is nothing to drop", () => {
+    const doc = buildDoc("Clean", [{ label: "Root?", depth: 1 }]);
+    expect(dropRetiredFields(doc)).toBe(doc);
   });
 });

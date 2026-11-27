@@ -9,6 +9,7 @@
 
 import type { DocSummary, TreeDoc, VersionEntry } from "../model/types";
 import { HISTORY_CAP } from "../model/types";
+import { dropRetiredFields } from "../model/tree";
 
 const DOC_KEY = "its.doc";
 const VERSIONS_KEY = "its.versions";
@@ -66,7 +67,8 @@ export async function listDocs(): Promise<DocSummary[]> {
 
 export async function getDoc(_id?: string): Promise<TreeDoc | null> {
   const doc = read<TreeDoc>(DOC_KEY);
-  return isTreeDoc(doc) ? doc : null;
+  // A document written before 0.11.0 still loads; its retired fields are dropped.
+  return isTreeDoc(doc) ? dropRetiredFields(doc) : null;
 }
 
 export async function putDoc(doc: TreeDoc): Promise<void> {

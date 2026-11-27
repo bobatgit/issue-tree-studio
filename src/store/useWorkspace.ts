@@ -25,8 +25,6 @@ import {
   outdentItem,
   parentOf,
   removeItem,
-  setMece as setMeceOp,
-  setNote as setNoteOp,
   setSettings as setSettingsOp,
   setStatus as setStatusOp,
   snapshotOf,
@@ -36,7 +34,6 @@ import {
 import type {
   DocSettings,
   KeyMap,
-  MeceFlags,
   ItemStatus,
   TreeDoc,
   VersionEntry,
@@ -80,14 +77,12 @@ export interface Workspace {
   editLabel: (id: string, label: string) => void;
   setStatus: (id: string, status: ItemStatus) => void;
   applyMarkdown: (text: string) => boolean;
-  setNote: (id: string, note: string) => void;
   collapsed: Set<string>;
   toggleCollapse: (id: string) => void;
   setBranchCollapsed: (id: string, value: boolean) => void;
   collapseAll: () => void;
   expandAll: () => void;
   expandAncestors: (id: string) => void;
-  setMece: (id: string, flags: MeceFlags) => void;
   setSettings: (settings: Partial<DocSettings>) => void;
   undo: () => void;
   redo: () => void;
@@ -503,24 +498,6 @@ export function useWorkspace(): Workspace {
     });
   }, []);
 
-  const setNote = useCallback(
-    (id: string, note: string) => {
-      const current = docRef.current;
-      if (!current) return;
-      commit(setNoteOp(current, id, note), "edit", "edited a note");
-    },
-    [commit],
-  );
-
-  const setMece = useCallback(
-    (id: string, flags: MeceFlags) => {
-      const current = docRef.current;
-      if (!current) return;
-      commit(setMeceOp(current, id, flags), "mece", "updated the MECE check");
-    },
-    [commit],
-  );
-
   const setSettings = useCallback(
     (settings: Partial<DocSettings>) => {
       const current = docRef.current;
@@ -763,8 +740,6 @@ export function useWorkspace(): Workspace {
     collapseAll,
     expandAll,
     expandAncestors,
-    setNote,
-    setMece,
     setSettings: (settings) => setSettings({ ...defaults, ...settings }),
     undo,
     redo,
