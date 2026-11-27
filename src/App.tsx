@@ -185,7 +185,7 @@ export function App() {
             ) : null}
           </div>
 
-          {view === "tree" ? <Outline ws={ws} onImport={() => setImportOpen(true)} /> : null}
+          {view === "tree" ? <Outline ws={ws} /> : null}
           {view === "markdown" ? <MarkdownView ws={ws} draft={draft} onDraft={setDraft} /> : null}
           {view === "diagram" ? <Diagram ws={ws} /> : null}
         </div>

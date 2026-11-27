@@ -375,6 +375,26 @@ describe("the column headings", () => {
     expect(head?.getAttribute("aria-hidden")).toBe("true");
   });
 
+  it("is the tree's only heading line, and the old controls are gone", async () => {
+    seedTree([{ label: "Root?", depth: 1 }]);
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".row-head")).toBeTruthy());
+
+    // The line that carried the hint and the two buttons is gone, so the labels own
+    // the heading line instead of sitting under a second one.
+    expect(document.querySelector(".editor-head")).toBeNull();
+    const labels = [...document.querySelectorAll("button")].map((button) =>
+      (button.textContent || "").trim(),
+    );
+    expect(labels).not.toContain("Expand all");
+    expect(labels).not.toContain("Collapse all");
+    expect(labels).not.toContain("Paste outline");
+    expect(document.body.textContent).not.toContain("Keys follow label and path");
+
+    // Removing the button removes no capability: the import dialog keeps its other entry.
+    expect(screen.getByRole("button", { name: "Import" })).toBeTruthy();
+  });
+
   it("shows no headings when the tree is empty", async () => {
     sessionStorage.setItem(
       "its.doc",

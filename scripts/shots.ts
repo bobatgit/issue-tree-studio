@@ -249,8 +249,14 @@ const SHOTS: Shot[] = [
     note: "the Details panel after #36, #37 and #38: the Key and the Checks only (#36, #37, #38)",
     view: "tree",
     size: [1440, 900],
+  },  {
+    name: "ticket-34-heading-1440",
+    note: "one heading line carrying the column labels, with the two controls gone (#34)",
+    view: "tree",
+    size: [1440, 900],
   },
 ];
+
 
 function slug(value: string): string {
   return value.replace(/[^a-z0-9-]+/gi, "-").toLowerCase();

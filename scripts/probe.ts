@@ -184,6 +184,9 @@ const CASES: ProbeCase[] = [
         const head = document.querySelector(".row-head");
         return head && getComputedStyle(head).position === "sticky" ? 1 : 0;
       })()`,
+      editorHead: `document.querySelectorAll(".editor-head").length`,
+      obsoleteControls: `[...document.querySelectorAll("button")].filter((button) =>
+        /Expand all|Collapse all|Paste outline/.test(button.textContent || "")).length`,
       statusOffset: `(() => {
         const head = document.querySelector(".row-head");
         const cell = document.querySelector(".row .status-box");
@@ -199,6 +202,8 @@ const CASES: ProbeCase[] = [
       { label: "Key sits over the key column", derived: "keyOffset", exact: 0 },
       { label: "Status is centred over the status column", derived: "statusOffset", min: -1, max: 1 },
       { label: "the heading row sticks while the list scrolls", derived: "headSticky", exact: 1 },
+      { label: "no second heading line remains", derived: "editorHead", exact: 0 },
+      { label: "the expand and paste controls are gone", derived: "obsoleteControls", exact: 0 },
     ],
   },
   {

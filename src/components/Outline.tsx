@@ -8,7 +8,6 @@ import type { Workspace } from "../store/useWorkspace";
 
 interface Props {
   ws: Workspace;
-  onImport: () => void;
 }
 
 type DropPosition = "before" | "after" | "into";
@@ -67,7 +66,7 @@ function BranchArrow({ open }: { open: boolean }) {
   );
 }
 
-export function Outline({ ws, onImport }: Props) {
+export function Outline({ ws }: Props) {
   const doc = ws.doc;
   const [dragId, setDragId] = useState<string | null>(null);
   const [actionsFor, setActionsFor] = useState<string | null>(null);
@@ -206,21 +205,6 @@ export function Outline({ ws, onImport }: Props) {
 
   return (
     <div className="editor">
-      <div className="editor-head">
-        <span className="spacer" />
-        <span className="muted">Keys follow label and path</span>
-        <button
-          type="button"
-          className="text-btn ghost"
-          onClick={() => (ws.collapsed.size > 0 ? ws.expandAll() : ws.collapseAll())}
-        >
-          {ws.collapsed.size > 0 ? "Expand all" : "Collapse all"}
-        </button>
-        <button type="button" className="text-btn ghost" onClick={onImport}>
-          Paste outline
-        </button>
-      </div>
-
       <div className="editor-scroll" onClick={() => ws.select(null)}>
         {flat.length > 0 ? (
           <div className="row-head" aria-hidden="true">
