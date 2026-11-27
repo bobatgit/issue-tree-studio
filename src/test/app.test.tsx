@@ -70,6 +70,49 @@ describe("item status", () => {
   });
 });
 
+describe("the right panel", () => {
+  it("is present in Tree, and absent in Markdown and Diagram", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeTruthy());
+
+    // A real click on the view tab, because the panel is not hidden by a class.
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeNull());
+
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeNull());
+  });
+
+  it("lets the workspace take the whole width where the panel is gone", async () => {
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeTruthy());
+    expect(document.querySelector(".body")?.className).not.toContain("no-panel");
+
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    await waitFor(() => expect(document.querySelector(".body")?.className).toContain("no-panel"));
+  });
+
+  it("keeps Ctrl+backslash from touching the panel outside Tree", async () => {
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeTruthy());
+    fireEvent.click(screen.getByRole("tab", { name: "Markdown" }));
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeNull());
+
+    fireEvent.keyDown(window, { key: "\\", ctrlKey: true });
+    fireEvent.click(screen.getByRole("tab", { name: "Tree" }));
+    // The panel must come back open, which it would not if the key had collapsed it.
+    await waitFor(() => expect(document.querySelector(".rightbar")).toBeTruthy());
+    expect(document.querySelector(".body")?.className).not.toContain("panel-collapsed");
+  });
+});
+
 describe("markdown view", () => {
   it("applies an edited outline on Ctrl+Enter", async () => {
     seedTree([

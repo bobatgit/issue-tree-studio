@@ -1545,6 +1545,11 @@ kbd {
   grid-template-columns: minmax(0, 1fr) 44px;
 }
 
+/** Markdown and Diagram have no panel, so the workspace takes the whole width. */
+.body.no-panel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /** The collapsed panel's rail. Not `.rail`: the Tree's connector lines use that. */
 .panel-rail {
   display: flex;

@@ -64,6 +64,9 @@ export function App() {
   const phone = useMediaQuery("(max-width: 640px), (max-height: 480px)");
   const [sheet, setSheet] = useState(false);
 
+  /** The panel carries item details and history, so only the Tree view has it. */
+  const showPanel = view === "tree";
+
   const { undo, redo } = ws;
 
   useEffect(() => {
@@ -116,7 +119,7 @@ export function App() {
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key === "\\") {
         event.preventDefault();
-        setCollapsed((current) => !current);
+        if (view === "tree") setCollapsed((current) => !current);
         return;
       }
       if (mod && event.key.toLowerCase() === "e") {
@@ -136,7 +139,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [undo, redo]);
+  }, [undo, redo, view]);
 
   if (!ws.ready) {
     return <div className="loading">Opening your trees…</div>;
@@ -151,7 +154,11 @@ export function App() {
         onSettings={() => setSettingsOpen(true)}
       />
 
-      <div className={`body ${collapsed ? "panel-collapsed" : ""}`}>
+      <div
+        className={["body", showPanel && collapsed ? "panel-collapsed" : "", showPanel ? "" : "no-panel"]
+          .filter(Boolean)
+          .join(" ")}
+      >
         <div className="workspace">
           <div className="view-switch" role="tablist" aria-label="Workspace views">
             {(phone ? VIEWS.filter((entry) => entry.id !== "diagram") : VIEWS).map((entry) => (
@@ -168,7 +175,7 @@ export function App() {
                 {entry.id === "markdown" && draft !== null ? <span className="dot" /> : null}
               </button>
             ))}
-            {phone ? (
+            {phone && showPanel ? (
               <>
                 <span className="spacer" />
                 <button type="button" className="text-btn" onClick={() => setSheet(true)}>
@@ -183,91 +190,95 @@ export function App() {
           {view === "diagram" ? <Diagram ws={ws} /> : null}
         </div>
 
-        {phone && sheet ? <div className="sheet-backdrop" onClick={() => setSheet(false)} /> : null}
-        <aside
-          className={`rightbar ${collapsed && !phone ? "collapsed" : ""} ${phone ? "sheet" : ""} ${phone && !sheet ? "hidden" : ""}`}
-          aria-label="Tree panels"
-        >
-          {collapsed && !phone ? (
-            <div className="panel-rail">
-              <button
-                type="button"
-                className="rail-btn"
-                title="Details"
-                aria-label="Open details"
-                onClick={() => {
-                  setTab("details");
-                  setCollapsed(false);
-                }}
-              >
-                ▤
-                {ws.findingCounts.error > 0 ? <span className="rail-dot" aria-hidden="true" /> : null}
-              </button>
-              <button
-                type="button"
-                className="rail-btn"
-                title="History"
-                aria-label="Open history"
-                onClick={() => {
-                  setTab("history");
-                  setCollapsed(false);
-                }}
-              >
-                <ClockIcon />
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="tabs" role="tablist">
+        {showPanel && phone && sheet ? (
+          <div className="sheet-backdrop" onClick={() => setSheet(false)} />
+        ) : null}
+        {showPanel ? (
+          <aside
+            className={`rightbar ${collapsed && !phone ? "collapsed" : ""} ${phone ? "sheet" : ""} ${phone && !sheet ? "hidden" : ""}`}
+            aria-label="Tree panels"
+          >
+            {collapsed && !phone ? (
+              <div className="panel-rail">
                 <button
                   type="button"
-                  role="tab"
-                  aria-selected={tab === "details"}
-                  className={`tab ${tab === "details" ? "active" : ""}`}
-                  onClick={() => setTab("details")}
-                >
-                  Details
-                  {ws.findingCounts.error > 0 ? (
-                    <span className="count errors">{ws.findingCounts.error}</span>
-                  ) : null}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === "history"}
-                  className={`tab ${tab === "history" ? "active" : ""}`}
-                  onClick={() => setTab("history")}
-                >
-                  History
-                  <span className="count">{ws.versionCount}</span>
-                </button>
-                <span className="spacer" />
-                <button
-                  type="button"
-                  className="panel-collapse"
-                  title="Collapse the panel (Ctrl+\\)"
-                  aria-label="Collapse panel"
+                  className="rail-btn"
+                  title="Details"
+                  aria-label="Open details"
                   onClick={() => {
-                    savedScroll.current = scrollRef.current?.scrollTop ?? 0;
-                    setCollapsed(true);
+                    setTab("details");
+                    setCollapsed(false);
                   }}
                 >
-                  ›
+                  ▤
+                  {ws.findingCounts.error > 0 ? <span className="rail-dot" aria-hidden="true" /> : null}
+                </button>
+                <button
+                  type="button"
+                  className="rail-btn"
+                  title="History"
+                  aria-label="Open history"
+                  onClick={() => {
+                    setTab("history");
+                    setCollapsed(false);
+                  }}
+                >
+                  <ClockIcon />
                 </button>
               </div>
+            ) : (
+              <>
+                <div className="tabs" role="tablist">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === "details"}
+                    className={`tab ${tab === "details" ? "active" : ""}`}
+                    onClick={() => setTab("details")}
+                  >
+                    Details
+                    {ws.findingCounts.error > 0 ? (
+                      <span className="count errors">{ws.findingCounts.error}</span>
+                    ) : null}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === "history"}
+                    className={`tab ${tab === "history" ? "active" : ""}`}
+                    onClick={() => setTab("history")}
+                  >
+                    History
+                    <span className="count">{ws.versionCount}</span>
+                  </button>
+                  <span className="spacer" />
+                  <button
+                    type="button"
+                    className="panel-collapse"
+                    title="Collapse the panel (Ctrl+\\)"
+                    aria-label="Collapse panel"
+                    onClick={() => {
+                      savedScroll.current = scrollRef.current?.scrollTop ?? 0;
+                      setCollapsed(true);
+                    }}
+                  >
+                    ›
+                  </button>
+                </div>
 
-              <div className="panel-scroll" ref={scrollRef}>
-                {tab === "details" ? (
-                  <>
-                    <ItemPanel ws={ws} />
-                    <QualityPanel ws={ws} />
-                  </>
-                ) : null}
-                {tab === "history" ? <HistoryPanel ws={ws} /> : null}
-              </div>
-            </>
-          )}
-        </aside>
+                <div className="panel-scroll" ref={scrollRef}>
+                  {tab === "details" ? (
+                    <>
+                      <ItemPanel ws={ws} />
+                      <QualityPanel ws={ws} />
+                    </>
+                  ) : null}
+                  {tab === "history" ? <HistoryPanel ws={ws} /> : null}
+                </div>
+              </>
+            )}
+          </aside>
+        ) : null}
       </div>
 
       <ExportDialog ws={ws} open={exportOpen} onClose={() => setExportOpen(false)} />

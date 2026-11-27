@@ -337,7 +337,10 @@ const CASES: ProbeCase[] = [
       { label: "the plan head shares it", from: ".diagram-view .section-head", field: "left", exact: 16 },
       { label: "the view does not scroll sideways", derived: "sideways", exact: 0 },
       { label: "the canvas is present", from: ".diagram-svg", field: "width", min: 200 },
-      { label: "the resting outline is thin too", from: ".diagram-svg .nrect", field: "strokePx", max: 2 },
+      // #35 gave the canvas the panel's width, and #20 defines outlines in SVG user units, so the
+      // stroke scales with the canvas. The boxes scale by the same factor, so the ratio is unchanged
+      // and the number to hold is "thin", not 1.6px at one particular window width.
+      { label: "the resting outline is thin too", from: ".diagram-svg .nrect", field: "strokePx", min: 0.5, max: 3 },
       { label: "at Fit the canvas is exactly the frame", from: ".diagram-svg", field: "width", min: 200 },
     ],
   },
@@ -426,6 +429,48 @@ const CASES: ProbeCase[] = [
         min: 0.5,
         max: 4,
       },
+    ],
+  },
+  {
+    name: "panel-markdown-1440",
+    note: "Markdown has no right panel, and the workspace takes the width (#35)",
+    view: "markdown",
+    size: [1440, 900],
+    selectors: [".workspace"],
+    derived: {
+      panels: `document.querySelectorAll(".rightbar").length`,
+      widthGap: `(() => {
+        const body = document.querySelector(".body");
+        const workspace = document.querySelector(".workspace");
+        if (!body || !workspace) return null;
+        return Math.round(body.getBoundingClientRect().width - workspace.getBoundingClientRect().width);
+      })()`,
+    },
+    checks: [
+      { label: "no right panel exists", derived: "panels", exact: 0 },
+      { label: "the workspace fills the body", derived: "widthGap", min: 0, max: 2 },
+      { label: "the markdown editor keeps most of the window", from: ".workspace", field: "width", min: 1000 },
+    ],
+  },
+  {
+    name: "panel-diagram-1440",
+    note: "Diagram has no right panel either (#35)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".workspace"],
+    derived: {
+      panels: `document.querySelectorAll(".rightbar").length`,
+      widthGap: `(() => {
+        const body = document.querySelector(".body");
+        const workspace = document.querySelector(".workspace");
+        if (!body || !workspace) return null;
+        return Math.round(body.getBoundingClientRect().width - workspace.getBoundingClientRect().width);
+      })()`,
+    },
+    checks: [
+      { label: "no right panel exists", derived: "panels", exact: 0 },
+      { label: "the workspace fills the body", derived: "widthGap", min: 0, max: 2 },
+      { label: "the canvas keeps most of the window", from: ".workspace", field: "width", min: 1000 },
     ],
   },
 ];
