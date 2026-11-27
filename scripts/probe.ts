@@ -73,6 +73,8 @@ interface ProbeCase {
   clicks?: { selector: string; times?: number };
   /** A real drag on an element, for panning. */
   drag?: { selector: string; dx: number; dy: number };
+  /** A real key press on a focused element, for keyboard behaviour. */
+  key?: { selector: string; key: string };
   /** Numbers computed in the page, reported beside the selectors. */
   derived?: Record<string, string>;
   checks?: Check[];
@@ -527,6 +529,75 @@ const CASES: ProbeCase[] = [
     checks: [{ label: "every box is back", derived: "boxes", exact: 18 }],
   },
   {
+    name: "marker-click-1440",
+    note: "a real click on the status marker completes the item (#33)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".marker-hit", ".nrect.complete"],
+    setup: `window.__statusBefore = {
+      complete: document.querySelectorAll(".nrect.complete").length,
+      checked: document.querySelectorAll('.marker-hit[aria-checked="true"]').length,
+    };`,
+    clicks: { selector: ".marker-hit", times: 1 },
+    derived: {
+      /** Absolute, so it does not matter whether the fixture starts that item complete. */
+      completeChanged: `Math.abs(document.querySelectorAll(".nrect.complete").length - window.__statusBefore.complete)`,
+      checkedChanged: `Math.abs(
+        document.querySelectorAll('.marker-hit[aria-checked="true"]').length - window.__statusBefore.checked
+      )`,
+      /** A box click does nothing, so the selection must be untouched by this. */
+      selected: `document.querySelectorAll(".nrect.selected").length`,
+    },
+    checks: [
+      { label: "exactly one item changed state", derived: "completeChanged", exact: 1 },
+      { label: "the checkbox announces the new state", derived: "checkedChanged", exact: 1 },
+    ],
+  },
+  {
+    name: "box-click-1440",
+    note: "a click on the box itself changes nothing (#33)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".nrect"],
+    setup: `window.__selectionBefore = document.querySelectorAll(".nrect.selected").length;`,
+    clicks: { selector: ".nrect", times: 1 },
+    derived: {
+      selectionChanged: `Math.abs(
+        document.querySelectorAll(".nrect.selected").length - window.__selectionBefore
+      )`,
+      completeNow: `document.querySelectorAll(".nrect.complete").length`,
+    },
+    checks: [
+      { label: "the selection did not move", derived: "selectionChanged", exact: 0 },
+    ],
+  },
+  {
+    name: "marker-keyboard-1440",
+    note: "the marker works from the keyboard, and announces the result (#33)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".marker-hit"],
+    setup: `const first = document.querySelector(".marker-hit");
+    window.__keyBefore = {
+      complete: document.querySelectorAll(".nrect.complete").length,
+      checked: first ? first.getAttribute("aria-checked") : "none",
+    };`,
+    key: { selector: ".marker-hit", key: " " },
+    derived: {
+      completeChanged: `Math.abs(document.querySelectorAll(".nrect.complete").length - window.__keyBefore.complete)`,
+      /** 1 when the announced state flipped, whatever it flipped from. */
+      announcedFlipped: `(() => {
+        const first = document.querySelector(".marker-hit");
+        const now = first ? first.getAttribute("aria-checked") : "none";
+        return now !== window.__keyBefore.checked ? 1 : 0;
+      })()`,
+    },
+    checks: [
+      { label: "space completed the item", derived: "completeChanged", exact: 1 },
+      { label: "the announced state flipped", derived: "announcedFlipped", exact: 1 },
+    ],
+  },
+  {
     name: "pan-still-tracks-1440",
     note: "a drag still pans, which is what the capture was for (#32)",
     view: "diagram",
@@ -707,6 +778,7 @@ async function runCase(probe: ProbeCase): Promise<Outcome[]> {
       for (let index = 0; index < times; index += 1) await page.realClick(probe.clicks.selector);
     }
     if (probe.drag) await page.drag(probe.drag.selector, probe.drag.dx, probe.drag.dy);
+    if (probe.key) await page.key(probe.key.selector, probe.key.key);
 
     const selectors = probe.selectors ?? [];
     const metrics = selectors.length > 0 ? await page.measure(selectors) : {};

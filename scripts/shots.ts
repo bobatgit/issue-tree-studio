@@ -255,6 +255,14 @@ const SHOTS: Shot[] = [
     view: "tree",
     size: [1440, 900],
   },
+  {
+    name: "ticket-33-complete-1440",
+    note: "a completed item in the diagram: green box, ticked checkbox (#33)",
+    view: "diagram",
+    size: [1440, 900],
+    setup: `const hit = document.querySelector(".marker-hit");
+    if (hit) hit.dispatchEvent(new MouseEvent("click", { bubbles: true }));`,
+  },
 ];
 
 

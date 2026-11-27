@@ -684,3 +684,51 @@ describe("the diagram's pointer capture", () => {
     expect(capture).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("completing an item from the diagram", () => {
+  const openDiagram = async () => {
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".view-tab")).toBeTruthy());
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    await waitFor(() => expect(document.querySelector(".marker-hit")).toBeTruthy());
+  };
+
+  it("toggles from the marker, by pointer and by keyboard", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    await openDiagram();
+
+    const marker = () => document.querySelector(".marker-hit") as Element;
+    expect(marker().getAttribute("aria-checked")).toBe("false");
+
+    fireEvent.click(marker());
+    await waitFor(() => expect(document.querySelector(".nrect.complete")).toBeTruthy());
+    expect(marker().getAttribute("aria-checked")).toBe("true");
+
+    // A checkbox has to work without a pointer, and Space is how one is expected to behave.
+    fireEvent.keyDown(marker(), { key: " " });
+    await waitFor(() => expect(document.querySelector(".nrect.complete")).toBeNull());
+    expect(marker().getAttribute("aria-checked")).toBe("false");
+
+    fireEvent.keyDown(marker(), { key: "Enter" });
+    await waitFor(() => expect(document.querySelector(".nrect.complete")).toBeTruthy());
+  });
+
+  it("leaves the selection alone when the box itself is clicked", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    await openDiagram();
+
+    const selected = () => document.querySelectorAll(".nrect.selected").length;
+    const before = selected();
+
+    fireEvent.click(document.querySelector(".nrect") as Element);
+    // Clicking the item does nothing on purpose: completing it is the marker's job.
+    expect(selected()).toBe(before);
+    expect(document.querySelector(".nrect.complete")).toBeNull();
+  });
+});

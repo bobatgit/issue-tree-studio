@@ -11,6 +11,8 @@
   --accent: #2f6feb;
   --accent-soft: #eaf1fe;
   --accent-strong: #1d4ed8;
+  --complete: #16a34a;
+  --complete-soft: #e7f8ee;
   --danger: #c2372c;
   --danger-soft: #fdeeec;
   --warn: #a16207;
@@ -1119,12 +1121,34 @@ kbd {
  */
 .diagram-svg .nrect {
   cursor: pointer;
+  fill: #f8fafc;
   stroke: #94a3b8;
   stroke-width: 0.009;
 }
 
 .diagram-svg .nrect.root {
+  fill: #1e293b;
   stroke: #0f172a;
+}
+
+/**
+ * A complete item. Declared before the hover and selected rules, which set the stroke, so
+ * pointing at a complete box still shows the pointer's own blue outline and selection
+ * still reads as selection, while the green fill continues to state the item's status.
+ */
+.diagram-svg .nrect.complete {
+  fill: var(--complete-soft);
+  stroke: var(--complete);
+  stroke-width: 0.016;
+}
+
+/**
+ * A completed box needs its own text colour. The root's text is white, which suits its dark
+ * fill, and white on a pale green fill cannot be read. Presentation attributes lose to any
+ * rule, so this overrides the fill attribute on the box's own texts.
+ */
+.diagram-svg .nrect.complete ~ text {
+  fill: #14532d;
 }
 
 .diagram-svg .nrect:hover {
@@ -1139,6 +1163,20 @@ kbd {
 .diagram-svg .nrect.selected {
   stroke: var(--accent);
   stroke-width: 0.022;
+}
+
+/**
+ * The marker's hit area. Painted, so it is hit-testable, but transparent; `fill: none`
+ * would leave the open marker untouchable, which is what the checkbox was until now.
+ */
+.marker-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.marker-hit:focus {
+  stroke: var(--accent);
+  stroke-width: 0.014;
 }
 
 /* ---------- toasts & modal ---------- */
@@ -1312,8 +1350,8 @@ kbd {
 }
 
 .status-box.complete {
-  background: #2f6feb;
-  border-color: #2f6feb;
+  background: var(--complete);
+  border-color: var(--complete);
 }
 
 .chevron {

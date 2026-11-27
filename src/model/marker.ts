@@ -34,10 +34,11 @@ export const MARKER = {
   ],
   colour: {
     /**
-     * A complete marker is filled, so its tick has to be the light colour to be
-     * seen at all. This is also what the Tree view's checkbox already does.
+     * A complete marker is filled, so its tick has to be the light colour to be seen at
+     * all. Green because completion is the same fact on the screen, in the tree and on
+     * the slide, and this is the one place that decides it.
      */
-    completeFill: "2F6FEB",
+    completeFill: "16A34A",
     completeTick: "FFFFFF",
     openFill: "none",
     openBorder: "94A3B8",

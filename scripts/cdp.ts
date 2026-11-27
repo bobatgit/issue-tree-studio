@@ -360,6 +360,37 @@ export class Page {
     await this.pause(300);
   }
 
+  /**
+   * Focus an element and press a real key on it.
+   *
+   * `rawKeyDown` rather than `keyDown`, so no character is inserted and Space does not
+   * scroll the page: the handlers under test only care about the key event itself.
+   */
+  async key(selector: string, key: string): Promise<void> {
+    const info = key === "Enter" ? { code: "Enter", keyCode: 13 } : { code: "Space", keyCode: 32 };
+    const focused = await this.evaluate<boolean>(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return false;
+      element.focus();
+      return document.activeElement === element;
+    })()`);
+    if (!focused) throw new Error(`Could not focus: ${selector}`);
+    await this.pause(150);
+    await this.send("Input.dispatchKeyEvent", {
+      type: "rawKeyDown",
+      key,
+      code: info.code,
+      windowsVirtualKeyCode: info.keyCode,
+    });
+    await this.send("Input.dispatchKeyEvent", {
+      type: "keyUp",
+      key,
+      code: info.code,
+      windowsVirtualKeyCode: info.keyCode,
+    });
+    await this.pause(300);
+  }
+
   /** Press, move in steps, release: a real drag, for a pan. */
   async drag(selector: string, dx: number, dy: number): Promise<void> {
     const point = await this.centre(selector);

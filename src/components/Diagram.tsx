@@ -10,9 +10,21 @@ interface Props {
   ws: Workspace;
 }
 
-const ITEM_STYLE = { fill: "#F8FAFC", border: "#94A3B8", text: "#1E293B" };
+/**
+ * Text colours only. A box's fill and outline belong to the stylesheet, because completion
+ * has to change them and an inline attribute cannot be overridden by a rule.
+ */
+const ITEM_STYLE = { text: "#1E293B" };
 
-const ROOT = { fill: "#1E293B", border: "#0F172A", text: "#FFFFFF" };
+const ROOT = { text: "#FFFFFF" };
+
+/**
+ * The marker's hit area, in inches. Wide enough that a target of 44px is reachable at the
+ * scale a diagram is drawn at, which is the same size a finger needs on a phone. The marker
+ * itself stays a fraction of this, and the area sits inside the box so it cannot overlap a
+ * neighbouring row.
+ */
+const MARKER_HIT = 0.42;
 
 /** Zoom is remembered per tab, like the fold state, and never touches the document. */
 const ZOOM_KEY = "its.zoom";
@@ -361,18 +373,12 @@ export function Diagram({ ws }: Props) {
             const lineHeight = (item.fontSize * 1.24) / 72;
             const marker = markerFor(item.status, item.x, item.y + 0.05, lineHeight);
             return (
-              <g
-                key={item.id}
-                onClick={() => {
-                  if (panned.current) return;
-                  ws.select(item.id);
-                  document.querySelector(`[data-row-id="${item.id}"]`)?.scrollIntoView({ block: "center" });
-                }}
-              >
+              <g key={item.id}>
                 <rect
                   className={[
                     "nrect",
                     isRoot ? "root" : "",
+                    item.status === "complete" ? "complete" : "",
                     ws.selection === item.id ? "selected" : "",
                   ]
                     .filter(Boolean)
@@ -382,7 +388,6 @@ export function Diagram({ ws }: Props) {
                   width={item.w}
                   height={item.h}
                   rx={0.04}
-                  fill={style.fill}
                 />
                 <rect
                   className={`marker-square ${item.status}`}
@@ -460,6 +465,32 @@ export function Diagram({ ws }: Props) {
                     {item.key}
                   </text>
                 ) : null}
+                {/*
+                 * Completing an item is done here, on the status marker. A click on the box
+                 * itself does nothing on purpose.
+                 */}
+                <rect
+                  className="marker-hit"
+                  x={item.x + 0.02}
+                  y={item.y + 0.02}
+                  width={MARKER_HIT}
+                  height={Math.max(0.1, item.h - 0.04)}
+                  rx={0.03}
+                  role="checkbox"
+                  aria-checked={item.status === "complete"}
+                  aria-label={`${item.number} ${item.label || "item"}`}
+                  tabIndex={0}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    ws.setStatus(item.id, item.status === "complete" ? "open" : "complete");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    ws.setStatus(item.id, item.status === "complete" ? "open" : "complete");
+                  }}
+                />
               </g>
             );
           })}
