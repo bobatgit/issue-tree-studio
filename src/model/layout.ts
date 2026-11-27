@@ -7,6 +7,7 @@
  */
 
 import { itemNumbers } from "./numbering";
+import { flatten } from "./tree";
 import type { KeyMap, ItemStatus, TreeDoc } from "./types";
 
 export interface LayoutOptions {
@@ -151,7 +152,9 @@ export function layoutTree(
     for (const childId of item.children) collect(childId, depth + 1, id);
   };
   if (doc.rootId) collect(doc.rootId, 1, null);
-  for (const id of Object.keys(doc.items)) if (!entries.has(id)) collect(id, 1, null);
+  // Orphans come from `flatten` too, so one order governs every placement. An item nothing
+  // reaches from the root still lands where the tree puts it, whatever its id looks like.
+  for (const entry of flatten(doc)) if (!entries.has(entry.item.id)) collect(entry.item.id, 1, null);
   if (entries.size === 0) {
     return {
       items: [],
@@ -322,7 +325,8 @@ export function packSlides(doc: TreeDoc, options: PackOptions = {}): SlideGroup[
   const maxLeaves = options.maxLeavesPerSlide ?? 16;
   const maxDepth = options.maxDepth ?? 4;
   const groups: SlideGroup[] = [];
-  const allIds = Object.keys(doc.items);
+  // The tree's order, because this list becomes the overview slide's items.
+  const allIds = flatten(doc).map((entry) => entry.item.id);
 
   if (options.overview !== false) {
     groups.push({

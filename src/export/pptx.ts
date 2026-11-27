@@ -12,6 +12,7 @@ import { layoutTree, packSlides, type LayoutItem, type LayoutResult } from "../m
 import type { KeyMap, TreeDoc } from "../model/types";
 import { MARKER, markerFor, type MarkerGeometry } from "../model/marker";
 import type { ItemStatus } from "../model/types";
+import { flatten } from "../model/tree";
 
 export interface PptxExportOptions {
   showKeys: boolean;
@@ -33,7 +34,12 @@ const ROOT_STYLE = { fill: "1E293B", border: "0F172A", text: "FFFFFF" };
 const EDGE_COLOR = "B8C4D4";
 const MUTED = "64748B";
 
-function overviewIds(doc: TreeDoc): { ids: string[]; levels: number; complete: boolean } {
+/**
+ * The items for the overview slide, in the tree's order, at the deepest level that stays legible.
+ *
+ * Exported so a test can pin that this order is the tree's and not the item map's.
+ */
+export function overviewIds(doc: TreeDoc): { ids: string[]; levels: number; complete: boolean } {
   const total = Object.keys(doc.items).length;
   const depthOf = new Map<string, number>();
   const walk = (id: string, depth: number): void => {
@@ -50,9 +56,15 @@ function overviewIds(doc: TreeDoc): { ids: string[]; levels: number; complete: b
     return ids.filter((id) => (doc.items[id]?.children ?? []).every((childId) => !set.has(childId))).length;
   };
 
+  // The tree's own order rather than the item map's. A map holding integer-like ids comes back in
+  // a different order, and this list decides which items share a slide.
+  const ordered = flatten(doc);
+
   let best: { ids: string[]; levels: number } | null = null;
   for (const levels of [5, 4, 3, 2]) {
-    const ids = Object.keys(doc.items).filter((id) => (depthOf.get(id) ?? 99) <= levels);
+    const ids = ordered
+      .filter((entry) => (depthOf.get(entry.item.id) ?? 99) <= levels)
+      .map((entry) => entry.item.id);
     if (ids.length > 30 || leafCountOf(ids) > 16) continue;
     best = { ids, levels };
     break;
@@ -62,7 +74,10 @@ function overviewIds(doc: TreeDoc): { ids: string[]; levels: number; complete: b
   if (best) return { ...best, complete: false };
 
   // Root alone with its first branches, as a last resort.
-  const ids = Object.keys(doc.items).filter((id) => (depthOf.get(id) ?? 99) <= 2).slice(0, 30);
+  const ids = ordered
+    .filter((entry) => (depthOf.get(entry.item.id) ?? 99) <= 2)
+    .map((entry) => entry.item.id)
+    .slice(0, 30);
   return { ids, levels: 2, complete: false };
 }
 
