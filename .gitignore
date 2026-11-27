@@ -8,3 +8,4 @@ temp-pptx/
 .env.local
 *.log
 docs/screenshots/gate-*.png
+*.tsbuildinfo
