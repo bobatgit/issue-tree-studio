@@ -318,10 +318,15 @@ export class Page {
     const point = await this.evaluate<{ x: number; y: number } | null>(`(() => {
       const element = document.querySelector(${JSON.stringify(selector)});
       if (!element) return null;
+      // A person scrolls a control into view before clicking it. Without this, a target whose
+      // centre lies outside its scroll container - a box low in a tall diagram, say - receives a
+      // click at coordinates that belong to the page behind it, and nothing happens.
+      element.scrollIntoView({ block: "center", inline: "center" });
       const box = element.getBoundingClientRect();
       return { x: Math.round(box.left + box.width / 2), y: Math.round(box.top + box.height / 2) };
     })()`);
     if (!point) throw new Error(`Nothing matched selector: ${selector}`);
+    await this.pause(200);
     return point;
   }
 

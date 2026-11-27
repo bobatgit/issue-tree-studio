@@ -61,7 +61,10 @@ export function Diagram({ ws }: Props) {
     if (!doc) return null;
     return layoutTree(doc, ws.keyMap, visible.map((entry) => entry.item.id), {
       maxWidth: 12.1,
-      maxHeight: 5.7,
+      // The canvas scales the whole diagram to fit, so it asks for no height cap. A cap here
+      // squeezed every box below the height its own text needed and overlapped the rows. The
+      // deck keeps its own cap, because a slide has hard edges and cannot scale to suit.
+      maxHeight: Number.POSITIVE_INFINITY,
       gapX: 0.36,
       gapY: 0.16,
       maxLines: 4,
@@ -75,8 +78,6 @@ export function Diagram({ ws }: Props) {
   const viewW = layout ? Math.max(1, layout.width) + pad * 2 : 1;
   const viewH = layout ? Math.max(1, layout.height) + pad * 2 : 1;
   /** Height per unit of width, so the SVG keeps its aspect at any level. */
-  const ratio = viewH / viewW;
-
   const wrapRef = useRef<HTMLDivElement>(null);
   const [level, setLevel] = useState<number>(readZoom);
   /** The live level, so a burst of clicks cannot each read a stale render. */
@@ -89,9 +90,19 @@ export function Diagram({ ws }: Props) {
   /** A click that ends a pan must not also select the box under the pointer. */
   const panned = useRef(false);
 
-  const sized = fitWidth > 0;
-  const width = sized ? (fitWidth * level) / 100 : 0;
-  const height = sized ? (fitWidth * level * ratio) / 100 : 0;
+  /**
+   * The scale at which the diagram is drawn at 100 percent: its width, and its width alone.
+   *
+   * Fitting the height as well was tried and is wrong. A 500-item tree has an aspect of roughly
+   * 64 to 1, so fitting all of it into a 1376 by 505 canvas rendered the whole diagram eight
+   * pixels wide - a sliver, unreadable at any zoom, and a canvas full of sub-pixel boxes that no
+   * measurement can describe. A tall tree scrolls instead, and the zoom reaches 25 percent when
+   * an overview is wanted.
+   */
+  const fitScale = fitWidth > 0 ? fitWidth / viewW : 0;
+  const sized = fitScale > 0;
+  const width = sized ? (fitScale * viewW * level) / 100 : 0;
+  const height = sized ? (fitScale * viewH * level) / 100 : 0;
 
   // Fit follows the window, so a resize while zoomed keeps the level.
   useEffect(() => {
@@ -124,6 +135,17 @@ export function Diagram({ ws }: Props) {
   }, [level]);
 
   /**
+   * A value as a fraction of a size, clamped to the content's own extent.
+   *
+   * The clamp matters once the whole diagram fits the canvas: the viewport's centre then lies
+   * outside the content, the fraction exceeds one, and the first zoom sends the scroll to the
+   * far edge instead of holding the middle still.
+   */
+  function fractionOf(value: number, size: number): number {
+    return size > 0 ? Math.min(1, Math.max(0, value / size)) : 0;
+  }
+
+  /**
    * Change the level, keeping whatever is under the focus point under it. The
    * content coordinate under a point is (scroll + point) / width, so restoring
    * the same fraction after the size changes is what holds the point still.
@@ -140,17 +162,21 @@ export function Diagram({ ws }: Props) {
       }
       const pointX = focusX ?? wrap.clientWidth / 2;
       const pointY = focusY ?? wrap.clientHeight / 2;
-      const fractionX = width > 0 ? (wrap.scrollLeft + pointX) / width : 0;
-      const fractionY = height > 0 ? (wrap.scrollTop + pointY) / height : 0;
+      const fractionX = fractionOf(wrap.scrollLeft + pointX, width);
+      const fractionY = fractionOf(wrap.scrollTop + pointY, height);
       setLevel(clamped);
       requestAnimationFrame(() => {
-        const nextWidth = (fitWidth * clamped) / 100;
-        const nextHeight = (fitWidth * clamped * ratio) / 100;
-        wrap.scrollLeft = fractionX * nextWidth - pointX;
-        wrap.scrollTop = fractionY * nextHeight - pointY;
+        const nextWidth = (fitScale * viewW * clamped) / 100;
+        const nextHeight = (fitScale * viewH * clamped) / 100;
+        // Only a canvas with somewhere to scroll can hold a point still. One that fits entirely
+        // has no content under the viewport's edges, and forcing the fraction onto it sends the
+        // scroll to the far edge - which is what made the middle of a fitted diagram jump to a
+        // corner the moment it was zoomed.
+        wrap.scrollLeft = nextWidth > wrap.clientWidth ? fractionX * nextWidth - pointX : 0;
+        wrap.scrollTop = nextHeight > wrap.clientHeight ? fractionY * nextHeight - pointY : 0;
       });
     },
-    [fitWidth, height, ratio, sized, width],
+    [fitScale, height, sized, viewH, viewW, width],
   );
 
   /** A factor, read against the live level, so repeated clicks accumulate. */

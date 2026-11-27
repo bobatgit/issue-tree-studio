@@ -14,7 +14,7 @@
 import path from "node:path";
 import { stat } from "node:fs/promises";
 import { Page } from "./cdp";
-import { EMPTY_DOC, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import { fixtureLarge, EMPTY_DOC, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 
 interface Shot {
@@ -262,6 +262,13 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
     setup: `const hit = document.querySelector(".marker-hit");
     if (hit) hit.dispatchEvent(new MouseEvent("click", { bubbles: true }));`,
+  },
+  {
+    name: "ticket-31-500-1440",
+    note: "500 items drawn without squeezing any box below its own text (#31)",
+    view: "diagram",
+    size: [1440, 900],
+    doc: fixtureLarge(499),
   },
 ];
 

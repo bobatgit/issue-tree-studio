@@ -156,3 +156,35 @@ describe("slide packing", () => {
     expect(groups).toHaveLength(1);
   });
 });
+
+describe("a dense tree with and without a height cap", () => {
+  const dense = () =>
+    docFrom(
+      [
+        "- Why did profit fall?",
+        ...Array.from({ length: 120 }, (_, index) => `  - Did branch ${index + 1} move?`),
+      ].join("\n"),
+    );
+
+  const options = { maxWidth: 12.1, gapX: 0.36, gapY: 0.16, maxLines: 4, showKeys: true };
+
+  it("keeps the gap between rows instead of squeezing boxes into each other", () => {
+    const doc = dense();
+    const keyMap = computeKeyMap(doc);
+
+    // The cap is what caused the collision: the pitch it produces is smaller than a box, so
+    // every box overlaps the next and its own text spills out.
+    const capped = layoutTree(doc, keyMap, null, { ...options, maxHeight: 5.7 });
+    expect(capped.rowPitch).toBeLessThan(capped.boxH);
+
+    // Uncapped, every box keeps the height its text needs and the gap survives.
+    const fitted = layoutTree(doc, keyMap, null, {
+      ...options,
+      maxHeight: Number.POSITIVE_INFINITY,
+    });
+    expect(fitted.rowPitch).toBeCloseTo(fitted.boxH + options.gapY, 5);
+    expect(fitted.rowPitch).toBeGreaterThanOrEqual(fitted.boxH);
+    // The diagram is taller than the cap, which is the point: the canvas scales it to fit.
+    expect(fitted.height).toBeGreaterThan(5.7);
+  });
+});

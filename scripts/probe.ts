@@ -15,7 +15,7 @@
  */
 
 import { Page } from "./cdp";
-import { CAN_SCROLL, OVERFLOWS, fixtureLongLabel, fixtureManyFindings, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import { CAN_SCROLL, OVERFLOWS, fixtureLarge, fixtureLongLabel, fixtureManyFindings, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 import type { Metrics } from "./cdp";
 
@@ -75,10 +75,47 @@ interface ProbeCase {
   drag?: { selector: string; dx: number; dy: number };
   /** A real key press on a focused element, for keyboard behaviour. */
   key?: { selector: string; key: string };
+  /** One-off page expression, reported for diagnosis. */
+  extra?: string;
   /** Numbers computed in the page, reported beside the selectors. */
   derived?: Record<string, string>;
   checks?: Check[];
 }
+
+/**
+ * Boxes that cannot hold their own text: shorter than it, overflowing it, or overlapping the row
+ * beside them. All three were one defect - a height cap that squeezed the boxes - so one number
+ * reports them, and zero is the only acceptable value.
+ */
+const FIT_VIOLATIONS = `(() => {
+  const rects = [...document.querySelectorAll(".diagram-svg .nrect")];
+  const bounds = rects.map((rect) => rect.getBoundingClientRect());
+  let violations = 0;
+  for (let index = 0; index < rects.length; index += 1) {
+    const box = bounds[index];
+    let top = Infinity;
+    let bottom = -Infinity;
+    let right = -Infinity;
+    for (const text of rects[index].parentElement.querySelectorAll("text")) {
+      const textBox = text.getBoundingClientRect();
+      if (textBox.width === 0) continue;
+      top = Math.min(top, textBox.top);
+      bottom = Math.max(bottom, textBox.bottom);
+      right = Math.max(right, textBox.right);
+    }
+    if (bottom <= top) continue;
+    if (box.height + 0.5 < bottom - top) violations += 1;
+    if (bottom > box.bottom + 0.5 || right > box.right + 0.5) violations += 1;
+  }
+  for (let i = 0; i < bounds.length; i += 1) {
+    for (let j = i + 1; j < bounds.length; j += 1) {
+      if (Math.abs(bounds[i].left - bounds[j].left) > 2) continue;
+      const shared = Math.min(bounds[i].bottom, bounds[j].bottom) - Math.max(bounds[i].top, bounds[j].top);
+      if (shared > 0.5) violations += 1;
+    }
+  }
+  return violations;
+})()`;
 
 const CASES: ProbeCase[] = [
   {
@@ -501,6 +538,53 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "fit-18-1440",
+    note: "every box holds its own text at the sample size (#31)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg"],
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      violations: FIT_VIOLATIONS,
+    },
+    checks: [
+      { label: "every item has a box", derived: "boxes", exact: 18 },
+      { label: "no box is shorter than its text, and no rows overlap", derived: "violations", exact: 0 },
+    ],
+  },
+  {
+    name: "fit-121-1440",
+    note: "every box holds its own text with 121 items (#31)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg"],
+    doc: fixtureLarge(120),
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      violations: FIT_VIOLATIONS,
+    },
+    checks: [
+      { label: "every item has a box", derived: "boxes", exact: 121 },
+      { label: "no box is shorter than its text, and no rows overlap", derived: "violations", exact: 0 },
+    ],
+  },
+  {
+    name: "fit-500-1440",
+    note: "every box holds its own text at the 500-item cap (#31)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg"],
+    doc: fixtureLarge(499),
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      violations: FIT_VIOLATIONS,
+    },
+    checks: [
+      { label: "every item has a box", derived: "boxes", exact: 500 },
+      { label: "no box is shorter than its text, and no rows overlap", derived: "violations", exact: 0 },
+    ],
+  },
+  {
     name: "fold-click-1440",
     note: "a real click on a fold control hides the branch (#32)",
     view: "diagram",
@@ -603,15 +687,12 @@ const CASES: ProbeCase[] = [
     view: "diagram",
     size: [1440, 900],
     selectors: [".diagram-wrap"],
-    setup: `// The zoom keeps its focus point still, so the canvas is already scrolled a long way
-    // by the time the drag starts. The pan check compares against a baseline taken
-    // immediately before the press, which the drag helper records, and not against zero.
-    // It cannot be taken here: React moves the scroll after these clicks return, so a
-    // reading on this line would always be zero.
-    for (let index = 0; index < 4; index += 1) {
-      const zoomIn = document.querySelector('[aria-label="Zoom in"]');
-      if (zoomIn) zoomIn.click();
-    }`,
+    // Real clicks on the zoom button, with a pause between them, rather than several clicks
+    // inside one evaluate: a burst of zoom steps shares a single render, so every step computes
+    // its focus from a size that is already stale. A person cannot click that fast.
+    // Six steps, so the canvas has room to move on both axes: at four it has only about 60px of
+    // slack sideways, and a drag of 160 cannot be measured in a space that size.
+    clicks: { selector: '[aria-label="Zoom in"]', times: 6 },
     drag: { selector: ".diagram-wrap", dx: -160, dy: -120 },
     derived: {
       panDeltaLeft: `(() => {
@@ -784,6 +865,14 @@ async function runCase(probe: ProbeCase): Promise<Outcome[]> {
     const metrics = selectors.length > 0 ? await page.measure(selectors) : {};
 
     const derived: Record<string, number | null> = {};
+    if (probe.extra) {
+      try {
+        const value = await page.evaluate<string>(probe.extra);
+        console.log(`  extra${" ".repeat(29)}${value}`);
+      } catch (error) {
+        console.log(`  extra${" ".repeat(29)}failed: ${(error as Error).message}`);
+      }
+    }
     for (const [name, expression] of Object.entries(probe.derived ?? {})) {
       derived[name] = await page.evaluate<number | null>(`(() => { return ${expression}; })()`);
     }
