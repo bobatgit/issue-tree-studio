@@ -114,6 +114,14 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
 
     if (item.children.length === 1) singleChild.push(item.id);
 
+    // One finding per parent per kind, not one per pair. A parent with n branches
+    // has n(n-1)/2 pairs, so a pairwise report grows quadratically and buries the
+    // panel it exists to fill: 117 similar siblings produced 6,786 findings.
+    const duplicated = new Set<string>();
+    const overlapping = new Set<string>();
+    let duplicatePair: [string, string] | null = null;
+    let overlapPair: [string, string] | null = null;
+
     for (let i = 0; i < item.children.length; i += 1) {
       const childA = doc.items[item.children[i]];
       if (!childA) continue;
@@ -123,23 +131,45 @@ export function reviewTree(doc: TreeDoc, keyMap: KeyMap): Finding[] {
         const normalA = childA.label.trim().toLowerCase();
         const normalB = childB.label.trim().toLowerCase();
         if (normalA && normalA === normalB) {
-          push(
-            "DUPLICATE_SIBLING",
-            "error",
-            "Two siblings say the same thing",
-            `"${childA.label}" is repeated under the same parent. Only one can be true; merge or reword.`,
-            childA.id,
-          );
-        } else if (overlapScore(childA.label, childB.label) >= 0.6) {
-          push(
-            "OVERLAP_SIBLING",
-            "warn",
-            "Siblings may overlap",
-            `"${childA.label}" and "${childB.label}" share most of their wording. Check they are mutually exclusive.`,
-            childA.id,
-          );
+          duplicated.add(childA.id);
+          duplicated.add(childB.id);
+          duplicatePair ??= [childA.label, childB.label];
+          continue;
+        }
+        if (overlapScore(childA.label, childB.label) >= 0.6) {
+          overlapping.add(childA.id);
+          overlapping.add(childB.id);
+          overlapPair ??= [childA.label, childB.label];
         }
       }
+    }
+
+    if (duplicated.size > 1) {
+      const [first] = [...duplicated];
+      push(
+        "DUPLICATE_SIBLING",
+        "error",
+        duplicated.size === 2
+          ? "Two branches say the same thing"
+          : `${duplicated.size} branches say the same thing`,
+        duplicatePair
+          ? `"${duplicatePair[0]}" is repeated under the same parent. Only one can be true; merge or reword.`
+          : "The same wording is repeated under one parent. Merge or reword it.",
+        first,
+      );
+    }
+
+    if (overlapping.size > 1) {
+      const [first] = [...overlapping];
+      push(
+        "OVERLAP_SIBLING",
+        "warn",
+        "Siblings may overlap",
+        overlapPair
+          ? `${overlapping.size} branches share most of their wording, for example "${overlapPair[0]}" and "${overlapPair[1]}". Check they are mutually exclusive.`
+          : "Several branches share most of their wording. Check they are mutually exclusive.",
+        first,
+      );
     }
 
     if (item.children.length > 7) {

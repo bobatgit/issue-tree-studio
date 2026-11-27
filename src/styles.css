@@ -815,6 +815,14 @@ kbd {
   background: var(--danger);
 }
 
+.finding-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 2px 0;
+}
+
 .finding {
   display: block;
   width: 100%;

@@ -3,6 +3,21 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.10.7] - 2026-11-26
+
+### Fixed
+
+- **The Details panel grew by more than a million pixels.** Two analyses reported one result per **pair** and the panel
+  rendered every one of them: the quality check produced 6,786 findings for 117 similar siblings, and the MECE review
+  of a split produced 6,903 suggestions, each drawn as a block. Both now report one result per kind for the whole
+  group, naming how many branches are involved and giving two examples, so 6,786 findings become 1 and 6,903
+  suggestions become 1. The panel's content fell from 1,690,558px to 2,375px and its scrollbar became usable.
+- The findings list is bounded at fifty, with a `Show all` control, so the panel stays usable whatever the tree's
+  size. The error, warning and note counts above the list are counted over every finding, so a bounded list hides
+  none of them.
+- The reported symptom, "with a lot of items there is no scroll function", was a different fault and is fixed in
+  0.10.5: the list container was never shorter than its content, so it had nothing to scroll.
+
 ## [0.10.6] - 2026-11-26
 
 ### Fixed

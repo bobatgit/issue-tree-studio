@@ -499,3 +499,27 @@ describe("folding in the diagram", () => {
     expect(document.querySelector(".row.selected")?.textContent).toContain("Root?");
   });
 });
+
+describe("the findings list", () => {
+  // A hundred and sixty-six rows is slow to render under jsdom, so this one gets room.
+  it("lists fifty and keeps the rest one click away", { timeout: 30000 }, async () => {
+    // Fifty-five parents, each with two identically named children: one duplicate
+    // finding each, plus the root's many-branches note. More than fifty.
+    const items = [{ label: "Root?", depth: 1 }];
+    for (let index = 0; index < 55; index += 1) {
+      items.push({ label: `Parent ${index}?`, depth: 2 });
+      items.push({ label: "Repeated?", depth: 3 });
+      items.push({ label: "Repeated?", depth: 3 });
+    }
+    seedTree(items);
+    render(<App />);
+    await waitFor(() => expect(screen.getAllByRole("treeitem").length).toBeGreaterThan(50));
+
+    const shown = (): number => document.querySelectorAll(".finding").length;
+    expect(shown()).toBe(50);
+    expect(document.querySelector(".finding-more")?.textContent).toContain("50 of");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Show all/ }));
+    await waitFor(() => expect(shown()).toBeGreaterThan(50));
+  });
+});

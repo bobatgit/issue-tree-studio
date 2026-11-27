@@ -72,26 +72,52 @@ export function heuristicMeceReview(doc: TreeDoc, keyMap: KeyMap, itemId: string
     });
   }
 
+  // One suggestion per kind, not one per pair: n branches make n(n-1)/2 pairs, so a
+  // pairwise list grows quadratically and buries the panel it exists to fill. 118
+  // similar branches produced 6,903 suggestions.
+  const exact = new Set<string>();
+  const wordy = new Set<string>();
+  let exactPair: [string, string] | null = null;
+  let wordyPair: [string, string] | null = null;
+
   for (let i = 0; i < children.length; i += 1) {
     for (let j = i + 1; j < children.length; j += 1) {
       const a = children[i];
       const b = children[j];
       if (a.label.trim().toLowerCase() === b.label.trim().toLowerCase()) {
-        suggestions.push({
-          code: "OVERLAP_EXACT",
-          level: "error",
-          message: `"${a.label}" and "${b.label}" are the same branch.`,
-          itemKeys: [keyOf(a.id), keyOf(b.id)],
-        });
-      } else if (overlapScore(a.label, b.label) >= 0.6) {
-        suggestions.push({
-          code: "OVERLAP_WORDS",
-          level: "warn",
-          message: `"${a.label}" and "${b.label}" share most of their wording. Confirm they are mutually exclusive.`,
-          itemKeys: [keyOf(a.id), keyOf(b.id)],
-        });
+        exact.add(a.id);
+        exact.add(b.id);
+        exactPair ??= [a.label, b.label];
+        continue;
+      }
+      if (overlapScore(a.label, b.label) >= 0.6) {
+        wordy.add(a.id);
+        wordy.add(b.id);
+        wordyPair ??= [a.label, b.label];
       }
     }
+  }
+
+  if (exact.size > 1) {
+    suggestions.push({
+      code: "OVERLAP_EXACT",
+      level: "error",
+      message: exactPair
+        ? `${exact.size} branches are the same branch, for example "${exactPair[0]}" and "${exactPair[1]}".`
+        : `${exact.size} branches are the same branch.`,
+      itemKeys: [...exact].slice(0, 3).map((id) => keyOf(id)),
+    });
+  }
+
+  if (wordy.size > 1) {
+    suggestions.push({
+      code: "OVERLAP_WORDS",
+      level: "warn",
+      message: ` ${wordy.size} branches share most of their wording${
+        wordyPair ? `, for example "${wordyPair[0]}" and "${wordyPair[1]}"` : ""
+      }. Confirm they are mutually exclusive.`.trim(),
+      itemKeys: [...wordy].slice(0, 3).map((id) => keyOf(id)),
+    });
   }
 
   if (children.length > 7) {

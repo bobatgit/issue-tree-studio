@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { computeKeyMap } from "../model/keys";
+import { heuristicMeceReview } from "../model/mece";
 import { parseMarkdown } from "../model/markdown";
 import { findingCounts, overlapScore, reviewTree } from "../model/quality";
-import { createDoc } from "../model/tree";
+import { buildDoc, createDoc } from "../model/tree";
 import { generateTree } from "./testUtils";
 
 function review(markdown: string) {
@@ -111,5 +112,75 @@ describe("status checks", () => {
     for (const item of Object.values(doc.items)) item.status = "complete";
     const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
     expect(codes).not.toContain("COMPLETE_WITH_OPEN_CHILD");
+  });
+});
+
+describe("a wide sibling group", () => {
+  const wide = (count: number, same = false) => {
+    const items = [{ label: "Root?", depth: 1 }];
+    for (let index = 0; index < count; index += 1) {
+      items.push({ label: same ? "Same wording?" : `Did branch ${index + 1} move?`, depth: 2 });
+    }
+    const doc = buildDoc("Wide", items);
+    return reviewTree(doc, computeKeyMap(doc));
+  };
+
+  it("reports one overlap finding for the group, not one per pair", () => {
+    const overlaps = wide(120).filter((finding) => finding.code === "OVERLAP_SIBLING");
+    expect(overlaps).toHaveLength(1);
+    // Every child of the root overlaps with every other, so all 120 are in the group.
+expect(overlaps[0].detail).toContain("120 branches");
+  });
+
+  it("reports one duplicate finding for the group, naming how many are involved", () => {
+    const duplicates = wide(120, true).filter((finding) => finding.code === "DUPLICATE_SIBLING");
+    expect(duplicates).toHaveLength(1);
+    expect(duplicates[0].title).toContain("120 branches");
+    expect(duplicates[0].level).toBe("error");
+  });
+
+  it("keeps the number of findings bounded as the group grows", () => {
+    // Before grouping this grew quadratically: 120 similar siblings produced 6,786.
+    const total = (count: number): number => wide(count).length;
+    expect(total(120)).toBeLessThan(total(10) + 10);
+  });
+
+  it("still names the two branches it is talking about", () => {
+    const overlaps = wide(4).filter((finding) => finding.code === "OVERLAP_SIBLING");
+    expect(overlaps).toHaveLength(1);
+    expect(overlaps[0].detail).toContain("Did branch 1 move?");
+    expect(overlaps[0].itemId).toBeTruthy();
+  });
+
+  it("says nothing about a parent whose branches are distinct", () => {
+    const doc = buildDoc("Distinct", [
+      { label: "Root?", depth: 1 },
+      { label: "Did revenue fall?", depth: 2 },
+      { label: "Did cost rise?", depth: 2 },
+      { label: "Did the mix shift?", depth: 2 },
+    ]);
+    const codes = reviewTree(doc, computeKeyMap(doc)).map((finding) => finding.code);
+    expect(codes).not.toContain("OVERLAP_SIBLING");
+    expect(codes).not.toContain("DUPLICATE_SIBLING");
+  });
+});
+
+describe("a wide split's MECE review", () => {
+  const wide = (count: number) => {
+    const items = [{ label: "Root?", depth: 1 }];
+    for (let index = 0; index < count; index += 1) {
+      items.push({ label: `Did branch ${index + 1} move?`, depth: 2 });
+    }
+    const doc = buildDoc("Wide", items);
+    return heuristicMeceReview(doc, computeKeyMap(doc), doc.rootId as string);
+  };
+
+  it("gives one overlap suggestion for the split, not one per pair", () => {
+    const suggestions = wide(120);
+    const wordy = suggestions.filter((suggestion) => suggestion.code === "OVERLAP_WORDS");
+    expect(wordy).toHaveLength(1);
+    expect(wordy[0].message).toContain("120 branches");
+    // Before grouping this was 6,903 suggestions, which the panel rendered in full.
+    expect(suggestions.length).toBeLessThan(10);
   });
 });

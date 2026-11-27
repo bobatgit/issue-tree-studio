@@ -238,17 +238,19 @@ const CASES: ProbeCase[] = [
     view: "tree",
     size: [1440, 900],
     doc: fixtureLarge(120),
-    selectors: [".editor-scroll", ".panel-scroll", ".panel-scroll .section", ".panel-scroll .finding", ".panel-scroll .textarea", ".panel-scroll .check"],
+    selectors: [".editor-scroll", ".panel-scroll", ".panel-scroll .meter", ".panel-scroll .finding-more", ".panel-scroll .kv", ".panel-scroll .ai-box", ".panel-scroll .empty-note", ".panel-scroll .key-big", ".panel-scroll .section"],
     derived: {
       listOverflow: OVERFLOWS(".editor-scroll"),
       listCanScroll: CAN_SCROLL(".editor-scroll"),
       panelOverflow: OVERFLOWS(".panel-scroll"),
+      /** The first eight children, in DOM order, with their heights. */
       panelCanScroll: CAN_SCROLL(".panel-scroll"),
     },
     checks: [
       { label: "the list has more rows than fit", derived: "listOverflow", min: 100 },
       { label: "the list can be scrolled", derived: "listCanScroll", exact: 1 },
       { label: "the panel can be scrolled", derived: "panelCanScroll", exact: 1 },
+      { label: "the panel stays bounded as the tree grows", derived: "panelOverflow", max: 40000 },
     ],
   },
   {
@@ -428,8 +430,10 @@ const CASES: ProbeCase[] = [
   },
 ];
 
-function format(value: number | null | undefined): string {
-  if (value === null || value === undefined || Number.isNaN(value)) return "missing";
+function format(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return "missing";
+  if (typeof value === "string") return value;
+  if (Number.isNaN(value)) return "missing";
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 

@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+
+/** Findings listed before the panel offers the rest. */
+const FINDING_PAGE = 50;
 import { diffSnapshots } from "../model/diff";
 import { copyText, downloadText, formatTime, slugify } from "../lib/ui";
 import { MECE_SELF_CHECK, disabledAiReviewer, heuristicMeceReview } from "../model/mece";
@@ -24,6 +27,9 @@ function copyKey(key: string, ws: Workspace, label: string): void {
 export function QualityPanel({ ws }: { ws: Workspace }) {
   const doc = ws.doc;
   const counts = ws.findingCounts;
+  const [showAll, setShowAll] = useState(false);
+  // The counts above are counted over every finding, so a bounded list hides none of them.
+  const listed = showAll ? ws.findings : ws.findings.slice(0, FINDING_PAGE);
   const capClass = ws.itemCount >= 100 ? "full" : ws.itemCount >= 80 ? "warn" : "";
   const meceItem = doc && ws.selection ? doc.items[ws.selection] : null;
   const meceSplit = useMemo(() => (doc && ws.selection ? heuristicMeceReview(doc, ws.keyMap, ws.selection) : []), [doc, ws.keyMap, ws.selection]);
@@ -59,7 +65,8 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
         {ws.findings.length === 0 ? (
           <p className="empty-note">No findings. The tree passes the deterministic checks.</p>
         ) : (
-          ws.findings.map((finding) => (
+          <>
+          {listed.map((finding) => (
             <button
               key={finding.id}
               type="button"
@@ -77,7 +84,18 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
               </span>
               <span className="fdetail">{finding.detail}</span>
             </button>
-          ))
+          ))}
+          {ws.findings.length > FINDING_PAGE ? (
+            <div className="finding-more">
+              <span className="small muted">
+                {showAll ? `${ws.findings.length} findings` : `${FINDING_PAGE} of ${ws.findings.length} shown`}
+              </span>
+              <button type="button" className="text-btn ghost" onClick={() => setShowAll(!showAll)}>
+                {showAll ? "Show fewer" : `Show all ${ws.findings.length}`}
+              </button>
+            </div>
+          ) : null}
+          </>
         )}
       </div>
 

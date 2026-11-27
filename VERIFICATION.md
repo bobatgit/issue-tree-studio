@@ -514,3 +514,24 @@ the root cause. That entry is corrected here and in the changelog.
 
 The general lesson, which this batch has now taught twice: a local pass is not evidence about the deployed artifact,
 and a check that runs against production is worthless if it can be served something old.
+
+## 0.10.7 - the panel that grew by a million pixels
+
+Filed as #29 after the scrolling fix, because a measurement taken then showed the Details panel's content at
+1,690,558px with the first quality finding 278,383px down it. The cause turned out to be two instances of one
+mistake, in two different analyses: each reported one result per **pair** of siblings, and the panel rendered every
+result. The quality check gave 6,786 findings for 117 similar siblings; the MECE review of a split gave 6,903
+suggestions, each drawn as a block in the Selected split section. The findings were 733,000px of the panel and the
+suggestions 680,000px, which is why fixing either alone left roughly a million.
+
+Both now report one result per kind for the whole group, naming how many branches are involved and giving two
+examples. The panel measures **2,375px**, and the section that held 6,935 blocks holds 6.
+
+The measurement that found it is worth keeping in mind: the model had no pairwise loop left after the first fix, so
+the remaining height could not be the findings, and the instrument that resolved it was asking the page to name the
+tallest element it contained rather than reasoning about which one it might be. Two of my guesses about where the
+height came from were wrong before that.
+
+The list is bounded at fifty with a `Show all` control, and the counts above it are counted over every finding, so a
+bounded list hides none of them. A probe case loads 120 items and asserts the panel stays under a bound, which would
+fail if either analysis went back to reporting pairs.
