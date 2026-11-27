@@ -535,3 +535,43 @@ height came from were wrong before that.
 The list is bounded at fifty with a `Show all` control, and the counts above it are counted over every finding, so a
 bounded list hides none of them. A probe case loads 120 items and asserts the panel stays under a bound, which would
 fail if either analysis went back to reporting pairs.
+
+## 0.11.0 - the panel diet
+
+Four tickets that all change the Details panel. Commits c3f2c72 (#35), 3eee3ff (#36), 4716341 (#37) and
+4a2ca0a (#38), pushed together as one release.
+
+**What changed.** The right panel exists only in Tree view now, so Markdown and Diagram take the full width.
+The MECE review is gone with its module. The Note field, the Label and Status editors and the Item budget
+meter are gone, and `note` and the MECE flags left the model, which is this release's breaking change. The
+Details tab holds the selected item's key and the duplicate checks, and the probe prints its headings as
+`Key|Checks`.
+
+**Test count: 203 to 210.** It fell once along the way: #36 removed two tests and added one, so the count ran
+206 to 205 at that commit, and the arithmetic is in the commit message. #37 took it to 209 and #38 to 210.
+
+**Probe: 58 to 66 checks.** Three for the panel's absence across two views, two for the Details headings, and
+the rest accounted for by the new cases.
+
+**One check was re-baselined, and the reason matters more than the number.** The resting outline measured
+2.20px against a 2px limit, because #35 gave the canvas the panel's width and #20 defines outlines in SVG user
+units, so the stroke scales with the canvas. The boxes scaled by the same factor, 303x61 against 218x44, so the
+outline's ratio to its own box is unchanged. The limit moved to 3 rather than the stroke being thinned to fit
+it, which would have been adjusting the artwork to satisfy a threshold.
+
+**One probe check was kept meaningful rather than deleted.** The panel-scroll check stopped passing, because
+120 similar siblings now group into a single finding and the MECE sections are gone, so the panel had nothing
+to scroll. Deleting it would have removed the guard for the 0.10.5 defect. A new fixture gives 60 branches two
+identically worded children each: 181 items and 60 findings, more than the panel's 50-a-page, which measures
+4343px of overflow.
+
+**Gates.** `build` 0; `smoke` 0, pptx 126,793 bytes, CSV round trip OK, 0 collisions; `perf` 0, the 500-item
+deck 2.67MB in 613ms; `shots` 0; `probe` 66 of 66.
+
+**Found while working, and recorded.** `tsc -b` reports success for `scripts/probe.ts`, so the probe is not
+typechecked by the build gate. An insertion error in a probe case was reported by TypeScript as exit 0 and
+appeared only when the probe ran and refused to parse. The probe gate is load-bearing.
+
+**An issue body was corrected.** #38 claimed the Item budget section had key-value rows beside its meter.
+Those rows belong to the Key section and stay. The body was corrected before the work started, because a wrong
+claim in a ticket drives wrong work.

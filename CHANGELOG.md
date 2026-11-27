@@ -3,6 +3,31 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.11.0] - 2026-11-27
+
+### Breaking
+
+- **The stored `note` and MECE fields are gone.** Every item carried a note and two MECE flags that were
+  written to neither the markdown nor the CSV, so nothing outside this app ever saw them. They leave the
+  model, and a document saved before this release still loads, with those two fields dropped and nothing
+  else altered. A browser holding notes loses them.
+
+### Changed
+
+- **The right panel belongs to the Tree view.** Markdown and Diagram were showing a panel of item details
+  while showing no item, so both views now take the full width. `Ctrl+\` follows the panel, and the phone's
+  Details button goes with it, because it opens that panel.
+- **The MECE review is gone.** The self-check, the AI review box, and the two places that listed its
+  suggestions - *Selected split* and *MECE check* - are removed, with the module behind them. They showed the
+  same suggestions twice, and those two sections were the larger half of the 1,013,000px of panel overflow
+  fixed in 0.10.7.
+- **The Details tab holds the selected item's key and the duplicate checks, and nothing else.** The Note
+  field, the Label and Status editors, and the Item budget meter are gone. Editing a label and completing an
+  item stay in the row, which is where they were already done. The meter reported an item count the top bar
+  and the footer both already showed; the soft-cap nudge and the 500-item cap are unchanged.
+- **One kind of finding leaves the Checks list**: `MECE_UNCONFIRMED`, which read the flags that no longer
+  exist. The duplicate and overlap findings, grouped and bounded in 0.10.7, stay.
+
 ## [0.10.7] - 2026-11-26
 
 ### Fixed

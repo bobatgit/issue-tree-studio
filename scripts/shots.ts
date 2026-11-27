@@ -230,6 +230,26 @@ const SHOTS: Shot[] = [
     size: [1440, 900],
     hover: ".diagram-svg .nrect",
   },
+  {
+    name: "ticket-35-markdown-1440",
+    note: "the Markdown view with no right panel, taking the full width (#35)",
+    view: "markdown",
+    size: [1440, 900],
+  },
+  {
+    name: "ticket-35-diagram-1440",
+    note: "the Diagram view with no right panel, taking the full width (#35)",
+    view: "diagram",
+    size: [1440, 900],
+  },
+  {
+    // One shot for three tickets: #36, #37 and #38 each remove something from
+    // this one panel, and they land together, so the panel is proved once.
+    name: "ticket-36-details-1440",
+    note: "the Details panel after #36, #37 and #38: the Key and the Checks only (#36, #37, #38)",
+    view: "tree",
+    size: [1440, 900],
+  },
 ];
 
 function slug(value: string): string {
