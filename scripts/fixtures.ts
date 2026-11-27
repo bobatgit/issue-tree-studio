@@ -111,6 +111,26 @@ export function fixtureManyFindings(branches = 60): TreeDoc {
   return parseMarkdown(lines.join("\n"), "Many findings").doc;
 }
 
+/**
+ * A tree whose root label is long enough for its own row field to clip, and with
+ * rows enough to scroll.
+ *
+ * It exists because #30's wheel test is vacuous without it: a wheel over a field
+ * with nothing hidden proves nothing, whether the field swallows it or not. The
+ * hidden height is asserted, so the test cannot quietly become vacuous again.
+ */
+export function fixtureLongLabel(branches = 40): TreeDoc {
+  const long =
+    "Why did profit fall year over year, and what does the difference between the two years tell us about " +
+    "the price, the volume, the mix and the cost base at the same time, before any of them is treated as " +
+    "the cause of the others?";
+  const lines = [`- ${long}`];
+  for (let index = 0; index < branches; index += 1) {
+    lines.push(`  - Did branch ${index + 1} move?`);
+  }
+  return parseMarkdown(lines.join("\n"), "Long label").doc;
+}
+
 /** Whether a container can actually be scrolled, by scrolling it. */
 export const CAN_SCROLL = (selector: string): string => `(() => {
   const element = document.querySelector(${JSON.stringify(selector)});

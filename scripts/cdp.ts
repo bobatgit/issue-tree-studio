@@ -326,6 +326,46 @@ export class Page {
     await this.pause(250);
   }
 
+  /** A real wheel over the first element matching the selector. */
+  async wheel(selector: string, deltaY: number): Promise<void> {
+    const point = await this.evaluate<{ x: number; y: number } | null>(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return null;
+      const box = element.getBoundingClientRect();
+      return { x: Math.round(box.left + box.width / 2), y: Math.round(box.top + box.height / 2) };
+    })()`);
+    if (!point) throw new Error(`Nothing to wheel over for selector: ${selector}`);
+    await this.send("Input.dispatchMouseEvent", {
+      type: "mouseWheel",
+      x: point.x,
+      y: point.y,
+      deltaX: 0,
+      deltaY,
+    });
+    await this.pause(400);
+  }
+
+  /**
+   * Type real text at the end of an element's value, through the input domain.
+   *
+   * A synthetic KeyboardEvent would not move the caret, and the caret's visibility is
+   * the behaviour under test, so the input has to be real.
+   */
+  async type(selector: string, text: string): Promise<void> {
+    const ready = await this.evaluate<boolean>(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      if (!element) return false;
+      element.focus();
+      const length = (element.value || "").length;
+      if (typeof element.setSelectionRange === "function") element.setSelectionRange(length, length);
+      return true;
+    })()`);
+    if (!ready) throw new Error(`Nothing to type into for selector: ${selector}`);
+    await this.pause(200);
+    await this.send("Input.insertText", { text });
+    await this.pause(400);
+  }
+
   async screenshot(file: string): Promise<void> {
     const { mkdir, writeFile } = await import("node:fs/promises");
     const path = await import("node:path");

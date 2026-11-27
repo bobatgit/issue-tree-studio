@@ -15,7 +15,7 @@
  */
 
 import { Page } from "./cdp";
-import { CAN_SCROLL, OVERFLOWS, fixtureManyFindings, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
+import { CAN_SCROLL, OVERFLOWS, fixtureLongLabel, fixtureManyFindings, fixtureWithComplete, seedSource, selectView, type ViewId } from "./fixtures";
 import type { TreeDoc } from "../src/model/types";
 import type { Metrics } from "./cdp";
 
@@ -59,6 +59,10 @@ interface ProbeCase {
   setup?: string;
   /** An element to put a real pointer over before measuring. */
   hover?: string;
+  /** A real wheel over an element before measuring, for scroll behaviour. */
+  wheel?: { selector: string; deltaY: number };
+  /** Real typed text at the end of an element's value, for caret behaviour. */
+  type?: { selector: string; text: string };
   /** Numbers computed in the page, reported beside the selectors. */
   derived?: Record<string, string>;
   checks?: Check[];
@@ -431,6 +435,55 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "wheel-over-field-1440",
+    note: "a wheel over a row's label field scrolls the tree, not the field (#30)",
+    view: "tree",
+    size: [1440, 900],
+    doc: fixtureLongLabel(),
+    selectors: [".editor-scroll", ".row .label-input"],
+    wheel: { selector: ".row .label-input", deltaY: 400 },
+    derived: {
+      /** What the field hides of its own text. Zero would make this case vacuous. */
+      fieldClip: `(() => {
+        const field = document.querySelector(".row .label-input");
+        return field ? Math.round(field.scrollHeight - field.clientHeight) : -1;
+      })()`,
+      treeScrollTop: `Math.round(document.querySelector(".editor-scroll").scrollTop)`,
+      fieldScrollTop: `Math.round((document.querySelector(".row .label-input") || { scrollTop: -1 }).scrollTop)`,
+    },
+    checks: [
+      { label: "the field really does hide text, so the wheel had something to take", derived: "fieldClip", min: 8 },
+      { label: "the wheel scrolled the tree", derived: "treeScrollTop", min: 100 },
+      { label: "the field did not scroll itself", derived: "fieldScrollTop", exact: 0 },
+    ],
+  },
+  {
+    name: "caret-in-field-1440",
+    note: "the browser still reveals the caret while typing a long label (#30)",
+    view: "tree",
+    size: [1440, 900],
+    doc: fixtureLongLabel(),
+    selectors: [".row .label-input"],
+    type: { selector: ".row .label-input", text: "X" },
+    derived: {
+      fieldClip: `(() => {
+        const field = document.querySelector(".row .label-input");
+        return field ? Math.round(field.scrollHeight - field.clientHeight) : -1;
+      })()`,
+      /** Nonzero only because typing scrolled the field to keep the caret in view. */
+      fieldScrollTop: `Math.round((document.querySelector(".row .label-input") || { scrollTop: -1 }).scrollTop)`,
+    },
+    checks: [
+      { label: "the field hides text", derived: "fieldClip", min: 8 },
+      {
+        label: "typing still scrolls the field to the caret",
+        derived: "fieldScrollTop",
+        min: 1,
+        max: 60,
+      },
+    ],
+  },
+  {
     name: "panel-details-1440",
     note: "the Details tab holds the Key and the Checks, and no item budget meter (#38)",
     view: "tree",
@@ -569,6 +622,8 @@ async function runCase(probe: ProbeCase): Promise<Outcome[]> {
       await page.pause(300);
     }
     if (probe.hover) await page.hover(probe.hover);
+    if (probe.wheel) await page.wheel(probe.wheel.selector, probe.wheel.deltaY);
+    if (probe.type) await page.type(probe.type.selector, probe.type.text);
 
     const selectors = probe.selectors ?? [];
     const metrics = selectors.length > 0 ? await page.measure(selectors) : {};

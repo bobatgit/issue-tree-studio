@@ -634,11 +634,17 @@ a.text-btn {
   color: var(--warn);
 }
 
+/**
+ * The row's field must never scroll inside itself. The wheel has to reach the tree,
+ * or scrolling stops whenever the pointer crosses a label, which is most of the
+ * list's surface. `overflow: hidden` rather than `auto`: the element keeps its
+ * programmatic scrolling, so the browser can still reveal the caret while typing,
+ * but it is no longer user-scrollable and the wheel chains to the tree.
+ */
 .label-input {
   border: 1px solid transparent;
   resize: none;
-  overflow-y: auto;
-  scrollbar-width: none;
+  overflow: hidden;
   display: block;
   background: transparent;
   border-radius: 5px; padding: 6px 8px; font-size: 18px; line-height: 1.4;
