@@ -43,7 +43,9 @@ it. Splitting them means screenshotting one panel four times and resolving four 
 3. `npm run smoke` regenerates `artifacts/` with no errors, and the CSV round trip still holds.
 4. `npm run probe` prints the phase's numbers and they match the issue.
 5. `npm run shots` writes the phase's PNGs, committed as `ticket-*.png` and referenced from the issues they
-   prove.
+   prove. Run it with the phase's ticket numbers as arguments: without a filter it regenerates every case,
+   which replaces the evidence attached to already-closed issues. The script has always supported the
+   filter; the 0.11.0 release simply ran it without one, and had to restore twenty-two shots.
 6. `npm run perf` recorded when the phase touches the layout or the deck.
 7. The CHANGELOG gains an entry. For a breaking change it says so in the first line.
 8. Push once. The Pages run is green, the live URL answers 200, and the bundle shows the new version, before
