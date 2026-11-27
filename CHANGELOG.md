@@ -3,6 +3,17 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.11.4] - 2026-11-27
+
+### Fixed
+
+- **Item order is the tree's order, always.** `newId()` returns a slice of a UUID, so about one id in fifty is
+  all digits, and JavaScript orders integer-like object keys first, in numeric order. On those runs the item map
+  came back in a different order from the tree, and the deck reads that map to choose which items share a slide.
+  A 500-item tree could therefore put a different set of branches on a slide on one run than the next, from the
+  same document, with nothing reporting it. Every order now comes from walking the tree: the deck's overview and
+  branch id lists, including the first-thirty fallback, and the layout's pass for items the root cannot reach.
+
 ## [0.11.3] - 2026-11-27
 
 ### Fixed

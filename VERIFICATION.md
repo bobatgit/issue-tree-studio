@@ -688,3 +688,37 @@ evidence shot is of 500 items, and it shows readable boxes rather than a sliver.
 
 **A human verification is owed and requested:** one exported deck opened in PowerPoint, because the deck shares
 this layout maths and a moved box is not something a check can judge.
+
+## 0.11.4 - item order
+
+One ticket, #28, and the last of the cycle.
+
+**The defect.** `newId()` returns a slice of a UUID, so roughly one id in fifty is all digits, and JavaScript
+orders integer-like object keys first, in numeric order. On those runs `Object.keys(doc.items)` and
+`Object.values(doc.items)` return an order that is not the tree's. Two places read that map where the order
+decides the result: the deck's overview and branch id lists, which then take the first thirty, and the layout's
+pass for items the root cannot reach. A 500-item tree could put a different set of branches on a slide on one run
+than the next, from the same document, silently. It was found by accident: a test that read the map passed twice
+locally and failed in CI.
+
+**The fix.** `flatten` is the single source of item order. The deck's id lists come from it, so the depth filter
+keeps tree order and the fallback takes the first thirty of the tree; the orphan pass walks it too. No change to
+id generation and none to the stored shape, as the issue's locked scope requires.
+
+**The guard test proves the hazard before it proves the fix.** It relabels a tree with integer-like ids numbered
+so that key order is the reverse of the tree, asserts that the map really does come back in a different order,
+and only then asserts that the slide items and the overview ids follow the tree.
+
+**Writing that test produced the demonstration it was describing.** Its second case asserted the map's key order
+for an ordinary document, and the run failed because `newId()` had produced an all-digit id - `76800518` - by
+chance. That is the one-in-fifty case, live, while writing the test about it. The assertion is gone with the
+reason recorded, because a claim about key order is the flaky test that started this issue.
+
+**Tests: 217 to 219.** Probe stays at 90 of 90; the probe measures rendered geometry, and this ticket changes no
+geometry.
+
+**The deck is unchanged for the existing fixtures**, which is the issue's "must not break": smoke exits 0, and
+perf still builds 34 slides and 2.67MB at 500 items.
+
+**Still owed by a person, unchanged from the phases before:** one exported deck opened in PowerPoint, a real
+phone for pinch and pan and the footer wrap, and folding while zoomed.
