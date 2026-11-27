@@ -90,6 +90,25 @@ describe("the Details panel", () => {
     expect(document.querySelector("textarea[data-label-id]")).toBeTruthy();
     expect(screen.getAllByLabelText("Mark this item complete").length).toBeGreaterThan(0);
   });
+
+  it("holds the Key and the Checks and nothing else", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".panel-scroll")).toBeTruthy());
+    const panel = document.querySelector(".panel-scroll") as HTMLElement;
+
+    const headings = [...panel.querySelectorAll(".section-head")].map((head) =>
+      (head.querySelector("span")?.textContent ?? "").trim(),
+    );
+    expect(headings).toEqual(["Key", "Checks"]);
+
+    // The meter reported the item count, and it is gone. The count is not.
+    expect(panel.querySelector(".meter")).toBeNull();
+    expect(document.querySelector(".app")?.textContent ?? "").toMatch(/\d+ items/);
+  });
 });
 
 describe("item status", () => {

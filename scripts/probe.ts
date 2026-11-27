@@ -431,6 +431,25 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "panel-details-1440",
+    note: "the Details tab holds the Key and the Checks, and no item budget meter (#38)",
+    view: "tree",
+    size: [1440, 900],
+    selectors: [".panel-scroll"],
+    derived: {
+      headings: `document.querySelectorAll(".panel-scroll .section-head").length`,
+      meters: `document.querySelectorAll(".meter").length`,
+      /** Named for the log, so the two headings are visible and not just counted. */
+      names: `[...document.querySelectorAll(".panel-scroll .section-head span:first-child")]
+        .map((span) => (span.textContent || "").trim())
+        .join("|")`,
+    },
+    checks: [
+      { label: "the Details tab holds exactly two sections", derived: "headings", exact: 2 },
+      { label: "no item budget meter is left", derived: "meters", exact: 0 },
+    ],
+  },
+  {
     name: "panel-markdown-1440",
     note: "Markdown has no right panel, and the workspace takes the width (#35)",
     view: "markdown",

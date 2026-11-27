@@ -29,29 +29,11 @@ export function QualityPanel({ ws }: { ws: Workspace }) {
   const [showAll, setShowAll] = useState(false);
   // The counts above are counted over every finding, so a bounded list hides none of them.
   const listed = showAll ? ws.findings : ws.findings.slice(0, FINDING_PAGE);
-  const capClass = ws.itemCount >= 100 ? "full" : ws.itemCount >= 80 ? "warn" : "";
 
   if (!doc) return null;
 
   return (
     <div>
-      <div className="section">
-        <div className="section-head">
-          <span>Item budget</span>
-          <span>
-            {ws.itemCount} / 100
-          </span>
-        </div>
-        <div className={`meter ${capClass}`}>
-          <span style={{ width: `${Math.min(100, ws.itemCount)}%` }} />
-        </div>
-        <p className="small muted" style={{ margin: "4px 0 0" }}>
-          {ws.atCap
-            ? "The cap is reached. Merge or delete an item to add more."
-            : `${100 - ws.itemCount} items left. The cap keeps every label readable on a slide.`}
-        </p>
-      </div>
-
       <div className="section">
         <div className="section-head">
           <span>Checks</span>
