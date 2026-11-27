@@ -575,3 +575,40 @@ appeared only when the probe ran and refused to parse. The probe gate is load-be
 **An issue body was corrected.** #38 claimed the Item budget section had key-value rows beside its meter.
 Those rows belong to the Key section and stay. The body was corrected before the work started, because a wrong
 claim in a ticket drives wrong work.
+
+## 0.11.1 - the tree's frame
+
+Two tickets, #30 (commit b74f2b1) and #34 (commit 48398f8), with two chores: untracking the generated
+`.tsbuildinfo` files (392254f), and restoring twenty-two evidence shots that an unfiltered shots run had
+overwritten (41a9162).
+
+**#30.** The cause was one declaration: `.label-input` carried `overflow-y: auto` with `scrollbar-width: none`,
+so the field was user-scrollable and its scrollbar was hidden. Measured before the fix: a 400px wheel over the
+field moved the field and left the tree at 0. After: the tree moved 400 and the field stayed at 0. The risk in
+`overflow: hidden` is the caret, so that was measured rather than assumed: typing at the end of a
+225-character label scrolled the field to 21px to keep the caret in view. Both behaviours are permanent probe
+checks now, and the fixture's field hides 28px of its own text, which is itself asserted, so the wheel check
+cannot quietly become vacuous.
+
+**#34.** The heading line is deleted rather than rebuilt, because its whole content was going and the labels
+already carry a row's grid template and padding. All four alignment offsets measure 0 and the heading row still
+sticks. The phone rule that hides the heading row is untouched, so the labels still hide at 640px. Paste
+outline's capability survives through the top bar, which a test asserts.
+
+**Test count: 210 to 213.** #30 added two stylesheet guards and #34 added one. The stylesheet guard exists
+because CI has no browser: the wheel behaviour is measured by the probe, which CI cannot run, so the rule
+itself is asserted where CI can see it.
+
+**Probe: 71 to 73 checks**, plus the two headings checks for the removed controls, giving 73 of 73.
+
+**A mistake of mine, and what it cost.** `npm run shots` regenerates every case, and I ran it without the name
+filter the script already supports. Twenty-two shots belonging to closed issues were replaced by the current
+UI, and three of them collapsed into one identical image: `ticket-12-numbers-1440`, `ticket-15-levels-1440` and
+`ticket-16-headings-1440` all became the same 126,722 bytes. They are restored from c5bc8cb, the commit before
+that release, so each shows the state it was taken from, build stamp included. PLAN.md now names the filter as
+part of the gate. What found it was asking whether the release commit had touched older evidence, which is a
+question that is easy not to ask.
+
+**Also attempted and reverted.** Adding `scripts/` to `tsconfig.node.json` needs a third project, because the
+scripts import from `src/`. The build gate therefore still does not typecheck the probe, which is how two probe
+syntax errors of mine reached a gate run instead of a compile.

@@ -3,6 +3,25 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.11.1] - 2026-11-27
+
+### Fixed
+
+- **A row's label field no longer swallows the wheel.** The field was user-scrollable with its scrollbar
+  hidden, so scrolling the tree stopped whenever the pointer crossed a label, which is most of the list's
+  surface. A wheel over a field now scrolls the tree, and the field keeps its programmatic scrolling, so the
+  caret is still revealed while typing a long label. The import and paste box keeps its own scrolling, on
+  purpose: a whole outline goes in there.
+
+### Changed
+
+- **The tree's headings own the heading line.** The line holding "Expand all", "Collapse all" and "Paste
+  outline" is gone, and the column labels are the tree's single heading line, aligned exactly over the columns
+  they label. Those two controls are removed. "Paste outline" opened the import dialog, which the top bar
+  still does, so no capability is lost.
+- The hint "Keys follow label and path" goes with that line. The Key column and the Details panel both state
+  the rule, and the line now belongs to the labels.
+
 ## [0.11.0] - 2026-11-27
 
 ### Breaking
