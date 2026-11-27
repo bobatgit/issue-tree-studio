@@ -649,3 +649,42 @@ typecheck `scripts/`, and two probe syntax errors of mine in this phase were cau
 **This cycle's evidence shots were retaken with a current build stamp.** The dev server had been running since
 before the phase's commits, so the footer read `0.10.7 · c5bc8cb`. They were retaken with the name filter, and a
 check confirmed that no shot from an earlier cycle changed.
+
+## 0.11.3 - the diagram's geometry
+
+One ticket, #31.
+
+**The defect, measured.** With 121 items every one of the 121 boxes rendered 17px tall while the text inside
+each ran up to 39px past its bottom edge. `layoutTree` closed the row gaps, then shrank every box and clipped
+its text lines to fit an `options.maxHeight`, then pushed the row pitch below the box height when even that did
+not fit. The boxes were laid on a pitch smaller than their own text.
+
+**The fix.** The canvas asks for no height cap. The squeeze stays in the model, because the deck shares it and a
+slide has hard edges: it packs fewer branches per slide rather than scaling. Measured after the change, at 18,
+121 and 500 items: no box shorter than its own text, no row overlapping, nothing spilling out of its box.
+
+**An approach I implemented, measured, and threw away, which is worth recording.** The user chose "scale it down,
+zoom to read", so the canvas was first made to fit both dimensions. The probe then reported every box shorter
+than its text at 121 and 500 items, and the breakdown explained why: the SVG rendered as **8px wide by 504 tall**
+for a viewBox of 6.84 by 420.9. A 500-item tree has an aspect of about 64 to 1, so fitting the whole of it into
+the canvas drew the whole diagram as a sliver, unreadable at any zoom, full of sub-pixel boxes that no
+measurement can describe. The canvas fits its width instead, and a tall tree scrolls, with the zoom reaching 25
+percent for an overview. This is written into the CHANGELOG so the trade-off is not rediscovered as a defect.
+
+**A change to the probe, and why it is not a weakened check.** The clicks on the fold control and the marker
+began failing once the diagram grew taller: measured, the fold control's centre sat at y=770 while the canvas's
+visible band ended at y=681, so the click landed on the page behind the canvas. The probe now scrolls a target
+into view before pointing at it, which is what a person does. The checks themselves are unchanged.
+
+**Tests: 217.** A unit test asserts both sides of the defect in the model: capped, the row pitch comes out
+smaller than a box; uncapped, the pitch keeps its gap and the tree is taller than the cap. CI can see that one,
+which is why it exists alongside the probe.
+
+**Probe: 84 to 90 checks**, three cases comparing every box's height against the bounding box of its own text
+and every pair of boxes in a column for shared space, at 18, 121 and 500 items.
+
+**Gates.** build 0; smoke 0, 0 collisions; perf 0, the 500-item deck 2.67MB in 34 slides; probe 90 of 90. The
+evidence shot is of 500 items, and it shows readable boxes rather than a sliver.
+
+**A human verification is owed and requested:** one exported deck opened in PowerPoint, because the deck shares
+this layout maths and a moved box is not something a check can judge.

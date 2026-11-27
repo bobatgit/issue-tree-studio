@@ -3,6 +3,28 @@
 All notable changes are recorded here. The format follows Keep a Changelog, and versions follow Semantic
 Versioning. The build stamp in the app header, for example `0.2.0 · c861e80`, matches a tag in this repository.
 
+## [0.11.3] - 2026-11-27
+
+### Fixed
+
+- **A diagram no longer squeezes a box below the height its own text needs.** Past a handful of items the
+  layout closed the row gaps, shrank every box, clipped its text, and finally pushed the row pitch below the
+  box height, so boxes overlapped and their text spilled out of them. Measured at 121 items: every box 17px
+  tall with its text running 39px past the top of it. The canvas now asks for no height cap, so each box keeps
+  the size its text needs and no two rows share space. Measured at 18, 121 and 500 items: no box shorter than
+  its text, no row overlapping, nothing spilling out.
+- **Zooming no longer sends a fitted diagram to a corner.** The focus-preserving maths took the point under the
+  pointer as a fraction of the content without clamping it, and applied it even when the content was smaller
+  than the viewport. A diagram that fits entirely has no content under the viewport's edges, so the first zoom
+  drove the scroll to the far edge.
+
+### Notes
+
+- A tall tree scrolls rather than shrinking to fit. Fitting the whole height was implemented and then measured:
+  a 500-item tree has an aspect of about 64 to 1, so fitting all of it into the canvas drew the entire diagram
+  eight pixels wide, a sliver unreadable at any zoom. The zoom reaches 25 percent when an overview is wanted.
+- The deck keeps its own height cap, because a slide has hard edges and cannot scroll to reach the rest.
+
 ## [0.11.2] - 2026-11-27
 
 ### Fixed
