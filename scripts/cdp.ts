@@ -313,28 +313,98 @@ export class Page {
     await this.pause(250);
   }
 
-  /** Move a real pointer over the first element matching the selector. */
-  async hover(selector: string): Promise<void> {
+  /** The centre of the first element matching the selector, in viewport pixels. */
+  private async centre(selector: string): Promise<{ x: number; y: number }> {
     const point = await this.evaluate<{ x: number; y: number } | null>(`(() => {
       const element = document.querySelector(${JSON.stringify(selector)});
       if (!element) return null;
       const box = element.getBoundingClientRect();
       return { x: Math.round(box.left + box.width / 2), y: Math.round(box.top + box.height / 2) };
     })()`);
-    if (!point) throw new Error(`Nothing to hover for selector: ${selector}`);
+    if (!point) throw new Error(`Nothing matched selector: ${selector}`);
+    return point;
+  }
+
+  /** Move a real pointer over the first element matching the selector. */
+  async hover(selector: string): Promise<void> {
+    const point = await this.centre(selector);
     await this.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: point.x, y: point.y, buttons: 0 });
     await this.pause(250);
   }
 
+  /**
+   * Press and release at the centre of an element, as a person does.
+   *
+   * `element.click()` cannot be used for the diagram: an SVG element has no such
+   * method, and a synthetic click would not exercise the pointer capture that decides
+   * whether the click arrives at all.
+   */
+  async realClick(selector: string): Promise<void> {
+    const point = await this.centre(selector);
+    await this.send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    });
+    await this.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    });
+    await this.pause(300);
+  }
+
+  /** Press, move in steps, release: a real drag, for a pan. */
+  async drag(selector: string, dx: number, dy: number): Promise<void> {
+    const point = await this.centre(selector);
+    // Record where the element stood, immediately before the press. A check that compared
+    // the position against zero would pass on any earlier step that scrolled it, such as
+    // the zoom, which keeps its focus point still and moves the scroll a long way.
+    await this.evaluate(`(() => {
+      const element = document.querySelector(${JSON.stringify(selector)});
+      window.__dragBefore = element
+        ? { left: element.scrollLeft, top: element.scrollTop }
+        : { left: 0, top: 0 };
+    })()`);
+    await this.send("Input.dispatchMouseEvent", {
+      type: "mousePressed",
+      x: point.x,
+      y: point.y,
+      button: "left",
+      buttons: 1,
+      clickCount: 1,
+    });
+    const steps = 6;
+    for (let step = 1; step <= steps; step += 1) {
+      await this.send("Input.dispatchMouseEvent", {
+        type: "mouseMoved",
+        x: Math.round(point.x + (dx * step) / steps),
+        y: Math.round(point.y + (dy * step) / steps),
+        button: "left",
+        buttons: 1,
+      });
+      await this.pause(30);
+    }
+    await this.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: point.x + dx,
+      y: point.y + dy,
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    });
+    await this.pause(300);
+  }
+
   /** A real wheel over the first element matching the selector. */
   async wheel(selector: string, deltaY: number): Promise<void> {
-    const point = await this.evaluate<{ x: number; y: number } | null>(`(() => {
-      const element = document.querySelector(${JSON.stringify(selector)});
-      if (!element) return null;
-      const box = element.getBoundingClientRect();
-      return { x: Math.round(box.left + box.width / 2), y: Math.round(box.top + box.height / 2) };
-    })()`);
-    if (!point) throw new Error(`Nothing to wheel over for selector: ${selector}`);
+    const point = await this.centre(selector);
     await this.send("Input.dispatchMouseEvent", {
       type: "mouseWheel",
       x: point.x,

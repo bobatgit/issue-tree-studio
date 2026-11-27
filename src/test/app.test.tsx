@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "../App";
 import { buildDoc } from "../model/tree";
@@ -634,5 +634,53 @@ describe("the findings list", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^Show all/ }));
     await waitFor(() => expect(shown()).toBeGreaterThan(50));
+  });
+});
+
+describe("the diagram's pointer capture", () => {
+  it("is taken when a drag begins, not when the pointer goes down", async () => {
+    seedTree([
+      { label: "Root?", depth: 1 },
+      { label: "A?", depth: 2 },
+    ]);
+
+    // jsdom has no pointer capture, which the component already guards for. Defining it
+    // is what makes it observable: the question is whether and when it is asked for.
+    const capture = vi.fn();
+    (Element.prototype as unknown as { setPointerCapture: unknown }).setPointerCapture = capture;
+
+    // jsdom has no PointerEvent either, and without one the synthetic event carries no
+    // coordinates, so the drag threshold would never trip and this test would pass on a
+    // broken threshold. A minimal event over MouseEvent carries both.
+    class TestPointerEvent extends MouseEvent {
+      pointerId: number;
+      constructor(type: string, init: PointerEventInit = {}) {
+        super(type, init);
+        this.pointerId = init.pointerId ?? 0;
+      }
+    }
+    const originalPointerEvent = (globalThis as unknown as { PointerEvent?: unknown }).PointerEvent;
+    (globalThis as unknown as { PointerEvent: unknown }).PointerEvent = TestPointerEvent;
+    afterEach(() => {
+      (globalThis as unknown as { PointerEvent?: unknown }).PointerEvent = originalPointerEvent;
+    });
+
+    render(<App />);
+    await waitFor(() => expect(document.querySelector(".view-tab")).toBeTruthy());
+    fireEvent.click(screen.getByRole("tab", { name: "Diagram" }));
+    // The tree loads asynchronously, so the canvas appears a tick after the view switches.
+    await waitFor(() => expect(document.querySelector(".diagram-wrap")).toBeTruthy());
+    const canvas = document.querySelector(".diagram-wrap");
+    expect(canvas).toBeTruthy();
+
+    fireEvent.pointerDown(canvas as Element, { pointerId: 1, clientX: 100, clientY: 100 });
+    // A press alone must not capture. While a pointer is captured the click is retargeted
+    // to the capturing element, which is what made every fold control and every box in the
+    // diagram unclickable, and why 0.10.4's fix did nothing.
+    expect(capture).not.toHaveBeenCalled();
+
+    fireEvent.pointerMove(canvas as Element, { pointerId: 1, clientX: 160, clientY: 160 });
+    // Past the threshold the gesture is a pan, and the capture keeps it tracking.
+    expect(capture).toHaveBeenCalledTimes(1);
   });
 });

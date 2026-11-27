@@ -55,7 +55,13 @@ interface ProbeCase {
   doc?: TreeDoc;
   /** Elements to report. */
   selectors?: string[];
-  /** Page source run before measuring, for a state such as folded. */
+  /**
+   * Page source run before measuring, for a state such as folded.
+   *
+   * It is wrapped as `(() => { ... })()`, so it must not end with a line comment: the
+   * wrapper's closing braces would land inside that comment and the page would report
+   * "Unexpected end of input". End it with a statement or a block instead.
+   */
   setup?: string;
   /** An element to put a real pointer over before measuring. */
   hover?: string;
@@ -63,6 +69,10 @@ interface ProbeCase {
   wheel?: { selector: string; deltaY: number };
   /** Real typed text at the end of an element's value, for caret behaviour. */
   type?: { selector: string; text: string };
+  /** Real press and release on an element, repeated, for click behaviour. */
+  clicks?: { selector: string; times?: number };
+  /** A real drag on an element, for panning. */
+  drag?: { selector: string; dx: number; dy: number };
   /** Numbers computed in the page, reported beside the selectors. */
   derived?: Record<string, string>;
   checks?: Check[];
@@ -489,6 +499,69 @@ const CASES: ProbeCase[] = [
     ],
   },
   {
+    name: "fold-click-1440",
+    note: "a real click on a fold control hides the branch (#32)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg"],
+    clicks: { selector: ".fold-hit", times: 1 },
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+      foldedCounts: `document.querySelectorAll(".folded-count").length`,
+    },
+    checks: [
+      { label: "folding the root leaves the root alone", derived: "boxes", exact: 1 },
+      { label: "the folded branch says how much it hides", derived: "foldedCounts", min: 1 },
+    ],
+  },
+  {
+    name: "fold-unfold-1440",
+    note: "a second real click on the same control brings the branch back (#32)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-svg"],
+    clicks: { selector: ".fold-hit", times: 2 },
+    derived: {
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+    },
+    checks: [{ label: "every box is back", derived: "boxes", exact: 18 }],
+  },
+  {
+    name: "pan-still-tracks-1440",
+    note: "a drag still pans, which is what the capture was for (#32)",
+    view: "diagram",
+    size: [1440, 900],
+    selectors: [".diagram-wrap"],
+    setup: `// The zoom keeps its focus point still, so the canvas is already scrolled a long way
+    // by the time the drag starts. The pan check compares against a baseline taken
+    // immediately before the press, which the drag helper records, and not against zero.
+    // It cannot be taken here: React moves the scroll after these clicks return, so a
+    // reading on this line would always be zero.
+    for (let index = 0; index < 4; index += 1) {
+      const zoomIn = document.querySelector('[aria-label="Zoom in"]');
+      if (zoomIn) zoomIn.click();
+    }`,
+    drag: { selector: ".diagram-wrap", dx: -160, dy: -120 },
+    derived: {
+      panDeltaLeft: `(() => {
+        const wrap = document.querySelector(".diagram-wrap");
+        const before = window.__dragBefore || { left: 0, top: 0 };
+        return Math.round(wrap.scrollLeft - before.left);
+      })()`,
+      panDeltaTop: `(() => {
+        const wrap = document.querySelector(".diagram-wrap");
+        const before = window.__dragBefore || { left: 0, top: 0 };
+        return Math.round(wrap.scrollTop - before.top);
+      })()`,
+      boxes: `document.querySelectorAll(".diagram-svg .nrect").length`,
+    },
+    checks: [
+      { label: "the drag moved the canvas by its own width", derived: "panDeltaLeft", min: 100 },
+      { label: "the drag moved the canvas by its own height", derived: "panDeltaTop", min: 60 },
+      { label: "a drag is not a click, so nothing folded", derived: "boxes", exact: 18 },
+    ],
+  },
+  {
     name: "panel-details-1440",
     note: "the Details tab holds the Key and the Checks, and no item budget meter (#38)",
     view: "tree",
@@ -629,6 +702,11 @@ async function runCase(probe: ProbeCase): Promise<Outcome[]> {
     if (probe.hover) await page.hover(probe.hover);
     if (probe.wheel) await page.wheel(probe.wheel.selector, probe.wheel.deltaY);
     if (probe.type) await page.type(probe.type.selector, probe.type.text);
+    if (probe.clicks) {
+      const times = probe.clicks.times ?? 1;
+      for (let index = 0; index < times; index += 1) await page.realClick(probe.clicks.selector);
+    }
+    if (probe.drag) await page.drag(probe.drag.selector, probe.drag.dx, probe.drag.dy);
 
     const selectors = probe.selectors ?? [];
     const metrics = selectors.length > 0 ? await page.measure(selectors) : {};

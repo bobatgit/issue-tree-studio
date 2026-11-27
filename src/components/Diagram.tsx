@@ -184,10 +184,6 @@ export function Diagram({ ws }: Props) {
     if (!wrap) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    // Capture keeps the drag tracking if the pointer leaves the canvas. It is not
-    // available in every environment, and the drag works without it.
-    const target = event.currentTarget;
-    if (typeof target.setPointerCapture === "function") target.setPointerCapture(event.pointerId);
     if (pointers.current.size === 1) {
       panned.current = false;
       drag.current = {
@@ -204,7 +200,25 @@ export function Diagram({ ws }: Props) {
       drag.current = null;
       const [first, second] = [...pointers.current.values()];
       pinch.current = { distance: Math.hypot(first.x - second.x, first.y - second.y), level };
+      // Two fingers are a gesture, never a click, so capturing at once is safe.
+      capture(event);
     }
+  };
+
+  /**
+   * Capture keeps a drag tracking when the pointer leaves the canvas.
+   *
+   * It is deliberately not taken on pointer down. While a pointer is captured the click
+   * is retargeted to the capturing element, so a click on a box or on a fold control
+   * never reached its own handler, and the whole diagram was unclickable. Capturing when
+   * the drag passes its threshold keeps the pan and leaves a click alone.
+   */
+  const capture = (event: React.PointerEvent<HTMLDivElement>): void => {
+    const target = event.currentTarget;
+    // Not available in every environment, and the drag works without it.
+    if (typeof target.setPointerCapture !== "function") return;
+    if (typeof target.hasPointerCapture === "function" && target.hasPointerCapture(event.pointerId)) return;
+    target.setPointerCapture(event.pointerId);
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>): void => {
@@ -224,6 +238,7 @@ export function Diagram({ ws }: Props) {
           (first.y + second.y) / 2 - rect.top,
         );
       }
+      capture(event);
       return;
     }
 
@@ -231,7 +246,12 @@ export function Diagram({ ws }: Props) {
     if (!start) return;
     const dx = event.clientX - start.x;
     const dy = event.clientY - start.y;
-    if (Math.abs(dx) + Math.abs(dy) > 3) start.moved = true;
+    if (!start.moved && Math.abs(dx) + Math.abs(dy) > 3) {
+      start.moved = true;
+      // The gesture is a pan now rather than a click, so capturing the pointer costs
+      // nothing: a click would not have fired anyway, and the pan keeps tracking.
+      capture(event);
+    }
     wrap.scrollLeft = start.left - dx;
     wrap.scrollTop = start.top - dy;
   };
